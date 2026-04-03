@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Food Ordering System</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<!-- QR Code Generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+body { font-family: Arial; display: flex; flex-wrap: wrap; }
+.container { width: 50%; padding: 20px; }
+.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+.qr-box { margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Customer Side -->
+<div class="container">
+  <h2>Scan & Order</h2>
+  <p>Table: <span id="tableNo"></span></p>
+
+  <input type="text" id="customerName" placeholder="Your Name"><br><br>
+
+  <h8>Menu</h8>
+  <label><input type="checkbox" value="Fried Rice"> Fried Rice</label><br>
+  <label><input type="checkbox" value="Beef Noodles">Beef Noodles</label><br>
+  <label><input type="checkbox" value="BBQ Pork"> BBQ Pork</label><br>
+  <label><input type="checkbox" value="BBQ Chicken"> BBQ Chicken</label><br>
+  <label><input type="checkbox" value="BBQ Salmon"> BBQ Salmon</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Curry Chicken"> Nasi Lemak Curry Chicken</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Chicken"> Nasi Lemak Fried Chicken</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Egg"> Nasi Lemak Fried Egg</label><br>
+
+  <button onclick="submitOrder()">Submit Order</button>
+</div>
+
+<!-- Kitchen Side -->
+<div class="container">
+  <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
+</div>
+
+<!-- QR Generator (for owner) -->
+<div class="container">
+  <h2>Generate Table QR Code</h2>
+  <input type="number" id="tableInput" placeholder="Table Number">
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode" class="qr-box"></div>
+</div>
+
+<script>
+// 🔥 Replace with your Firebase config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// 📌 Get table number from URL
+const params = new URLSearchParams(window.location.search);
+const table = params.get('table') || 'Unknown';
+document.getElementById('tableNo').innerText = table;
+
+function submitOrder() {
+  const name = document.getElementById('customerName').value;
+  const items = document.querySelectorAll('input[type=checkbox]:checked');
+
+  if (!name || items.length === 0) {
+    alert('Enter name & select food');
+    return;
+  }
+
+  let orderItems = [];
+  items.forEach(item => orderItems.push(item.value));
+
+  db.ref('orders').push({
+    table: table,
+    name: name,
+    items: orderItems,
+    status: 'New',
+    time: new Date().toLocaleTimeString()
+  });
+
+  alert('Order sent!');
+  location.reload();
+}
+
+function loadOrders() {
+  const ordersDiv = document.getElementById('orders');
+
+  db.ref('orders').on('value', snapshot => {
+    ordersDiv.innerHTML = '';
+    const data = snapshot.val();
+
+    for (let id in data) {
+      const order = data[id];
+      const div = document.createElement('div');
+      div.className = 'order';
+      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
+      <button onclick="completeOrder('${id}')">Done</button>`;
+      ordersDiv.appendChild(div);
+    }
+  });
+}
+
+function completeOrder(id) {
+  db.ref('orders/' + id).remove();
+}
+
+// 📱 Generate QR Code
+function generateQR() {
+  const tableNo = document.getElementById('tableInput').value;
+  const url = window.location.origin + window.location.pathname + '?table=' + tableNo;
+
+  const qrDiv = document.getElementById('qrcode');
+  qrDiv.innerHTML = '';
+
+  QRCode.toCanvas(url, function (err, canvas) {
+    if (err) console.error(err);
+    qrDiv.appendChild(canvas);
+  });
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>
+https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app/
+:
+null
+Add a child node
+Remove this node
