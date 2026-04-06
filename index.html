@@ -1,3 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Food Ordering System</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<!-- QR Code Generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
+<style>
+body { font-family: Arial; display: flex; flex-wrap: wrap; }
+.container { width: 50%; padding: 20px; }
+.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+.qr-box { margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Customer Side -->
+<div class="container">
+  <h2>Scan & Order</h2>
+  <p>Table: <span id="tableNo"></span></p>
+
+  <input type="text" id="customerName" placeholder="Your Name"><br><br>
+
+  <h8>Menu</h8>
+  <label><input type="checkbox" value="Fried Rice"> Fried Rice</label><br>
+  <label><input type="checkbox" value="Beef Noodles">Beef Noodles</label><br>
+  <label><input type="checkbox" value="BBQ Pork"> BBQ Pork</label><br>
+  <label><input type="checkbox" value="BBQ Chicken"> BBQ Chicken</label><br>
+  <label><input type="checkbox" value="BBQ Salmon"> BBQ Salmon</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Curry Chicken"> Nasi Lemak Curry Chicken</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Chicken"> Nasi Lemak Fried Chicken</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Egg"> Nasi Lemak Fried Egg</label><br>
+
+  <button onclick="submitOrder()">Submit Order</button>
+</div>
+
+<!-- Kitchen Side -->
+<div class="container">
+  <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
+</div>
+
+<!-- QR Generator (for owner) -->
+<div class="container">
+  <h2>Generate Table QR Code</h2>
+  <input type="number" id="tableInput" placeholder="Table Number">
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode" class="qr-box"></div>
+</div>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
@@ -90,3 +147,15 @@ function generateQR() {
 
 loadOrders();
 </script>
+
+</body>
+</html>
+https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app/
+:
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+Remove this node
