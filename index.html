@@ -36,7 +36,7 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
  <label><input type="checkbox" value=" Wantan Soup " data-price="8"> Wanton Soup - $6.50</label><br>
   
 <button onclick="submitOrder()">Submit</button>
-<p id="totalPrice">Total: $0</p>
+<p id="totalPrice">Total: $0.00</p>
 <!-- Kitchen Side -->
 <div class="container">
   <h2>Kitchen Orders</h2>
@@ -60,9 +60,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// 📌 Get table number from URL
 const params = new URLSearchParams(window.location.search);
-const table = params.get('table') || Math.floor(Math.random()*20+1);
-document.getElementById('tableNo').innerText = table;
+let table = params.get('table');
+
+// 如果没有 table 参数 → 随机生成 1~20 桌
+if (!table) {
+  table = Math.floor(Math.random() * 20) + 1;
+}
 
 // 计算价格
 document.querySelectorAll('input[type=checkbox]').forEach(box=>{
@@ -75,6 +80,9 @@ document.querySelectorAll('input[type=checkbox]').forEach(box=>{
   });
 });
 
+ // 显示桌号
+document.getElementById('tableNo').innerText = table;
+
 function submitOrder(){
   const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input:checked');
@@ -84,21 +92,42 @@ function submitOrder(){
     return;
   }
 
-  let list = [], total=0;
-  items.forEach(i=>{
-    list.push(i.value);
-    total += parseFloat(i.dataset.price);
-  });
+ let orderItems = [];
+  items.forEach(item => orderItems.push(item.value));
 
   db.ref('orders').push({
-    table, name, items:list, total,
-    status:"New",
-    time:new Date().toLocaleTimeString()
+    table: table,
+    name: name,
+    items: orderItems,
+    status: 'New',
+    time: new Date().toLocaleTimeString()
   });
 
   alert("Order Sent! $" + total);
   location.reload();
 }
+ function loadOrders() {
+  const ordersDiv = document.getElementById('orders');
+
+  db.ref('orders').on('value', snapshot => {
+    ordersDiv.innerHTML = '';
+    const data = snapshot.val();
+
+    for (let id in data) {
+      const order = data[id];
+      const div = document.createElement('div');
+      div.className = 'order';
+      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
+      <button onclick="completeOrder('${id}')">Done</button>`;
+      ordersDiv.appendChild(div);
+    }
+  });
+}
+
+function completeOrder(id) {
+  db.ref('orders/' + id).remove();
+}
+ 
 </script>
 
 </body>
