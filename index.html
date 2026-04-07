@@ -44,14 +44,11 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 </div>
 
 <!-- Kitchen Side -->
-<!-- Removed the Kitchen Orders section as requested -->
-<!--
 <div class="container">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
   <div id="totalSales"></div>
 </div>
--->
 
 <!-- QR Generator (for owner) -->
 <!-- Removed the QR Generator section as requested -->
@@ -138,14 +135,58 @@ function submitOrder() {
   // Keep the order total displayed until the page is reloaded or a new order is submitted
 }
 
-// Removed loadOrders function as Kitchen Orders are no longer displayed on the customer side
-// function loadOrders() { ... }
+function loadOrders() {
+  const ordersDiv = document.getElementById('orders');
+  const totalSalesDiv = document.getElementById('totalSales');
+  let overallTotalPrice = 0;
+
+  db.ref('orders').on('value', snapshot => {
+    ordersDiv.innerHTML = '';
+    const data = snapshot.val();
+
+    if (data) {
+      for (let id in data) {
+        const order = data[id];
+        const div = document.createElement('div');
+        div.className = 'order';
+
+        // --- Modified section to correctly display menu items ---
+        let itemsHtml = '<ul>'; // Using an unordered list for menu items
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach(item => {
+            const itemName = item.name || 'Unknown Item';
+            const itemPrice = parseFloat(item.price);
+            const formattedPrice = isNaN(itemPrice) ? 'N/A' : `$${itemPrice.toFixed(2)}`;
+            itemsHtml += `<li>${itemName} - ${formattedPrice}</li>`;
+          });
+        } else {
+          itemsHtml += '<li>No items listed</li>'; // Fallback if items array is missing or not an array
+        }
+        itemsHtml += '</ul>';
+        // --- End of modified section ---
+
+        div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${itemsHtml}<br>
+        <b>Total: $${order.totalPrice.toFixed(2)}</b><br>${order.time}<br>
+        <button onclick="completeOrder('${id}')">Done</button>`;
+        ordersDiv.appendChild(div);
+
+        overallTotalPrice += order.totalPrice; // Add to overall total
+      }
+    }
+
+    totalSalesDiv.innerHTML = `<h3>Total Sales: $${overallTotalPrice.toFixed(2)}</h3>`;
+  });
+}
+
+function completeOrder(id) {
+  db.ref('orders/' + id).remove();
+}
 
 // Removed generateQR function as QR code generation is removed
 // function generateQR() { ... }
 
-// No need to call loadOrders() on initial load for the customer view anymore.
-// loadOrders();
+// Call loadOrders to display existing orders when the page loads
+loadOrders();
 </script>
 
 </body>
