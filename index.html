@@ -5,34 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Order Food</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
 <style>
-body { font-family: Arial; padding: 20px; }
+body { font-family: Arial; display: flex; flex-wrap: wrap; }
+.container { width: 50%; padding: 20px; }
+.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+.qr-box { margin-top: 20px; }
 </style>
 </head>
-
 <body>
 
-<h8>Order Food</h8>
-<p>Table: <span id="tableNo"></span></p>
+<!-- Customer Side -->
+<div class="container">
+ <h2>Scan & Order</h2>
+ <p>Table: <span id="tableNo"></span></p>
 
-<input type="text" id="customerName" placeholder="Your Name"><br><br>
+ <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
-<h8>Menu</h8>
-<label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
-<label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
-<label><input type="checkbox" value="BBQ Chicken" data-price="8"> BBQ Chicken - $7.20</label><br>
-<label><input type="checkbox" value="BBQ Salmen" data-price="8"> BBQ Salmen - $7.90</label><br>
-<label><input type="checkbox" value="Roasted Chicken" data-price="8"> Roasted Chicken - $7.80</label><br>
-<label><input type="checkbox" value="Steam Chicken" data-price="8"> Steam Chicken - $7.20</label><br>
-<label><input type="checkbox" value=" Kailan" data-price="8"> Kailan - $6.80</label><br>
-<label><input type="checkbox" value=" Wantan Soup " data-price="8"> Wanton Soup - $6.50</label><br>
+ <h8>Menu</h8>
+ <label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
+ <label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
+ <label><input type="checkbox" value="BBQ Chicken" data-price="8"> BBQ Chicken - $7.20</label><br>
+ <label><input type="checkbox" value="BBQ Salmen" data-price="8"> BBQ Salmen - $7.90</label><br>
+ <label><input type="checkbox" value="Roasted Chicken" data-price="8"> Roasted Chicken - $7.80</label><br>
+ <label><input type="checkbox" value="Steam Chicken" data-price="8"> Steam Chicken - $7.20</label><br>
+ <label><input type="checkbox" value=" Kailan" data-price="8"> Kailan - $6.80</label><br>
+ <label><input type="checkbox" value=" Wantan Soup " data-price="8"> Wanton Soup - $6.50</label><br>
   
-<br>
 <button onclick="submitOrder()">Submit</button>
 <p id="totalPrice">Total: $0</p>
+<!-- Kitchen Side -->
+<div class="container">
+  <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
+</div>
 
 <script>
 const firebaseConfig = {
