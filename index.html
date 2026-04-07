@@ -50,12 +50,15 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 </div>
 
 <!-- QR Generator (for owner) -->
+<!-- Removed the QR Generator section as requested -->
+<!--
 <div class="container">
   <h2>Generate Table QR Code</h2>
   <input type="number" id="tableInput" placeholder="Table Number">
   <button onclick="generateQR()">Generate QR</button>
   <div id="qrcode" class="qr-box"></div>
 </div>
+-->
 
 <script>
 // 🔥 Replace with your Firebase config
@@ -147,16 +150,19 @@ function loadOrders() {
   });
 }
 
-// 📱 Generate QR Code
-function generateQR() {
-  const tableNo = document.getElementById('tableInput').value;
-  const url = window.location.origin + window.location.pathname + '?table=' + tableNo;
+// Removed the generateQR function as requested
+// function generateQR() {
+//   const tableNo = document.getElementById('tableInput').value;
+//   const url = window.location.origin + window.location.pathname + '?table=' + tableNo;
 
-  const qrDiv = document.getElementById('qrcode');
-  qrDiv.innerHTML = '';
+//   const qrDiv = document.getElementById('qrcode');
+//   qrDiv.innerHTML = '';
 
-  });
-}
+//   QRCode.toCanvas(url, function (err, canvas) {
+//     if (err) console.error(err);
+//     qrDiv.appendChild(canvas);
+//   });
+// }
 
 loadOrders();
 </script>
