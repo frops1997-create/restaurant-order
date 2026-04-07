@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Food</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<style>
+body { font-family: Arial; padding: 20px; }
+</style>
+</head>
+
+<body>
+
+<h2>Order Food</h2>
+<p>Table: <span id="tableNo"></span></p>
+
+<input type="text" id="customerName" placeholder="Your Name"><br><br>
+
+<label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
+<label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
+
+<br>
+<button onclick="submitOrder()">Submit</button>
+<p id="totalPrice">Total: $0</p>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const params = new URLSearchParams(window.location.search);
+const table = params.get('table') || Math.floor(Math.random()*20+1);
+document.getElementById('tableNo').innerText = table;
+
+// 计算价格
+document.querySelectorAll('input[type=checkbox]').forEach(box=>{
+  box.addEventListener('change', ()=>{
+    let total = 0;
+    document.querySelectorAll('input:checked').forEach(i=>{
+      total += parseFloat(i.dataset.price);
+    });
+    document.getElementById('totalPrice').innerText = "Total: $" + total;
+  });
+});
+
+function submitOrder(){
+  const name = document.getElementById('customerName').value;
+  const items = document.querySelectorAll('input:checked');
+
+  if(!name || items.length==0){
+    alert("Enter name & select food");
+    return;
+  }
+
+  let list = [], total=0;
+  items.forEach(i=>{
+    list.push(i.value);
+    total += parseFloat(i.dataset.price);
+  });
+
+  db.ref('orders').push({
+    table, name, items:list, total,
+    status:"New",
+    time:new Date().toLocaleTimeString()
+  });
+
+  alert("Order Sent! $" + total);
+  location.reload();
+}
+</script>
+
+</body>
+</html>
