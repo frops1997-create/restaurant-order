@@ -8,6 +8,13 @@
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+const urlParams = new URLSearchParams(window.location.search);
+const isKitchen = urlParams.get('kitchen');
+
+// 如果不是厨房 → 隐藏
+if (!isKitchen) {
+  document.getElementById('kitchenSection').style.display = 'none';
+}
 
 <style>
 body { font-family: Arial; display: flex; flex-wrap: wrap; }
@@ -40,10 +47,6 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 </div>
 
 <!-- Kitchen -->
-<div class="container">
-  <h2>Kitchen Orders</h2>
-  <div id="orders"></div>
-</div>
 
 <script>
 
