@@ -139,45 +139,7 @@ function submitOrder() {
 }
 
 // Removed loadOrders function as Kitchen Orders are no longer displayed on the customer side
-// function loadOrders() {
-  const ordersDiv = document.getElementById('orders');
-  const totalSalesDiv = document.getElementById('totalSales');
-  let overallTotalPrice = 0;
-
-  db.ref('orders').on('value', snapshot => {
-    ordersDiv.innerHTML = '';
-    const data = snapshot.val();
-
-    if (data) {
-      for (let id in data) {
-        const order = data[id];
-        const div = document.createElement('div');
-        div.className = 'order';
-
-        // --- 修改点开始 ---
-        let itemsHtml = '<ul>'; // 使用无序列表来显示菜单项
-        order.items.forEach(item => {
-          // 确保 item.name 和 item.price 存在且格式正确
-          const itemName = item.name || 'Unknown Item';
-          const itemPrice = parseFloat(item.price);
-          const formattedPrice = isNaN(itemPrice) ? 'N/A' : `$${itemPrice.toFixed(2)}`;
-          itemsHtml += `<li>${itemName} - ${formattedPrice}</li>`;
-        });
-        itemsHtml += '</ul>';
-        // --- 修改点结束 ---
-
-        div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${itemsHtml}<br>
-        <b>Total: $${order.totalPrice.toFixed(2)}</b><br>${order.time}<br>
-        <button onclick="completeOrder('${id}')">Done</button>`;
-        ordersDiv.appendChild(div);
-
-        overallTotalPrice += order.totalPrice; // Add to overall total
-      }
-    }
-
-    totalSalesDiv.innerHTML = `<h3>Total Sales: $${overallTotalPrice.toFixed(2)}</h3>`;
-  });
-}
+// function loadOrders() { ... }
 
 // Removed generateQR function as QR code generation is removed
 // function generateQR() { ... }
