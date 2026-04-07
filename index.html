@@ -28,23 +28,25 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 
   <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
-  <h8>Menu</h8>
-  <label><input type="checkbox" value="Fried Rice"> Fried Rice</label><br>
-  <label><input type="checkbox" value="Beef Noodles">Beef Noodles</label><br>
-  <label><input type="checkbox" value="BBQ Pork"> BBQ Pork</label><br>
-  <label><input type="checkbox" value="BBQ Chicken"> BBQ Chicken</label><br>
-  <label><input type="checkbox" value="BBQ Salmon"> BBQ Salmon</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Curry Chicken"> Nasi Lemak Curry Chicken</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Chicken"> Nasi Lemak Fried Chicken</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Egg"> Nasi Lemak Fried Egg</label><br>
+  <h8>Menu</h8><br>
+  <label><input type="checkbox" value="Fried Rice" data-price="8.00"> Fried Rice - $8.00</label><br>
+  <label><input type="checkbox" value="Beef Noodles" data-price="10.00"> Beef Noodles - $10.00</label><br>
+  <label><input type="checkbox" value="BBQ Pork" data-price="12.00"> BBQ Pork - $12.00</label><br>
+  <label><input type="checkbox" value="BBQ Chicken" data-price="15.00"> BBQ Chicken - $15.00</label><br>
+  <label><input type="checkbox" value="BBQ Salmon" data-price="18.00"> BBQ Salmon - $18.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="13.00"> Nasi Lemak Curry Chicken - $13.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="12.00"> Nasi Lemak Fried Chicken - $12.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00"> Nasi Lemak Fried Egg - $9.00</label><br>
 
   <button onclick="submitOrder()">Submit Order</button>
+  <div id="orderTotal"></div>
 </div>
 
 <!-- Kitchen Side -->
 <div class="container">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
+  <div id="totalSales"></div>
 </div>
 
 <!-- QR Generator (for owner) -->
@@ -91,40 +93,58 @@ function submitOrder() {
   }
 
   let orderItems = [];
-  items.forEach(item => orderItems.push(item.value));
+  let totalPrice = 0;
+  items.forEach(item => {
+    const itemName = item.value;
+    const itemPrice = parseFloat(item.getAttribute('data-price'));
+    orderItems.push({ name: itemName, price: itemPrice });
+    totalPrice += itemPrice;
+  });
 
   db.ref('orders').push({
     table: table,
     name: name,
     items: orderItems,
+    totalPrice: totalPrice, // Store the total price
     status: 'New',
     time: new Date().toLocaleTimeString()
   });
 
   alert('Order sent!');
-  location.reload();
+  // Optionally, clear checkboxes and name after submission
+  document.getElementById('customerName').value = '';
+  items.forEach(item => item.checked = false);
+  document.getElementById('orderTotal').innerText = ''; // Clear displayed total
 }
 
 function loadOrders() {
   const ordersDiv = document.getElementById('orders');
+  const totalSalesDiv = document.getElementById('totalSales');
+  let overallTotalPrice = 0;
 
   db.ref('orders').on('value', snapshot => {
     ordersDiv.innerHTML = '';
     const data = snapshot.val();
 
-    for (let id in data) {
-      const order = data[id];
-      const div = document.createElement('div');
-      div.className = 'order';
-      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
-      ordersDiv.appendChild(div);
-    }
-  });
-}
+    if (data) {
+      for (let id in data) {
+        const order = data[id];
+        const div = document.createElement('div');
+        div.className = 'order';
 
-function completeOrder(id) {
-  db.ref('orders/' + id).remove();
+        let itemsHtml = order.items.map(item => `${item.name} - $${item.price.toFixed(2)}`).join('<br>');
+
+        div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${itemsHtml}<br>
+        <b>Total: $${order.totalPrice.toFixed(2)}</b><br>${order.time}<br>
+        <button onclick="completeOrder('${id}')">Done</button>`;
+        ordersDiv.appendChild(div);
+
+        overallTotalPrice += order.totalPrice; // Add to overall total
+      }
+    }
+
+    totalSalesDiv.innerHTML = `<h3>Total Sales: $${overallTotalPrice.toFixed(2)}</h3>`;
+  });
 }
 
 // 📱 Generate QR Code
@@ -135,9 +155,6 @@ function generateQR() {
   const qrDiv = document.getElementById('qrcode');
   qrDiv.innerHTML = '';
 
-  QRCode.toCanvas(url, function (err, canvas) {
-    if (err) console.error(err);
-    qrDiv.appendChild(canvas);
   });
 }
 
@@ -146,12 +163,3 @@ loadOrders();
 
 </body>
 </html>
-https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app/
-:
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-Remove this node
