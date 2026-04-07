@@ -1,162 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Food Ordering System</title>
+<title>Order Food</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-const urlParams = new URLSearchParams(window.location.search);
-const isKitchen = urlParams.get('kitchen');
-
-// 如果不是厨房 → 隐藏
-if (!isKitchen) {
-  document.getElementById('kitchenSection').style.display = 'none';
-}
 
 <style>
-body { font-family: Arial; display: flex; flex-wrap: wrap; }
-.container { width: 50%; padding: 20px; }
-.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+body { font-family: Arial; padding: 20px; }
 </style>
 </head>
 
 <body>
 
-<!-- Customer -->
-<div class="container">
-  <h2>Scan & Order</h2> id="kitchenSection">
-  <p>Table: <span id="tableNo"></span></p>
+<h2>Order Food</h2>
+<p>Table: <span id="tableNo"></span></p>
 
-  <input type="text" id="customerName" placeholder="Your Name"><br><br>
+<input type="text" id="customerName" placeholder="Your Name"><br><br>
 
-  <h3>Menu</h3>
+<label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
+<label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
 
-  <label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
-  <label><input type="checkbox" value="Beef Noodles" data-price="6"> Beef Noodles - $6</label><br>
-  <label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
-  <label><input type="checkbox" value="BBQ Chicken" data-price="7"> BBQ Chicken - $7</label><br>
-  <label><input type="checkbox" value="BBQ Salmon" data-price="10"> BBQ Salmon - $10</label><br>
-
-  <br>
-  <button onclick="submitOrder()">Submit Order</button>
-
-  <p id="totalPrice">Total: $0</p>
-</div>
-
-<!-- Kitchen -->
+<br>
+<button onclick="submitOrder()">Submit</button>
+<p id="totalPrice">Total: $0</p>
 
 <script>
-
-// 🔥 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
-  storageBucket: "restaurants-cs.firebasestorage.app",
-  messagingSenderId: "209872919844",
-  appId: "1:209872919844:web:c1730801cd51d615e867b1"
+  projectId: "restaurants-cs"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 📌 Table number
 const params = new URLSearchParams(window.location.search);
-let table = params.get('table');
-
-if (!table) {
-  table = Math.floor(Math.random() * 20) + 1;
-}
-
+const table = params.get('table') || Math.floor(Math.random()*20+1);
 document.getElementById('tableNo').innerText = table;
 
-// 💰 实时计算价格
-const checkboxes = document.querySelectorAll('input[type=checkbox]');
-checkboxes.forEach(box => {
-  box.addEventListener('change', updateTotal);
+// 计算价格
+document.querySelectorAll('input[type=checkbox]').forEach(box=>{
+  box.addEventListener('change', ()=>{
+    let total = 0;
+    document.querySelectorAll('input:checked').forEach(i=>{
+      total += parseFloat(i.dataset.price);
+    });
+    document.getElementById('totalPrice').innerText = "Total: $" + total;
+  });
 });
 
-function updateTotal() {
-  let total = 0;
-
-  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
-    total += parseFloat(item.getAttribute('data-price'));
-  });
-
-  document.getElementById('totalPrice').innerText = "Total: $" + total;
-}
-
-// 📦 提交订单
-function submitOrder() {
+function submitOrder(){
   const name = document.getElementById('customerName').value;
-  const items = document.querySelectorAll('input[type=checkbox]:checked');
+  const items = document.querySelectorAll('input:checked');
 
-  if (!name || items.length === 0) {
-    alert('Enter name & select food');
+  if(!name || items.length==0){
+    alert("Enter name & select food");
     return;
   }
 
-  let orderItems = [];
-  let total = 0;
-
-  items.forEach(item => {
-    const price = parseFloat(item.getAttribute('data-price'));
-    orderItems.push(item.value + " ($" + price + ")");
-    total += price;
+  let list = [], total=0;
+  items.forEach(i=>{
+    list.push(i.value);
+    total += parseFloat(i.dataset.price);
   });
 
   db.ref('orders').push({
-    table: table,
-    name: name,
-    items: orderItems,
-    total: total,
-    time: new Date().toLocaleTimeString()
+    table, name, items:list, total,
+    status:"New",
+    time:new Date().toLocaleTimeString()
   });
 
-  alert("Order sent! Total: $" + total);
+  alert("Order Sent! $" + total);
   location.reload();
 }
-
-// 🍳 厨房显示
-function loadOrders() {
-  const ordersDiv = document.getElementById('orders');
-
-  db.ref('orders').on('value', snapshot => {
-    ordersDiv.innerHTML = '';
-    const data = snapshot.val() || {};
-
-    for (let id in data) {
-      const order = data[id];
-
-      const div = document.createElement('div');
-      div.className = 'order';
-
-      div.innerHTML = `
-        <b>Table ${order.table}</b><br>
-        👤 ${order.name}<br>
-        🍽️ ${order.items.join(', ')}<br>
-        💰 $${order.total}<br>
-        🕒 ${order.time}<br>
-        <button onclick="completeOrder('${id}')">Done</button>
-      `;
-
-      ordersDiv.appendChild(div);
-    }
-  });
-}
-
-// ❌ 完成订单
-function completeOrder(id) {
-  db.ref('orders/' + id).remove();
-}
-
-// 启动
-loadOrders();
-
 </script>
 
 </body>
