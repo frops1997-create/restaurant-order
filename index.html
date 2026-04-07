@@ -29,14 +29,14 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
   <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
   <h8>Menu</h8><br>
-  <label><input type="checkbox" value="Fried Rice" data-price="8.00"> Fried Rice - $8.00</label><br>
-  <label><input type="checkbox" value="Beef Noodles" data-price="10.00"> Beef Noodles - $10.00</label><br>
-  <label><input type="checkbox" value="BBQ Pork" data-price="12.00"> BBQ Pork - $12.00</label><br>
-  <label><input type="checkbox" value="BBQ Chicken" data-price="15.00"> BBQ Chicken - $15.00</label><br>
-  <label><input type="checkbox" value="BBQ Salmon" data-price="18.00"> BBQ Salmon - $18.00</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="13.00"> Nasi Lemak Curry Chicken - $13.00</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="12.00"> Nasi Lemak Fried Chicken - $12.00</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00"> Nasi Lemak Fried Egg - $9.00</label><br>
+  <label><input type="checkbox" value="Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> Fried Rice - $8.00</label><br>
+  <label><input type="checkbox" value="Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> Beef Noodles - $10.00</label><br>
+  <label><input type="checkbox" value="BBQ Pork" data-price="12.00" onchange="updateOrderTotal()"> BBQ Pork - $12.00</label><br>
+  <label><input type="checkbox" value="BBQ Chicken" data-price="15.00" onchange="updateOrderTotal()"> BBQ Chicken - $15.00</label><br>
+  <label><input type="checkbox" value="BBQ Salmon" data-price="18.00" onchange="updateOrderTotal()"> BBQ Salmon - $18.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="13.00" onchange="updateOrderTotal()"> Nasi Lemak Curry Chicken - $13.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="12.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Chicken - $12.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Egg - $9.00</label><br>
 
   <button onclick="submitOrder()">Submit Order</button>
   <!-- Display order total here -->
@@ -90,6 +90,16 @@ if (!table) {
 // 显示桌号
 document.getElementById('tableNo').innerText = table;
 
+// Function to update the displayed order total
+function updateOrderTotal() {
+  const items = document.querySelectorAll('input[type=checkbox]:checked');
+  let totalPrice = 0;
+  items.forEach(item => {
+    totalPrice += parseFloat(item.getAttribute('data-price'));
+  });
+  document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
+}
+
 function submitOrder() {
   const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input[type=checkbox]:checked');
@@ -113,7 +123,7 @@ function submitOrder() {
     table: table,
     name: name,
     items: orderItems,
-    totalPrice: totalPrice,
+    totalPrice: totalPrice, // Store the total price
     status: 'New',
     time: new Date().toLocaleTimeString()
   });
