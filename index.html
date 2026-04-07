@@ -29,14 +29,14 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
   <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
   <h8>Menu</h8>
-  <label><input type="checkbox" value="Fried Rice"> Fried Rice</label><br>
-  <label><input type="checkbox" value="Beef Noodles">Beef Noodles</label><br>
-  <label><input type="checkbox" value="BBQ Pork"> BBQ Pork</label><br>
-  <label><input type="checkbox" value="BBQ Chicken"> BBQ Chicken</label><br>
-  <label><input type="checkbox" value="BBQ Salmon"> BBQ Salmon</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Curry Chicken"> Nasi Lemak Curry Chicken</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Chicken"> Nasi Lemak Fried Chicken</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Egg"> Nasi Lemak Fried Egg</label><br>
+  <label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
+<label><input type="checkbox" value="Beef Noodles" data-price="6"> Beef Noodles - $6</label><br>
+<label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
+<label><input type="checkbox" value="BBQ Chicken" data-price="7"> BBQ Chicken - $7</label><br>
+<label><input type="checkbox" value="BBQ Salmon" data-price="10"> BBQ Salmon - $10</label><br>
+<label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="6"> Nasi Lemak Curry Chicken - $6</label><br>
+<label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="6"> Nasi Lemak Fried Chicken - $6</label><br>
+<label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="4"> Nasi Lemak Fried Egg - $4</label><br>
 
   <button onclick="submitOrder()">Submit Order</button>
 </div>
@@ -91,17 +91,24 @@ function submitOrder() {
   }
 
   let orderItems = [];
-  items.forEach(item => orderItems.push(item.value));
+  let total = 0;
+
+  items.forEach(item => {
+    const price = parseFloat(item.getAttribute('data-price'));
+    orderItems.push(item.value + " ($" + price + ")");
+    total += price;
+  });
 
   db.ref('orders').push({
     table: table,
     name: name,
     items: orderItems,
+    total: total,
     status: 'New',
     time: new Date().toLocaleTimeString()
   });
 
-  alert('Order sent!');
+  alert("Order sent! Total: $" + total);
   location.reload();
 }
 
