@@ -39,6 +39,7 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="4"> Nasi Lemak Fried Egg - $4</label><br>
 
   <button onclick="submitOrder()">Submit Order</button>
+
 </div>
 
 <div class="container">
@@ -157,3 +158,15 @@ https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app/
   }
 }
 Remove this node
+const checkboxes = document.querySelectorAll('input[type=checkbox]');
+checkboxes.forEach(box => {
+  box.addEventListener('change', updateTotal);
+});
+
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
+    total += parseFloat(item.getAttribute('data-price'));
+  });
+  document.getElementById('totalPrice').innerText = "Total: $" + total;
+}
