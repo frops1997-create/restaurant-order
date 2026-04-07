@@ -3,53 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Code Food Ordering System</title>
+<title>Food Ordering System</title>
 
 <!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
-<!-- QR Code Generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
 <style>
 body { font-family: Arial; display: flex; flex-wrap: wrap; }
 .container { width: 50%; padding: 20px; }
 .order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
-.qr-box { margin-top: 20px; }
 </style>
 </head>
+
 <body>
 
-<!-- Customer Side -->
+<!-- Customer -->
 <div class="container">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
   <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
-  <h8>Menu</h8>
-  <label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
-<label><input type="checkbox" value="Beef Noodles" data-price="6"> Beef Noodles - $6</label><br>
-<label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
-<label><input type="checkbox" value="BBQ Chicken" data-price="7"> BBQ Chicken - $7</label><br>
-<label><input type="checkbox" value="BBQ Salmon" data-price="10"> BBQ Salmon - $10</label><br>
-<label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="6"> Nasi Lemak Curry Chicken - $6</label><br>
-<label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="6"> Nasi Lemak Fried Chicken - $6</label><br>
-<label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="4"> Nasi Lemak Fried Egg - $4</label><br>
+  <h3>Menu</h3>
 
+  <label><input type="checkbox" value="Fried Rice" data-price="5"> Fried Rice - $5</label><br>
+  <label><input type="checkbox" value="Beef Noodles" data-price="6"> Beef Noodles - $6</label><br>
+  <label><input type="checkbox" value="BBQ Pork" data-price="8"> BBQ Pork - $8</label><br>
+  <label><input type="checkbox" value="BBQ Chicken" data-price="7"> BBQ Chicken - $7</label><br>
+  <label><input type="checkbox" value="BBQ Salmon" data-price="10"> BBQ Salmon - $10</label><br>
+
+  <br>
   <button onclick="submitOrder()">Submit Order</button>
 
-<p id="totalPrice">Total: $0</p>
-
+  <p id="totalPrice">Total: $0</p>
 </div>
 
+<!-- Kitchen -->
 <div class="container">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
 </div>
 
 <script>
+
+// 🔥 Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
@@ -57,24 +55,39 @@ const firebaseConfig = {
   projectId: "restaurants-cs",
   storageBucket: "restaurants-cs.firebasestorage.app",
   messagingSenderId: "209872919844",
-  appId: "1:209872919844:web:c1730801cd51d615e867b1",
-  measurementId: "G-12T3WGM880"
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 📌 Get table number
+// 📌 Table number
 const params = new URLSearchParams(window.location.search);
 let table = params.get('table');
 
-// 没有桌号 → 随机
 if (!table) {
   table = Math.floor(Math.random() * 20) + 1;
 }
 
 document.getElementById('tableNo').innerText = table;
 
+// 💰 实时计算价格
+const checkboxes = document.querySelectorAll('input[type=checkbox]');
+checkboxes.forEach(box => {
+  box.addEventListener('change', updateTotal);
+});
+
+function updateTotal() {
+  let total = 0;
+
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
+    total += parseFloat(item.getAttribute('data-price'));
+  });
+
+  document.getElementById('totalPrice').innerText = "Total: $" + total;
+}
+
+// 📦 提交订单
 function submitOrder() {
   const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input[type=checkbox]:checked');
@@ -98,13 +111,14 @@ function submitOrder() {
     name: name,
     items: orderItems,
     total: total,
-    status: 'New',
     time: new Date().toLocaleTimeString()
   });
+
   alert("Order sent! Total: $" + total);
   location.reload();
 }
 
+// 🍳 厨房显示
 function loadOrders() {
   const ordersDiv = document.getElementById('orders');
 
@@ -114,60 +128,33 @@ function loadOrders() {
 
     for (let id in data) {
       const order = data[id];
+
       const div = document.createElement('div');
       div.className = 'order';
+
       div.innerHTML = `
         <b>Table ${order.table}</b><br>
-        ${order.name}<br>
-        ${order.items.join(', ')}<br>
-        ${order.time}<br>
+        👤 ${order.name}<br>
+        🍽️ ${order.items.join(', ')}<br>
+        💰 $${order.total}<br>
+        🕒 ${order.time}<br>
         <button onclick="completeOrder('${id}')">Done</button>
       `;
+
       ordersDiv.appendChild(div);
     }
   });
 }
 
+// ❌ 完成订单
 function completeOrder(id) {
   db.ref('orders/' + id).remove();
 }
 
-function generateQR() {
-  const tableNo = document.getElementById('tableInput').value;
-  const url = window.location.origin + window.location.pathname + '?table=' + tableNo;
-
-  const qrDiv = document.getElementById('qrcode');
-  qrDiv.innerHTML = '';
-
-  QRCode.toCanvas(url, function (err, canvas) {
-    if (err) console.error(err);
-    qrDiv.appendChild(canvas);
-  });
-}
-
+// 启动
 loadOrders();
+
 </script>
 
 </body>
 </html>
-https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app/
-:
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-Remove this node
-const checkboxes = document.querySelectorAll('input[type=checkbox]');
-checkboxes.forEach(box => {
-  box.addEventListener('change', updateTotal);
-});
-
-function updateTotal() {
-  let total = 0;
-  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
-    total += parseFloat(item.getAttribute('data-price'));
-  });
-  document.getElementById('totalPrice').innerText = "Total: $" + total;
-}
