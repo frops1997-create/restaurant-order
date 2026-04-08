@@ -118,11 +118,13 @@ function submitOrder() {
 
   db.ref('orders').push({
     table: table,
+      table: table,
     name: name,
     items: orderItems,
-    total: total,
+    status: 'New',
     time: new Date().toLocaleTimeString()
-});
+  });
+
 
 
   alert('Order sent!');
