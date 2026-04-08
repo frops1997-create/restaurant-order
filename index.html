@@ -86,6 +86,16 @@ if (!table) {
 // 显示桌号
 document.getElementById('tableNo').innerText = table;
 
+// Function to update the displayed order total
+function updateOrderTotal() {
+  const items = document.querySelectorAll('input[type=checkbox]:checked');
+  let totalPrice = 0;
+  items.forEach(item => {
+    totalPrice += parseFloat(item.getAttribute('data-price'));
+  });
+  document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
+}
+
 function submitOrder() {
   const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input[type=checkbox]:checked');
