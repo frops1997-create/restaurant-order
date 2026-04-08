@@ -120,9 +120,10 @@ function submitOrder() {
     table: table,
     name: name,
     items: orderItems,
-    status: 'New',
+    total: total,
     time: new Date().toLocaleTimeString()
-  });
+});
+
 
   alert('Order sent!');
   location.reload();
