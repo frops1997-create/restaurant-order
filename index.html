@@ -79,6 +79,9 @@ const params = new URLSearchParams(window.location.search);
 let table = params.get('table');
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
+if (!isKitchen) {
+  document.getElementById('kitchenSection').style.display = 'none';
+}
 if (!isAdmin) {
   document.getElementById('qrSection').style.display = 'none';
 }
