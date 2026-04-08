@@ -152,10 +152,8 @@ function loadOrders() {
 
         // --- Modified section to correctly display menu items ---
         let itemsHtml = '<ul>'; // Using an unordered list for menu items
-        if (order.items.forEach(item=>{
-  itemsText += item.name + " ($" + item.price + ")"
-})
-            {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach(item => {
             const itemName = item.name || 'Unknown Item';
             const itemPrice = parseFloat(item.price);
             const formattedPrice = isNaN(itemPrice) ? 'N/A' : `$${itemPrice.toFixed(2)}`;
