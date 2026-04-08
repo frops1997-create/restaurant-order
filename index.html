@@ -6,6 +6,9 @@
 <title>QR Code Food Ordering System</title>
 
 <!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script>
 const urlParams = new URLSearchParams(window.location.search);
 const isKitchen = urlParams.get('kitchen');
 const isAdmin = urlParams.get('admin');
@@ -18,9 +21,7 @@ if (!isKitchen) {
 if (!isAdmin) {
   document.getElementById('qrSection').style.display = 'none';
 }
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
+<script>
 <!-- QR Code Generator -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
