@@ -100,6 +100,22 @@ function submitOrder() {
   }
 
   let orderItems = [];
+  items.forEach(item => orderItems.push(item.value));
+
+  db.ref('orders').push({
+    table: table,
+    name: name,
+    items: orderItems,
+    status: 'New',
+    time: new Date().toLocaleTimeString()
+  });
+
+  alert('Order sent!');
+  location.reload();
+}
+
+
+  let orderItems = [];
   let total = 0;
 
   items.forEach(item => {
