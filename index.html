@@ -77,6 +77,11 @@ const db = firebase.database();
 // 📌 Get table number from URL
 const params = new URLSearchParams(window.location.search);
 let table = params.get('table');
+const isKitchen = params.get('kitchen');
+const isAdmin = params.get('admin');
+if (!isAdmin) {
+  document.getElementById('qrSection').style.display = 'none';
+}
 
 // 如果没有 table 参数 → 随机生成 1~20 桌
 if (!table) {
