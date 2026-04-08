@@ -119,7 +119,7 @@ function submitOrder() {
   db.ref('orders').push({
     table: table,
       table: table,
-    name: name,
+    name: name,//
     items: orderItems,
     status: 'New',
     time: new Date().toLocaleTimeString()
