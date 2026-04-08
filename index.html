@@ -6,6 +6,18 @@
 <title>QR Code Food Ordering System</title>
 
 <!-- Firebase -->
+const urlParams = new URLSearchParams(window.location.search);
+const isKitchen = urlParams.get('kitchen');
+const isAdmin = urlParams.get('admin');
+
+// 顾客页面（默认）→ 隐藏全部
+if (!isKitchen) {
+  document.getElementById('kitchenSection').style.display = 'none';
+}
+
+if (!isAdmin) {
+  document.getElementById('qrSection').style.display = 'none';
+}
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
