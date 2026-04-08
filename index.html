@@ -3,190 +3,150 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Code Food Ordering System</title>
+<title>Restaurant Ordering System</title>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
-<!-- QR Code Generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
 body { font-family: Arial; display: flex; flex-wrap: wrap; }
 .container { width: 50%; padding: 20px; }
 .order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
-.qr-box { margin-top: 20px; }
 </style>
 </head>
+
 <body>
 
-<!-- Customer Side -->
+<!-- Customer -->
 <div class="container">
-  <h2>Scan & Order</h2>
+  <h2>Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
   <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
-  <h8>Menu</h8><br>
-  <label><input type="checkbox" value="Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> Fried Rice - $8.00</label><br>
-  <label><input type="checkbox" value="Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> Beef Noodles - $10.00</label><br>
-  <label><input type="checkbox" value="BBQ Pork" data-price="12.00" onchange="updateOrderTotal()"> BBQ Pork - $12.00</label><br>
-  <label><input type="checkbox" value="BBQ Chicken" data-price="15.00" onchange="updateOrderTotal()"> BBQ Chicken - $15.00</label><br>
-  <label><input type="checkbox" value="BBQ Salmon" data-price="18.00" onchange="updateOrderTotal()"> BBQ Salmon - $18.00</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="13.00" onchange="updateOrderTotal()"> Nasi Lemak Curry Chicken - $13.00</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="12.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Chicken - $12.00</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Egg - $9.00</label><br>
+  <label><input type="checkbox" value="Fried Rice" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label><br>
+  <label><input type="checkbox" value="Beef Noodles" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label><br>
+  <label><input type="checkbox" value="BBQ Pork" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label><br>
 
-  <button onclick="submitOrder()">Submit Order</button>
-  <!-- Display order total here -->
-  <div id="orderTotal"></div>
+  <br>
+  <button onclick="submitOrder()">Submit</button>
+  <p id="orderTotal">Total: $0</p>
 </div>
 
-<!-- Kitchen Side -->
+<!-- Kitchen -->
 <div class="container">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
-  <div id="totalSales"></div>
+  <h3 id="totalSales"></h3>
 </div>
-
-<!-- QR Generator (for owner) -->
-<!-- Removed the QR Generator section as requested -->
-<!--
-<div class="container">
-  <h2>Generate Table QR Code</h2>
-  <input type="number" id="tableInput" placeholder="Table Number">
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode" class="qr-box"></div>
-</div>
--->
 
 <script>
-// 🔥 Replace with your Firebase config
+
+// Firebase
 const firebaseConfig = {
-  apiKey: "真实的key",
-  authDomain: "你的项目.firebaseapp.com",
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "你的项目ID",
-  storageBucket: "你的项目.appspot.com",
-  messagingSenderId: "真实ID",
-  appId: "真实ID"
+  projectId: "restaurants-cs"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 📌 Get table number from URL
+// Table
 const params = new URLSearchParams(window.location.search);
-let table = params.get('table');
-
-// 如果没有 table 参数 → 随机生成 1~20 桌
-if (!table) {
-  table = Math.floor(Math.random() * 20) + 1;
-}
-
-// 显示桌号
+let table = params.get('table') || Math.floor(Math.random()*20+1);
 document.getElementById('tableNo').innerText = table;
 
-// Function to update the displayed order total
-function updateOrderTotal() {
-  const items = document.querySelectorAll('input[type=checkbox]:checked');
-  let totalPrice = 0;
-  items.forEach(item => {
-    totalPrice += parseFloat(item.getAttribute('data-price'));
+// 💰 更新价格
+function updateTotal(){
+  let total = 0;
+  document.querySelectorAll('input:checked').forEach(i=>{
+    total += parseFloat(i.dataset.price);
   });
-  document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
+  document.getElementById('orderTotal').innerText = "Total: $" + total.toFixed(2);
 }
 
-function submitOrder() {
+// 📦 下单
+function submitOrder(){
   const name = document.getElementById('customerName').value;
-  const items = document.querySelectorAll('input[type=checkbox]:checked');
+  const items = document.querySelectorAll('input:checked');
 
-  if (!name || items.length === 0) {
-    alert('Enter name & select food');
+  if(!name || items.length===0){
+    alert("Enter name & select food");
     return;
   }
 
-  let orderItems = [];
-  let totalPrice = 0;
-  items.forEach(item => {
-    const itemName = item.value;
-    const itemPrice = parseFloat(item.getAttribute('data-price'));
-    orderItems.push({ name: itemName, price: itemPrice });
-    totalPrice += itemPrice;
+  let list = [];
+  let total = 0;
+
+  items.forEach(i=>{
+    const price = parseFloat(i.dataset.price);
+    list.push({name:i.value, price:price});
+    total += price;
   });
 
-  // Store the order with total price
   db.ref('orders').push({
-    table: table,
-    name: name,
-    items: orderItems,
-    totalPrice: totalPrice, // Store the total price
-    status: 'New',
-    time: new Date().toLocaleTimeString()
+    table,
+    name,
+    items:list,
+    total,
+    time:new Date().toLocaleTimeString()
   });
 
-  alert('Order sent!');
-  // Display the total price for this order
-  document.getElementById('orderTotal').innerText = 'Order Total: $' + totalPrice.toFixed(2);
-
-  // Optionally, clear checkboxes and name after submission
-  document.getElementById('customerName').value = '';
-  items.forEach(item => item.checked = false);
-  // Keep the order total displayed until the page is reloaded or a new order is submitted
+  alert("Order sent!");
+  location.reload();
 }
 
-function loadOrders() {
+// 🍳 厨房显示（修复重点）
+function loadOrders(){
   const ordersDiv = document.getElementById('orders');
   const totalSalesDiv = document.getElementById('totalSales');
-  let overallTotalPrice = 0;
 
-  db.ref('orders').on('value', snapshot => {
-    ordersDiv.innerHTML = '';
-    const data = snapshot.val();
+  db.ref('orders').on('value', snap=>{
+    ordersDiv.innerHTML='';
+    let totalSales = 0;
 
-    if (data) {
-      for (let id in data) {
-        const order = data[id];
-        const div = document.createElement('div');
-        div.className = 'order';
+    const data = snap.val()||{};
 
-        // --- Modified section to correctly display menu items ---
-        let itemsHtml = '<ul>'; // Using an unordered list for menu items
-        if (order.items && Array.isArray(order.items)) {
-          order.items.forEach(item => {
-            const itemName = item.name || 'Unknown Item';
-            const itemPrice = parseFloat(item.price);
-            const formattedPrice = isNaN(itemPrice) ? 'N/A' : `$${itemPrice.toFixed(2)}`;
-            itemsHtml += `<li>${itemName} - ${formattedPrice}</li>`;
-          });
-        } else {
-          itemsHtml += '<li>No items listed</li>'; // Fallback if items array is missing or not an array
-        }
-        itemsHtml += '</ul>';
-        // --- End of modified section ---
+    for(let id in data){
+      const o = data[id];
 
-        div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${itemsHtml}<br>
-        <b>Total: $${order.totalPrice.toFixed(2)}</b><br>${order.time}<br>
-        <button onclick="completeOrder('${id}')">Done</button>`;
-        ordersDiv.appendChild(div);
-
-        overallTotalPrice += order.totalPrice; // Add to overall total
+      // ✅ 关键修复：正确显示 items
+      let itemsText = "";
+      if(o.items && Array.isArray(o.items)){
+        o.items.forEach(item=>{
+          itemsText += `${item.name} ($${item.price})<br>`;
+        });
       }
+
+      const div = document.createElement('div');
+      div.className='order';
+
+      div.innerHTML = `
+        <b>Table ${o.table}</b><br>
+        👤 ${o.name}<br>
+        ${itemsText}
+        💰 Total: $${o.total}<br>
+        🕒 ${o.time}<br>
+        <button onclick="completeOrder('${id}')">Done</button>
+      `;
+
+      ordersDiv.appendChild(div);
+      totalSales += o.total;
     }
 
-    totalSalesDiv.innerHTML = `<h3>Total Sales: $${overallTotalPrice.toFixed(2)}</h3>`;
+    totalSalesDiv.innerText = "Total Sales: $" + totalSales.toFixed(2);
   });
 }
 
-function completeOrder(id) {
-  db.ref('orders/' + id).remove();
+// ❌ 完成订单
+function completeOrder(id){
+  db.ref('orders/'+id).remove();
 }
 
-// Removed generateQR function as QR code generation is removed
-// function generateQR() { ... }
-
-// Call loadOrders to display existing orders when the page loads
 loadOrders();
+
 </script>
 
 </body>
