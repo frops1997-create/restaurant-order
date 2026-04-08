@@ -28,18 +28,21 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 
   <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
-  <h8>Menu</h8>
-  <label><input type="checkbox" value="Fried Rice"> Fried Rice</label><br>
-  <label><input type="checkbox" value="Beef Noodles">Beef Noodles</label><br>
-  <label><input type="checkbox" value="BBQ Pork"> BBQ Pork</label><br>
-  <label><input type="checkbox" value="BBQ Chicken"> BBQ Chicken</label><br>
-  <label><input type="checkbox" value="BBQ Salmon"> BBQ Salmon</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Curry Chicken"> Nasi Lemak Curry Chicken</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Chicken"> Nasi Lemak Fried Chicken</label><br>
-  <label><input type="checkbox" value="Nasi Lemak Fried Egg"> Nasi Lemak Fried Egg</label><br>
+  <h8>Menu</h8><br>
+  <label><input type="checkbox" value="Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> Fried Rice - $8.00</label><br>
+  <label><input type="checkbox" value="Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> Beef Noodles - $10.00</label><br>
+  <label><input type="checkbox" value="BBQ Pork" data-price="12.00" onchange="updateOrderTotal()"> BBQ Pork - $12.00</label><br>
+  <label><input type="checkbox" value="BBQ Chicken" data-price="15.00" onchange="updateOrderTotal()"> BBQ Chicken - $15.00</label><br>
+  <label><input type="checkbox" value="BBQ Salmon" data-price="18.00" onchange="updateOrderTotal()"> BBQ Salmon - $18.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="13.00" onchange="updateOrderTotal()"> Nasi Lemak Curry Chicken - $13.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="12.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Chicken - $12.00</label><br>
+  <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Egg - $9.00</label><br>
 
   <button onclick="submitOrder()">Submit Order</button>
+  <!-- Display order total here -->
+  <div id="orderTotal"></div>
 </div>
+
 
 <!-- Kitchen Side -->
 <div class="container">
