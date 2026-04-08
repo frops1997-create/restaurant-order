@@ -121,7 +121,15 @@ function submitOrder() {
       table: table,
     name: name,//
     items: orderItems,
+    status: db.ref('orders').push({
+    table: table,
+      table: table,
+    name: name,
+    items: orderItems,
     status: 'New',
+    total: total,
+    time: new Date().toLocaleTimeString()
+  });,
     time: new Date().toLocaleTimeString()
   });
 
