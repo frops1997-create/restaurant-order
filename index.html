@@ -62,16 +62,7 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
   <button onclick="generateQR()">Generate QR</button>
   <div id="qrcode" class="qr-box"></div>
 </div>
-<script>
-function updateTotal() {
-  let total = 0;
 
-  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
-    total += parseFloat(item.getAttribute('data-price'));
-  });
-
-  document.getElementById('orderTotal').innerText = "Total: $" + total.toFixed(2);
-}
 <script>
 // 🔥 Replace with your Firebase config
 const firebaseConfig = {
@@ -123,22 +114,40 @@ function submitOrder() {
   location.reload();
 }
 
-function loadOrders() {
-  const ordersDiv = document.getElementById('orders');
+function submitOrder() {
+  const name = document.getElementById('customerName').value;
+  const items = document.querySelectorAll('input[type=checkbox]:checked');
 
-  db.ref('orders').on('value', snapshot => {
-    ordersDiv.innerHTML = '';
-    const data = snapshot.val();
+  if (!name || items.length === 0) {
+    alert('Enter name & select food');
+    return;
+  }
 
-    for (let id in data) {
-      const order = data[id];
-      const div = document.createElement('div');
-      div.className = 'order';
-      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
-      ordersDiv.appendChild(div);
-    }
+  let orderItems = [];
+  let total = 0;
+
+  items.forEach(item => {
+    const price = parseFloat(item.getAttribute('data-price'));
+    orderItems.push({
+      name: item.value,
+      price: price
+    });
+    total += price;
   });
+
+  db.ref('orders').push({
+    table: table,
+    name: name,
+    items: orderItems,
+    total: total,
+    status: 'New',
+    time: new Date().toLocaleTimeString()
+  });
+
+  // 👇 显示总价
+  document.getElementById('orderTotal').innerText = "Order Sent! Total: $" + total.toFixed(2);
+
+  alert("Order sent! Total: $" + total.toFixed(2));
 }
 
 function completeOrder(id) {
