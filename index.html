@@ -44,6 +44,15 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
   <label><input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> Nasi Lemak Fried Egg - $9.00</label><br>
   <button onclick="submitOrder()">Submit Order</button>
   <p id="orderTotal">Total: $0</p>
+  function updateTotal() {
+  let total = 0;
+
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
+    total += parseFloat(item.getAttribute('data-price'));
+  });
+
+  document.getElementById('orderTotal').innerText = "Total: $" + total.toFixed(2);
+}
   <!-- Display order total here -->
   <div id="orderTotal"></div>
 </div>
@@ -151,9 +160,7 @@ function generateQR() {
 
 loadOrders();
 </script>
-<button onclick="submitOrder()">Submit Order</button>
 
-<p id="orderTotal">Total: $0</p>
 </body>
 </html>
 </script>
