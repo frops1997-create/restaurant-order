@@ -78,6 +78,7 @@ const db = firebase.database();
 // 📌 Get table number from URL
 const params2 = new URLSearchParams(window.location.search);
 const isKitchen = params2.get('kitchen');
+let table = params.get('table');
   
   // ❗隐藏厨房（给顾客用）
 if (!isKitchen) {
