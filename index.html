@@ -100,30 +100,6 @@ function submitOrder() {
   }
 
   let orderItems = [];
-  items.forEach(item => orderItems.push(item.value));
-
-  db.ref('orders').push({
-    table: table,
-    name: name,
-    items: orderItems,
-    status: 'New',
-    time: new Date().toLocaleTimeString()
-  });
-
-  alert('Order sent!');
-  location.reload();
-}
-
-function submitOrder() {
-  const name = document.getElementById('customerName').value;
-  const items = document.querySelectorAll('input[type=checkbox]:checked');
-
-  if (!name || items.length === 0) {
-    alert('Enter name & select food');
-    return;
-  }
-
-  let orderItems = [];
   let total = 0;
 
   items.forEach(item => {
