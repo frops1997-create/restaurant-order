@@ -119,11 +119,6 @@ function submitOrder() {
   db.ref('orders').push({
     table: table,
       table: table,
-    name: name,//
-    items: orderItems,
-    status: db.ref('orders').push({
-    table: table,
-      table: table,
     name: name,
     items: orderItems,
     status: 'New',
@@ -147,7 +142,7 @@ function loadOrders() {
       const order = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-     div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
+      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
       <button onclick="completeOrder('${id}')">Done</button>`;
       ordersDiv.appendChild(div);
     }
