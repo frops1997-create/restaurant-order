@@ -132,20 +132,6 @@ function completeOrder(id) {
   db.ref('orders/' + id).remove();
 }
 
-// 📱 Generate QR Code
-function generateQR() {
-  const tableNo = document.getElementById('tableInput').value;
-  const url = window.location.origin + window.location.pathname + '?table=' + tableNo;
-
-  const qrDiv = document.getElementById('qrcode');
-  qrDiv.innerHTML = '';
-
-  QRCode.toCanvas(url, function (err, canvas) {
-    if (err) console.error(err);
-    qrDiv.appendChild(canvas);
-  });
-}
-
 loadOrders();
 </script>
 
