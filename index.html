@@ -118,7 +118,6 @@ function submitOrder() {
 
   db.ref('orders').push({
     table: table,
-      table: table,
     name: name,
     items: orderItems,
     status: 'New',
@@ -131,7 +130,7 @@ function submitOrder() {
   location.reload();
 }
 
-function loadOrders() {
+function itemsText() {
   const ordersDiv = document.getElementById('orders');
 
   db.ref('orders').on('value', snapshot => {
@@ -153,7 +152,7 @@ function completeOrder(id) {
   db.ref('orders/' + id).remove();
 }
 
-loadOrders();console.log(order);
+itemsText();console.log(order);
 </script>
 
 </body>
