@@ -44,7 +44,7 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 </div>
 
 <!-- Kitchen Side -->
-<div class="container">
+<div class="container" id="kitchenSection">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
   <div id="totalSales"></div>
@@ -76,8 +76,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // 📌 Get table number from URL
-const params = new URLSearchParams(window.location.search);
-let table = params.get('table');
+const params2 = new URLSearchParams(window.location.search);
+const isKitchen = params2.get('kitchen');
+  
+  // ❗隐藏厨房（给顾客用）
+if (!isKitchen) {
+  document.getElementById('kitchenSection').style.display = 'none';
+}
 
 // 如果没有 table 参数 → 随机生成 1~20 桌
 if (!table) {
