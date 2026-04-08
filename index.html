@@ -65,11 +65,11 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
 // 🔥 Replace with your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-  authDomain: "你的项目.firebaseapp.com",
+  authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "你的项目ID",
   storageBucket: "你的项目.appspot.com",
-  messagingSenderId: "真实ID",
+  messagingSenderId: “1:209872919844:web:c1730801cd51d615e867b1",
   appId: "真实ID"
 };
 firebase.initializeApp(firebaseConfig);
@@ -78,7 +78,6 @@ const db = firebase.database();
 // 📌 Get table number from URL
 const params2 = new URLSearchParams(window.location.search);
 const isKitchen = params2.get('kitchen');
-let table = params.get('table');
   
   // ❗隐藏厨房（给顾客用）
 if (!isKitchen) {
