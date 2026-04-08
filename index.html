@@ -28,7 +28,7 @@ body { font-family: Arial; display: flex; flex-wrap: wrap; }
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
-  <input type="text" id="customerName" placeholder="Your Name"><br><br>
+  <input type="text" id="customerName" placeholder="Name"><br><br>
 
   <h8>Menu</h8><br>
   <label><input type="checkbox" value="（1） Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> (1) Fried Rice - $8.00</label><br>
@@ -153,8 +153,7 @@ function completeOrder(id) {
   db.ref('orders/' + id).remove();
 }
 
-loadOrders();
-console.log(order);
+loadOrders();console.log(order);
 </script>
 
 </body>
