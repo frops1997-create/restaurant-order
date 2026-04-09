@@ -9,33 +9,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
+<!-- QR Code Generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
 <style>
-body {
-  font-family: Arial;
-  display: flex;
-  flex-wrap: wrap;
-}
+<style>
+body { font-family: Arial; display: flex; flex-wrap: wrap; }
 .container { width: 50%; padding: 20px; }
 .order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
 .qr-box { margin-top: 20px; }
-.container {
-  width: 50%;
-  padding: 20px;
-
-  background: rgba(255,255,255,0.9);
-  border-radius: 10px;
-}
-</style>
-<style>
-body {
-  font-family: Arial;
-  display: flex;
-  flex-wrap: wrap;
-
-  background-image: url("https://images.unsplash.com/photo-1504674900247-0877df9cc836");
-  background-size: cover;
-  background-position: center;
-}
+{ display: none; }
 </style>
 </head>
 <body>
@@ -67,8 +50,6 @@ body {
 <div class="container" id="kitchenSection">
   <p id="your name">
   <h2>Kitchen Orders</h2>
-  <div id="orders"></div>
-
 </div>
 
 <!-- QR Generator (for owner) -->
@@ -124,8 +105,7 @@ function updateOrderTotal() {
   document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
 }
 
-function submitOrder()
-{name, price}{
+function submitOrder() {
   const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input[type=checkbox]:checked');
 
@@ -135,20 +115,22 @@ function submitOrder()
   }
 
   let orderItems = [];
-   items.forEach(item => {
-    orderItems.push({
-      name: item.value,
-      price: item.getAttribute('data-price')
-    });
-  });
+  items.forEach(item => orderItems.push(item.value));
 
   db.ref('orders').push({
     table: table,
+      table: table,
     name: name,
     items: orderItems,
+    status: 'New',
     time: new Date().toLocaleTimeString()
   });
 
+
+
+  alert('Order sent!');
+  location.reload();
+}
 
 function loadOrders() {
   const ordersDiv = document.getElementById('orders');
