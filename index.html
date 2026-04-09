@@ -9,10 +9,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
-<!-- QR Code Generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
-<style>
 <style>
 body {
   font-family: Arial;
@@ -71,6 +67,8 @@ body {
 <div class="container" id="kitchenSection">
   <p id="your name">
   <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
+
 </div>
 
 <!-- QR Generator (for owner) -->
@@ -126,7 +124,8 @@ function updateOrderTotal() {
   document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
 }
 
-function submitOrder() {
+function submitOrder()
+{name, price}{
   const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input[type=checkbox]:checked');
 
@@ -136,18 +135,12 @@ function submitOrder() {
   }
 
   let orderItems = [];
-  items.forEach(item => orderItems.push(item.value));
-
-  db.ref('orders').push({
-    table: table,
-      table: table,
-    name: name,
-    items: orderItems,
-    status: 'New',
-    time: new Date().toLocaleTimeString()
+  items.forEach(item => {
+    orderItems.push({
+      name: item.value,
+      price: item.getAttribute('data-price')
+    });
   });
-
-
 
   alert('Order sent!');
   location.reload();
