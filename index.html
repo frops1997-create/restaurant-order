@@ -138,7 +138,6 @@ function submitOrder() {
   db.ref('orders').push({
     table: table,
     name: name,
-    price: item.getAttribute('data-price')
     items: orderItems,
     status: 'New',
     time: new Date().toLocaleTimeString()
