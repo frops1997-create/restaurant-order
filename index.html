@@ -155,8 +155,12 @@ function loadOrders() {
       const order = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      div.innerHTML = `<b>Table ${order.table}</b><br>${order.items.join(', ')}<br>${order.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
+      div.innerHTML = `
+    <strong>Table ${order.table}</strong><br>
+    <!-- 顾客姓名行已删除 -->
+    Items: ${order.items.join(', ')}<br>
+    Time: ${order.time}<br>
+    <button onclick="completeOrder('${id}')">Mark Done</button>
       ordersDiv.appendChild(div);
     }
   });
