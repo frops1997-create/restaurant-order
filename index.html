@@ -135,16 +135,20 @@ function submitOrder()
   }
 
   let orderItems = [];
-  items.forEach(item => {
+   items.forEach(item => {
     orderItems.push({
       name: item.value,
       price: item.getAttribute('data-price')
     });
   });
 
-  alert('Order sent!');
-  location.reload();
-}
+  db.ref('orders').push({
+    table: table,
+    name: name,
+    items: orderItems,
+    time: new Date().toLocaleTimeString()
+  });
+
 
 function loadOrders() {
   const ordersDiv = document.getElementById('orders');
