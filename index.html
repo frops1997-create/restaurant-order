@@ -13,28 +13,22 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-<style>
 body {
   font-family: Arial;
   display: flex;
   flex-wrap: wrap;
-}
-.container { width: 50%; padding: 20px; background: rgba(255,255,255,0.9);
-border-radius: 10px;
-}
-.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
-.qr-box { margin-top: 20px; }
-</style>
-<style>
-body {
-  font-family: Arial;
-  display: flex;
-  flex-wrap: wrap;
-
   background-image: url("https://images.unsplash.com/photo-1504674900247-0877df9cc836");
   background-size: cover;
   background-position: center;
 }
+.container { 
+  width: 50%; 
+  padding: 20px; 
+  background: rgba(255,255,255,0.9);
+  border-radius: 10px;
+}
+.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+.qr-box { margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -43,8 +37,6 @@ body {
 <div class="container">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
-
-  <input type="text" id="customerName" placeholder="Your Name"><br><br>
 
   <h8>Menu</h8><br>
   <label><input type="checkbox" value="（1） Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> (1) Fried Rice - $8.00</label><br>
@@ -58,13 +50,12 @@ body {
 
   <button onclick="submitOrder()">Submit Order</button>
   <p id="orderTotal">Total: $0</p>
-  <!-- Display order total here -->
 </div>
-
 
 <!-- Kitchen Side -->
 <div class="container" id="kitchenSection">
   <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
 </div>
 
 <!-- QR Generator (for owner) -->
@@ -76,7 +67,7 @@ body {
 </div>
 
 <script>
-// 🔥 Replace with your Firebase config
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
@@ -90,7 +81,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 📌 Get table number from URL
+// Get table number from URL
 const params = new URLSearchParams(window.location.search);
 let table = params.get('table');
 const isKitchen = params.get('kitchen');
@@ -102,15 +93,15 @@ if (!isAdmin) {
   document.getElementById('qrSection').style.display = 'none';
 }
 
-// 如果没有 table 参数 → 随机生成 1~20 桌
+// Auto generate table 1-20
 if (!table) {
   table = Math.floor(Math.random() * 20) + 1;
 }
 
-// 显示桌号
+// Show table number
 document.getElementById('tableNo').innerText = table;
 
-// Function to update the displayed order total
+// Update order total
 function updateOrderTotal() {
   const items = document.querySelectorAll('input[type=checkbox]:checked');
   let totalPrice = 0;
@@ -120,12 +111,12 @@ function updateOrderTotal() {
   document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
 }
 
+// Submit order (NO NAME REQUIRED)
 function submitOrder() {
-  const name = document.getElementById('customerName').value;
   const items = document.querySelectorAll('input[type=checkbox]:checked');
 
-  if (!name || items.length === 0) {
-    alert('Enter name & select food');
+  if (items.length === 0) {
+    alert('Please select food');
     return;
   }
 
@@ -134,19 +125,16 @@ function submitOrder() {
 
   db.ref('orders').push({
     table: table,
-      table: table,
-    name: name,
     items: orderItems,
     status: 'New',
     time: new Date().toLocaleTimeString()
   });
 
-
-
   alert('Order sent!');
   location.reload();
 }
 
+// Load orders for kitchen (NO NAME DISPLAYED)
 function loadOrders() {
   const ordersDiv = document.getElementById('orders');
 
@@ -158,22 +146,27 @@ function loadOrders() {
       const order = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
+      div.innerHTML = `<b>Table ${order.table}</b><br>${order.items.join(', ')}<br>${order.time}<br>
       <button onclick="completeOrder('${id}')">Done</button>`;
       ordersDiv.appendChild(div);
     }
   });
 }
 
+// Complete order
 function completeOrder(id) {
   db.ref('orders/' + id).remove();
 }
 
-loadOrders();
-</script>
+// Generate QR code
+function generateQR() {
+  const tableNum = document.getElementById('tableInput').value;
+  if (!tableNum) return;
+  const url = window.location.origin + window.location.pathname + '?table=' + tableNum;
+  QRCode.toCanvas(document.getElementById('qrcode'), url, { width: 200 });
+}
 
-</body>
-</html>
+loadOrders();
 </script>
 
 </body>
