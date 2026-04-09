@@ -44,8 +44,7 @@ body {
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
-  <input type="text" id="customerName" placeholder="Your Name"><br><br>= 'none';
-
+  <input type="text" id="customerName" placeholder="Your Name"><br><br>
   <h8>Menu</h8><br>
   <label><input type="checkbox" value="（1） Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> (1) Fried Rice - $8.00</label><br>
   <label><input type="checkbox" value="（2） Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> (2) Beef Noodles - $10.00</label><br>
@@ -98,6 +97,8 @@ const params = new URLSearchParams(window.location.search);
 let table = params.get('table');
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
+if (!isYour Name) {
+  document.getElementById('Your Name').style.display = 'none';
 if (!isKitchen) {
   document.getElementById('kitchenSection').style.display = 'none';
 }
