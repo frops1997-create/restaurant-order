@@ -122,10 +122,8 @@ function updateOrderTotal() {
 }
 
 function submitOrder() {
-  const name = document.getElementById('customerName').value;
-  const items = document.querySelectorAll('input[type=checkbox]:checked');
 
-  if (!name || items.length === 0) {
+  if (items.length === 0) {
     alert('Enter name & select food');
     return;
   }
@@ -135,7 +133,6 @@ function submitOrder() {
 
   db.ref('orders').push({
     table: table,
-    name: name,
     items: orderItems,
     status: 'New',
     time: new Date().toLocaleTimeString()
@@ -158,7 +155,7 @@ function loadOrders() {
       const order = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      div.innerHTML = `<b>Table ${order.table}</b><br>${order.name}<br>${order.items.join(', ')}<br>${order.time}<br>
+      div.innerHTML = `<b>Table ${order.table}</b><br>${order.items.join(', ')}<br>${order.time}<br>
       <button onclick="completeOrder('${id}')">Done</button>`;
       ordersDiv.appendChild(div);
     }
