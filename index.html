@@ -48,7 +48,7 @@ body {
   <label><input type="checkbox" value="（7） Nasi Lemak Fried Chicken" data-price="12.00" onchange="updateOrderTotal()"> (7) Nasi Lemak Fried Chicken - $12.00</label><br>
   <label><input type="checkbox" value="（8） Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> (8) Nasi Lemak Fried Egg - $9.00</label><br>
 
-  <button onclick="submitOrder()">Submit Order</button>
+  <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
   <p id="orderTotal">Total: $0</p>
 </div>
 
@@ -113,12 +113,21 @@ function updateOrderTotal() {
 
 // Submit order (NO NAME REQUIRED)
 function submitOrder() {
+  const btn = document.getElementById('submitBtn');
+  
+  // 已经提交过的话，直接阻止
+  if (btn.disabled) return;
+
   const items = document.querySelectorAll('input[type=checkbox]:checked');
 
   if (items.length === 0) {
     alert('Please select food');
     return;
   }
+
+  // 立即禁用按钮，防止重复提交
+  btn.disabled = true;
+  btn.innerText = "Order Submitted";
 
   let orderItems = [];
   items.forEach(item => orderItems.push(item.value));
@@ -131,7 +140,9 @@ function submitOrder() {
   });
 
   alert('Order sent!');
-  location.reload();
+  
+  // 可选：刷新页面重置（不刷新也可以，按钮已经锁死）
+  // location.reload();
 }
 
 // Load orders for kitchen (NO NAME DISPLAYED)
