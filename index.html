@@ -3,42 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Food Order</title>
+<title>QR Food Order - Kitchen System</title>
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<!-- Firebase SDKs -->
+<script src="https://gstatic.com"></script>
+<script src="https://gstatic.com"></script>
+<script src="https://jsdelivr.net"></script>
 
 <style>
-  * {
-    box-sizing: border-box;
-  }
+  * { box-sizing: border-box; }
 
   body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-
-    /* 背景放大 50% → 75% 居中 */
-    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
+    background-image: url('https://unsplash.com');
     background-size: 75%;
     background-position: center center;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
-
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
   }
 
-  .menu-box {
-    width: 380px;
+  .menu-box, #kitchenSection, #qrSection {
+    width: 100%;
+    max-width: 400px;
     padding: 30px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 16px;
     font-weight: bold;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
   }
 
   .order-confirm {
@@ -47,15 +45,11 @@
     padding: 15px;
     border-radius: 10px;
     margin-top: 15px;
-    font-size: 16px;
     text-align: center;
     display: none;
   }
 
-  label {
-    display: block;
-    margin: 8px 0;
-  }
+  label { display: block; margin: 8px 0; cursor: pointer; }
 
   button {
     width: 100%;
@@ -69,46 +63,48 @@
     cursor: pointer;
   }
 
-  button:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-  }
+  button:disabled { background: #cccccc; cursor: not-allowed; }
+  .btn-done { background: #28a745; margin-top: 10px; }
 
-  button:hover:not(:disabled) {
-    background: #0056b3;
-  }
-
-  #kitchenSection, #qrSection {
-    display: none;
-  }
-
-  .order {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin: 10px 0;
+  .order-card {
+    border-left: 5px solid #007bff;
+    padding: 15px;
+    margin: 15px 0;
     background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .total-price {
+    color: #d9534f;
+    font-size: 1.1em;
+    margin-top: 5px;
+    display: block;
   }
 </style>
 </head>
 
 <body>
 
-<div class="menu-box">
+<!-- Customer Menu Section -->
+<div id="customerSection" class="menu-box">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
   <h3>Menu</h3>
-  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
-  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
-  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
-  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
-  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
-  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
+  <div id="menuItems">
+    <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
+    <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
+    <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
+    <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+    <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
+    <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
+    <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
+    <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
+  </div>
 
   <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
-  <p id="total">Total: $0.00</p>
+  <p id="totalDisplay">Total: $0.00</p>
 
   <div class="order-confirm" id="orderConfirm">
     <h3>Order Submitted!</h3>
@@ -118,106 +114,144 @@
   </div>
 </div>
 
-<div id="kitchenSection">
+<!-- Kitchen Display Section -->
+<div id="kitchenSection" style="display:none;">
   <h2>Kitchen Orders</h2>
-  <div id="orders"></div>
+  <div id="orders">Loading...</div>
 </div>
 
-<div id="qrSection">
-  <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No">
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode"></div>
+<!-- Admin QR Generator Section -->
+<div id="qrSection" style="display:none;">
+  <h2>Table QR Generator</h2>
+  <input type="number" id="tableInput" placeholder="Enter Table No" style="width:100%; padding:10px; margin-bottom:10px;">
+  <button onclick="generateQR()">Generate QR Code</button>
+  <div id="qrcode" style="margin-top:20px; display:flex; justify-content:center;"></div>
 </div>
 
 <script>
+// --- Configuration ---
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-  authDomain: "restaurants-cs.firebaseapp.com",
-  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  authDomain: "://firebaseapp.com",
+  databaseURL: "https://firebasedatabase.app",
   projectId: "restaurants-cs",
   storageBucket: "restaurants-cs.firebasestorage.app",
   messagingSenderId: "209872919844",
   appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// --- Initialization ---
 const params = new URLSearchParams(location.search);
-let table = params.get('table') || Math.floor(Math.random()*20)+1;
-const isKitchen = params.get('kitchen');
-const isAdmin = params.get('admin');
+const table = params.get('table') || "Guest";
+const isKitchen = params.get('kitchen') === 'true';
+const isAdmin = params.get('admin') === 'true';
 
-if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
-if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
 document.getElementById('tableNo').textContent = table;
 
+// Route View Logic
+if (isKitchen) {
+  document.getElementById('customerSection').style.display = 'none';
+  document.getElementById('kitchenSection').style.display = 'block';
+  loadOrders();
+}
+if (isAdmin) {
+  document.getElementById('qrSection').style.display = 'block';
+}
+
+// --- Customer Functions ---
 function updateTotal() {
   let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
-  document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
+  document.querySelectorAll('#menuItems input:checked').forEach(i => {
+    total += parseFloat(i.dataset.price);
+  });
+  document.getElementById('totalDisplay').innerText = `Total: $${total.toFixed(2)}`;
 }
 
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
-  if (btn.disabled) return;
+  const items = Array.from(document.querySelectorAll('#menuItems input:checked'));
 
-  const items = Array.from(document.querySelectorAll('input:checked'));
   if (items.length === 0) {
-    alert('Please select food!');
+    alert('Please select at least one item!');
     return;
   }
 
   btn.disabled = true;
-  btn.innerText = "Order Sent";
+  btn.innerText = "Sending...";
 
-  let total = 0;
-  let list = [];
+  let totalAmount = 0;
+  let itemList = [];
+  
   items.forEach(i => {
-    total += parseFloat(i.dataset.price);
-    list.push(i.nextSibling.textContent.trim());
+    totalAmount += parseFloat(i.dataset.price);
+    itemList.push(i.parentElement.textContent.split('-')[0].trim());
   });
 
+  // Save to Firebase including the TOTAL
   db.ref('orders').push({
     table: table,
-    items: list,
+    items: itemList,
+    total: totalAmount.toFixed(2), // NEW: Storing total in DB
     time: new Date().toLocaleTimeString()
+  }).then(() => {
+    document.getElementById('showTable').innerText = table;
+    document.getElementById('showTotal').innerText = totalAmount.toFixed(2);
+    document.getElementById('orderConfirm').style.display = 'block';
+    btn.innerText = "Order Sent!";
   });
-
-  document.getElementById('showTable').innerText = table;
-  document.getElementById('showTotal').innerText = total.toFixed(2);
-  document.getElementById('orderConfirm').style.display = 'block';
 }
 
+// --- Kitchen Functions ---
 function loadOrders() {
   db.ref('orders').on('value', snap => {
     const data = snap.val();
     const out = document.getElementById('orders');
     out.innerHTML = '';
-    if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
+    
+    if (!data) {
+      out.innerHTML = '<p>No pending orders.</p>';
+      return;
+    }
 
     for (let id in data) {
       const o = data[id];
       const div = document.createElement('div');
-      div.className = 'order';
-      div.innerHTML = `<b>Table ${o.table}</b><br>${o.items.join(', ')}<br>${o.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
+      div.className = 'order-card';
+      
+      // Updated UI to show the TOTAL amount in the Kitchen view
+      div.innerHTML = `
+        <strong>Table: ${o.table}</strong><br>
+        <small>${o.time}</small><hr>
+        <div>${o.items.join('<br>')}</div>
+        <div class="total-price"><strong>Total Bill: $${o.total || '0.00'}</strong></div>
+        <button class="btn-done" onclick="completeOrder('${id}')">Mark as Done</button>
+      `;
       out.appendChild(div);
     }
   });
 }
 
 function completeOrder(id) {
-  db.ref('orders/'+id).remove();
+  db.ref('orders/' + id).remove();
 }
 
+// --- Admin Functions ---
 function generateQR() {
   const t = document.getElementById('tableInput').value;
-  if (!t) { alert('Enter table!'); return; }
-  QRCode.toCanvas(document.getElementById('qrcode'), `${location.origin}${location.pathname}?table=${t}`, {width:180});
+  if (!t) { alert('Please enter a table number'); return; }
+  
+  const url = `${window.location.origin}${window.location.pathname}?table=${t}`;
+  const qrContainer = document.getElementById('qrcode');
+  qrContainer.innerHTML = ''; // Clear previous
+  
+  QRCode.toCanvas(url, { width: 200 }, function (error, canvas) {
+    if (error) console.error(error);
+    qrContainer.appendChild(canvas);
+  });
 }
-
-loadOrders();
 </script>
 
 </body>
