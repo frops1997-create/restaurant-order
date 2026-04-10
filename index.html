@@ -18,10 +18,13 @@
     font-family: Arial;
     margin: 0;
     padding: 20px;
+    /* 背景图缩小 30% → 70% 显示 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-    background-size: cover;
+    background-size: 70%;
     background-position: center;
     background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-color: #f5f5f5;
   }
 
   /* 只给菜单加半透明 */
@@ -161,14 +164,12 @@ function submitOrder() {
     list.push(i.nextSibling.textContent.trim());
   });
 
-  // 发送订单到 Firebase
   db.ref('orders').push({
     table: table,
     items: list,
     time: new Date().toLocaleTimeString()
   });
 
-  // 显示在页面上，不刷新
   document.getElementById('showTable').innerText = table;
   document.getElementById('showTotal').innerText = total.toFixed(2);
   document.getElementById('orderConfirm').style.display = 'block';
