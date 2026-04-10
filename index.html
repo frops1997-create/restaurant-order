@@ -15,23 +15,28 @@
   }
 
   body {
-    font-family: Arial;
+    font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 20px;
+    min-height: 100vh;
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-    background-size: cover;
+    background-size: 50%;
     background-position: center;
     background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-color: #f8f9fa;
+    display: flex;
+    align-items: center;
   }
 
-  /* 只给菜单加半透明 */
   .menu-box {
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 25px;
+    width: 380px;
+    padding: 30px;
     background: rgba(255, 255, 255, 0.85);
-    border-radius: 14px;
+    border-radius: 16px;
     font-weight: bold;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-left: 40px;
   }
 
   .order-confirm {
@@ -47,26 +52,32 @@
 
   label {
     display: block;
-    margin: 6px 0;
+    margin: 8px 0;
   }
 
   button {
     width: 100%;
-    padding: 10px;
-    margin-top: 10px;
+    padding: 12px;
+    margin-top: 12px;
     background: #007bff;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 16px;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  button:hover:not(:disabled) {
+    background: #0056b3;
   }
 
   #kitchenSection, #qrSection {
-    max-width: 400px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 12px;
+    display: none;
   }
 
   .order {
@@ -85,19 +96,18 @@
   <p>Table: <span id="tableNo"></span></p>
 
   <h3>Menu</h3>
-  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> (1)Fried Rice - $8</label>
-  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> (2) Beef Noodles - $10</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> (3) BBQ Pork - $12</label>
-  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> (4) BBQ Chicken - $15</label>
-  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> (5) BBQ Salmon - $18</label>
-  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> (6) Nasi Lemak Curry - $13</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> (7) Nasi Lemak Chicken - $12</label>
-  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> (8) Nasi Lemak Egg - $9</label>
+  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
+  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
+  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
+  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
+  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
 
-  <button onclick="submitOrder()">Submit Order</button>
+  <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
 
-  <!-- 下单后持续显示在这里 -->
   <div class="order-confirm" id="orderConfirm">
     <h3>Order Submitted!</h3>
     <p>Table: <span id="showTable"></span></p>
@@ -113,9 +123,9 @@
 
 <div id="qrSection">
   <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No" style="width:100%; padding:10px; margin-bottom:10px;">
+  <input type="number" id="tableInput" placeholder="Table No">
   <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode" style="margin-top:20px;"></div>
+  <div id="qrcode"></div>
 </div>
 
 <script>
@@ -146,13 +156,22 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// 下单不刷新，只显示订单信息在页面
+// 🔴 只能提交一次，提交后禁用按钮
 function submitOrder() {
+  const btn = document.getElementById('submitBtn');
+  
+  // 如果已经禁用，直接退出
+  if (btn.disabled) return;
+
   const items = Array.from(document.querySelectorAll('input:checked'));
   if (items.length === 0) {
     alert('Please select food!');
     return;
   }
+
+  // 🔴 立即禁用按钮，防止重复提交
+  btn.disabled = true;
+  btn.innerText = "Order Sent";
 
   let total = 0;
   let list = [];
@@ -161,14 +180,12 @@ function submitOrder() {
     list.push(i.nextSibling.textContent.trim());
   });
 
-  // 发送订单到 Firebase
   db.ref('orders').push({
     table: table,
     items: list,
     time: new Date().toLocaleTimeString()
   });
 
-  // 显示在页面上，不刷新
   document.getElementById('showTable').innerText = table;
   document.getElementById('showTotal').innerText = total.toFixed(2);
   document.getElementById('orderConfirm').style.display = 'block';
