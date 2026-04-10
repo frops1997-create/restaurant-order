@@ -17,18 +17,52 @@ body {
   font-family: Arial;
   display: flex;
   flex-wrap: wrap;
+  margin: 0;
+  padding: 20px;
+  background-color: #f0f0f0;
+}
+
+/* 顾客区域：菜单背景图 */
+.container:nth-child(1) {
+  width: 50%;
+  padding: 20px;
+  background: rgba(255,255,255,0.9);
   background-image: url("https://images.unsplash.com/photo-150467490024-0879df9cc836");
   background-size: cover;
   background-position: center;
+  border-radius: 10px;
+  color: black;
+  font-weight: bold;
 }
-.container { 
-  width: 50%; 
-  padding: 20px; 
+
+.container {
+  width: 50%;
+  padding: 20px;
   background: rgba(255,255,255,0.9);
   border-radius: 10px;
+  margin-bottom: 20px;
 }
-.order { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
-.qr-box { margin-top: 20px; }
+
+.order {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-top: 10px;
+  background: white;
+}
+
+.qr-box {
+  margin-top: 20px;
+}
+
+label {
+  margin: 5px 0;
+  display: block;
+}
+
+button {
+  margin-top: 10px;
+  padding: 8px 12px;
+}
 </style>
 </head>
 <body>
@@ -38,7 +72,7 @@ body {
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
-  <h8>Menu</h8><br>
+  <h3>Menu</h3>
   <label><input type="checkbox" value="（1） Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> (1) Fried Rice - $8.00</label><br>
   <label><input type="checkbox" value="（2） Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> (2) Beef Noodles - $10.00</label><br>
   <label><input type="checkbox" value="（3） BBQ Pork" data-price="12.00" onchange="updateOrderTotal()"> (3) BBQ Pork - $12.00</label><br>
@@ -130,26 +164,21 @@ function submitOrder() {
     time: new Date().toLocaleTimeString()
   });
 
-  // 顾客下单后显示桌号 + 总价
   alert('Order Successful!\n\nTable: ' + table + '\nTotal: $' + total.toFixed(2));
-
   location.reload();
 }
 
 function loadOrders() {
   const ordersDiv = document.getElementById('orders');
-
   db.ref('orders').on('value', snapshot => {
     ordersDiv.innerHTML = '';
     const data = snapshot.val();
-
     if (!data) return;
 
     for (let id in data) {
       const order = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      // 厨房端 不显示总价
       div.innerHTML = `<b>Table ${order.table}</b><br>
         ${order.items.join(', ')}<br>
         ${order.time}<br>
