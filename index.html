@@ -19,16 +19,19 @@
     margin: 0;
     padding: 20px;
     min-height: 100vh;
+    
+    /* 背景恢复：50% 大小，居中，不重复 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 50%;
     background-position: center;
-    background-attachment: fixed;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
+    
     display: flex;
     align-items: center;
   }
 
+  /* 菜单在左侧，半透明 */
   .menu-box {
     width: 380px;
     padding: 30px;
@@ -156,11 +159,9 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// 🔴 只能提交一次，提交后禁用按钮
+// 只能提交一次，防止重复下单
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
-  
-  // 如果已经禁用，直接退出
   if (btn.disabled) return;
 
   const items = Array.from(document.querySelectorAll('input:checked'));
@@ -169,7 +170,6 @@ function submitOrder() {
     return;
   }
 
-  // 🔴 立即禁用按钮，防止重复提交
   btn.disabled = true;
   btn.innerText = "Order Sent";
 
