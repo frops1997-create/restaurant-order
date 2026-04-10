@@ -29,9 +29,20 @@
     max-width: 420px;
     margin: 0 auto;
     padding: 25px;
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.85);
     border-radius: 14px;
     font-weight: bold;
+  }
+
+  .order-confirm {
+    background: rgba(0, 150, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 16px;
+    text-align: center;
+    display: none;
   }
 
   label {
@@ -69,7 +80,6 @@
 
 <body>
 
-<!-- 只有菜单被半透明包围 -->
 <div class="menu-box">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
@@ -86,6 +96,14 @@
 
   <button onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
+
+  <!-- 下单后持续显示在这里 -->
+  <div class="order-confirm" id="orderConfirm">
+    <h3>Order Submitted!</h3>
+    <p>Table: <span id="showTable"></span></p>
+    <p>Total: $<span id="showTotal"></span></p>
+    <small>Please wait for your food</small>
+  </div>
 </div>
 
 <div id="kitchenSection">
@@ -128,9 +146,13 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
+// 下单不刷新，只显示订单信息在页面
 function submitOrder() {
   const items = Array.from(document.querySelectorAll('input:checked'));
-  if (items.length === 0) { alert('Select food!'); return; }
+  if (items.length === 0) {
+    alert('Please select food!');
+    return;
+  }
 
   let total = 0;
   let list = [];
@@ -139,14 +161,17 @@ function submitOrder() {
     list.push(i.nextSibling.textContent.trim());
   });
 
+  // 发送订单到 Firebase
   db.ref('orders').push({
     table: table,
     items: list,
     time: new Date().toLocaleTimeString()
   });
 
-  alert(`Order Success!\nTable: ${table}\nTotal: $${total.toFixed(2)}`);
-  location.reload();
+  // 显示在页面上，不刷新
+  document.getElementById('showTable').innerText = table;
+  document.getElementById('showTotal').innerText = total.toFixed(2);
+  document.getElementById('orderConfirm').style.display = 'block';
 }
 
 function loadOrders() {
