@@ -93,14 +93,15 @@
   <p>Table: <span id="tableNo"></span></p>
 
   <h3>Menu</h3>
-  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
-  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
-  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
-  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
-  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
-  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
+    <label><input type="checkbox" value="（1） Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> (1) Fried Rice - $8.00</label><br>
+  <label><input type="checkbox" value="（2） Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> (2) Beef Noodles - $10.00</label><br>
+  <label><input type="checkbox" value="（3） BBQ Pork" data-price="12.00" onchange="updateOrderTotal()"> (3) BBQ Pork - $12.00</label><br>
+  <label><input type="checkbox" value="（4） BBQ Chicken" data-price="15.00" onchange="updateOrderTotal()"> (4) BBQ Chicken - $15.00</label><br>
+  <label><input type="checkbox" value="（5） BBQ Salmon" data-price="18.00" onchange="updateOrderTotal()"> (5) BBQ Salmon - $18.00</label><br>
+  <label><input type="checkbox" value="（6） Nasi Lemak Curry Chicken" data-price="13.00" onchange="updateOrderTotal()"> (6) Nasi Lemak Curry Chicken - $13.00</label><br>
+  <label><input type="checkbox" value="（7） Nasi Lemak Fried Chicken" data-price="12.00" onchange="updateOrderTotal()"> (7) Nasi Lemak Fried Chicken - $12.00</label><br>
+  <label><input type="checkbox" value="（8） Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> (8) Nasi Lemak Fried Egg - $9.00</label><br
+
 
   <button onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
