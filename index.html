@@ -129,7 +129,26 @@ function submitOrder() {
     status: 'New',
     time: new Date().toLocaleTimeString()
   });
+// 顾客下单后显示桌号 + 总价
+  alert('Order Successful!\n\nTable: ' + table + '\nTotal: $' + total.toFixed(2));
 
+  location.reload();
+}
+
+function loadOrders() {
+  const ordersDiv = document.getElementById('orders');
+
+  db.ref('orders').on('value', snapshot => {
+    ordersDiv.innerHTML = '';
+    const data = snapshot.val();
+
+    if (!data) return;
+
+    for (let id in data) {
+      const order = data[id];
+      const div = document.createElement('div');
+      div.className = 'order';
+      
   alert('Order sent!');
   location.reload();
 }
