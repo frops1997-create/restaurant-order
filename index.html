@@ -18,40 +18,41 @@
     font-family: Arial;
     margin: 0;
     padding: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    background: #f5f5f5;
-  }
-
-  /* 点餐区域：背景图 + 内层半透明 */
-  #customer {
-    flex: 1;
-    min-width: 350px;
-    padding: 30px;
-    border-radius: 12px;
-
-    /* 背景图在这里 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: cover;
     background-position: center;
-
-    position: relative;
-    overflow: hidden;
+    background-attachment: fixed;
   }
 
-  /* 半透明内层 */
-  #customer .inner {
-    position: relative;
-    z-index: 2;
-    background: rgba(255,255,255, 0.85);
+  /* 只给菜单加半透明 */
+  .menu-box {
+    max-width: 420px;
+    margin: 0 auto;
     padding: 25px;
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: 14px;
     font-weight: bold;
   }
 
-  .other {
-    min-width: 300px;
+  label {
+    display: block;
+    margin: 6px 0;
+  }
+
+  button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+  }
+
+  #kitchenSection, #qrSection {
+    max-width: 400px;
+    margin: 20px auto;
     padding: 20px;
     background: white;
     border-radius: 12px;
@@ -61,58 +62,38 @@
     border: 1px solid #ccc;
     padding: 10px;
     margin: 10px 0;
-    background: #fff;
-  }
-
-  label {
-    display: block;
-    margin: 8px 0;
-  }
-
-  button {
-    padding: 10px;
-    width: 100%;
-    margin-top: 10px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
+    background: white;
   }
 </style>
 </head>
 
 <body>
 
-<!-- 顾客端（有背景 + 半透明） -->
-<div id="customer">
-  <div class="inner">
-    <h2>Scan & Order</h2>
-    <p>Table: <span id="tableNo"></span></p>
+<!-- 只有菜单被半透明包围 -->
+<div class="menu-box">
+  <h2>Scan & Order</h2>
+  <p>Table: <span id="tableNo"></span></p>
 
-    <h3>Menu</h3>
-    <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
-    <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
-    <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
-    <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
-    <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
-    <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
-    <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
-    <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
+  <h3>Menu</h3>
+  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
+  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
+  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
+  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
+  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
 
-    <button onclick="submitOrder()">Submit Order</button>
-    <p id="total">Total: $0.00</p>
-  </div>
+  <button onclick="submitOrder()">Submit Order</button>
+  <p id="total">Total: $0.00</p>
 </div>
 
-<!-- 厨房 -->
-<div class="other" id="kitchenSection">
+<div id="kitchenSection">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
 </div>
 
-<!-- QR -->
-<div class="other" id="qrSection">
+<div id="qrSection">
   <h2>Table QR</h2>
   <input type="number" id="tableInput" placeholder="Table No" style="width:100%; padding:10px; margin-bottom:10px;">
   <button onclick="generateQR()">Generate QR</button>
@@ -137,8 +118,8 @@ let table = params.get('table') || Math.floor(Math.random()*20)+1;
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
 
-!isKitchen && (document.getElementById('kitchenSection').style.display='none');
-!isAdmin && (document.getElementById('qrSection').style.display='none');
+if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
+if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
 document.getElementById('tableNo').textContent = table;
 
 function updateTotal() {
@@ -173,7 +154,6 @@ function loadOrders() {
     const data = snap.val();
     const out = document.getElementById('orders');
     out.innerHTML = '';
-
     if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
 
     for (let id in data) {
