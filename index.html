@@ -10,32 +10,84 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-body {
-  font-family: Arial;
-  padding: 20px;
-  background: #f5f5f5;
-}
+  * {
+    box-sizing: border-box;
+  }
 
-.menu-box {
-  max-width: 400px;
-  margin: auto;
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-}
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
 
-button {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-}
+    /* 背景放大 50% → 75% 居中 */
+    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
+    background-size: 75%;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-color: #f8f9fa;
 
-.order {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin: 10px;
-  background: white;
-}
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .menu-box {
+    width: 380px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    font-weight: bold;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  }
+
+  .order-confirm {
+    background: rgba(0, 150, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 16px;
+    text-align: center;
+    display: none;
+  }
+
+  label {
+    display: block;
+    margin: 8px 0;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  button:hover:not(:disabled) {
+    background: #0056b3;
+  }
+
+  #kitchenSection, #qrSection {
+    display: none;
+  }
+
+  .order {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    background: white;
+  }
 </style>
 </head>
 
@@ -45,24 +97,37 @@ button {
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
+  <h3>Menu</h3>
   <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
   <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
   <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
   <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
+  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
+  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
 
-  <button id="submitBtn" onclick="submitOrder()">Submit</button>
+  <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
 
-  <div id="orderConfirm" style="display:none;color:green;">
-    Order Sent! Total: $<span id="showTotal"></span>
+  <div class="order-confirm" id="orderConfirm">
+    <h3>Order Submitted!</h3>
+    <p>Table: <span id="showTable"></span></p>
+    <p>Total: $<span id="showTotal"></span></p>
+    <small>Please wait for your food</small>
   </div>
 </div>
-
-<hr>
 
 <div id="kitchenSection">
   <h2>Kitchen Orders</h2>
   <div id="orders"></div>
+</div>
+
+<div id="qrSection">
+  <h2>Table QR</h2>
+  <input type="number" id="tableInput" placeholder="Table No">
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode"></div>
 </div>
 
 <script>
@@ -71,6 +136,9 @@ const firebaseConfig = {
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -78,81 +146,83 @@ const db = firebase.database();
 const params = new URLSearchParams(location.search);
 let table = params.get('table') || Math.floor(Math.random()*20)+1;
 const isKitchen = params.get('kitchen');
+const isAdmin = params.get('admin');
 
-document.getElementById('tableNo').innerText = table;
+if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
+if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
+document.getElementById('tableNo').textContent = table;
 
-// ✅ 计算总价
 function updateTotal() {
   let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => {
-    total += parseFloat(i.dataset.price);
-  });
+  document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// ✅ 提交订单（含 total）
 function submitOrder() {
+  const btn = document.getElementById('submitBtn');
+  if (btn.disabled) return;
+
   const items = Array.from(document.querySelectorAll('input:checked'));
   if (items.length === 0) {
-    alert('Select food!');
+    alert('Please select food!');
     return;
   }
 
+  btn.disabled = true;
+  btn.innerText = "Order Sent";
+
   let total = 0;
   let list = [];
-
   items.forEach(i => {
     total += parseFloat(i.dataset.price);
-    list.push(i.parentElement.textContent.trim());
+    list.push(i.nextSibling.textContent.trim());
   });
 
+  // 存储订单时加入总金额
   db.ref('orders').push({
     table: table,
     items: list,
-    total: total, // ✅ 存 total
+    total: total,
     time: new Date().toLocaleTimeString()
   });
 
+  document.getElementById('showTable').innerText = table;
   document.getElementById('showTotal').innerText = total.toFixed(2);
   document.getElementById('orderConfirm').style.display = 'block';
 }
 
-// ✅ 厨房显示订单（含 total）
 function loadOrders() {
-  if (!isKitchen) return;
-
   db.ref('orders').on('value', snap => {
     const data = snap.val();
     const out = document.getElementById('orders');
     out.innerHTML = '';
-
-    if (!data) {
-      out.innerHTML = 'No orders';
-      return;
-    }
+    if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
 
     for (let id in data) {
       const o = data[id];
-
       const div = document.createElement('div');
       div.className = 'order';
-
+      // 厨房显示：桌号 + 总金额 + 菜品 + 时间 + 完成按钮
       div.innerHTML = `
         <b>Table ${o.table}</b><br>
-        ${o.items.join(', ')}<br>
-        💰 Total: $${o.total ? o.total.toFixed(2) : '0.00'}<br>
-        ⏰ ${o.time}<br>
+        Total: $${o.total.toFixed(2)}<br>
+        Items: ${o.items.join(', ')}<br>
+        ${o.time}<br>
         <button onclick="completeOrder('${id}')">Done</button>
       `;
-
       out.appendChild(div);
     }
   });
 }
 
-// ✅ 完成订单
 function completeOrder(id) {
-  db.ref('orders/' + id).remove();
+  db.ref('orders/'+id).remove();
+}
+
+function generateQR() {
+  const t = document.getElementById('tableInput').value;
+  if (!t) { alert('Enter table!'); return; }
+  QRCode.toCanvas(document.getElementById('qrcode'), `${location.origin}${location.pathname}?table=${t}`, {width:180});
 }
 
 loadOrders();
