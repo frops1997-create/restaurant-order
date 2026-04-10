@@ -19,17 +19,19 @@
     margin: 0;
     padding: 20px;
     min-height: 100vh;
+    
+    /* 背景恢复：50% 大小，居中，不重复 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 50%;
     background-position: center;
-    background-attachment: fixed;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
+    
     display: flex;
     align-items: center;
   }
 
-  /* 菜单移到左侧 + 半透明 */
+  /* 菜单在左侧，半透明 */
   .menu-box {
     width: 380px;
     padding: 30px;
@@ -68,7 +70,12 @@
     cursor: pointer;
   }
 
-  button:hover {
+  button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  button:hover:not(:disabled) {
     background: #0056b3;
   }
 
@@ -87,7 +94,6 @@
 
 <body>
 
-<!-- 整个菜单已移动到左侧 -->
 <div class="menu-box">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
@@ -102,7 +108,7 @@
   <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
   <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
 
-  <button onclick="submitOrder()">Submit Order</button>
+  <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
 
   <div class="order-confirm" id="orderConfirm">
@@ -153,12 +159,19 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
+// 只能提交一次，防止重复下单
 function submitOrder() {
+  const btn = document.getElementById('submitBtn');
+  if (btn.disabled) return;
+
   const items = Array.from(document.querySelectorAll('input:checked'));
   if (items.length === 0) {
     alert('Please select food!');
     return;
   }
+
+  btn.disabled = true;
+  btn.innerText = "Order Sent";
 
   let total = 0;
   let list = [];
