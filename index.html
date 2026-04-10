@@ -20,21 +20,18 @@
     padding: 20px;
     min-height: 100vh;
     
-    /* 背景放大 + 垂直模式 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 75%;
-    background-position: center top;
+    background-position: center center;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
 
-    /* 垂直排版 */
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
   }
 
-  /* 垂直半透明菜单 */
   .menu-box {
     width: 100%;
     max-width: 400px;
@@ -43,7 +40,6 @@
     border-radius: 16px;
     font-weight: bold;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    margin-top: 30px;
   }
 
   .order-confirm {
@@ -80,14 +76,25 @@
   }
 
   #kitchenSection, #qrSection {
-    display: none;
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+  }
+
+  .order {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    background: white;
   }
 </style>
 </head>
 
 <body>
 
-<!-- 垂直模式点餐区 -->
 <div class="menu-box">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
@@ -113,8 +120,17 @@
   </div>
 </div>
 
-<div id="kitchenSection"></div>
-<div id="qrSection"></div>
+<div id="kitchenSection">
+  <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
+</div>
+
+<div id="qrSection">
+  <h2>Table QR</h2>
+  <input type="number" id="tableInput" placeholder="Table No" style="width:100%; padding:10px; margin-bottom:10px;">
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode" style="margin-top:20px;"></div>
+</div>
 
 <script>
 const firebaseConfig = {
@@ -164,9 +180,11 @@ function submitOrder() {
     list.push(i.nextSibling.textContent.trim());
   });
 
+  // 把 total 一起传给厨房
   db.ref('orders').push({
     table: table,
     items: list,
+    total: total,
     time: new Date().toLocaleTimeString()
   });
 
@@ -181,12 +199,19 @@ function loadOrders() {
     const out = document.getElementById('orders');
     out.innerHTML = '';
     if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
+
     for (let id in data) {
       const o = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      div.innerHTML = `<b>Table ${o.table}</b><br>${o.items.join(', ')}<br>${o.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
+      // 厨房显示总价
+      div.innerHTML = `
+        <b>Table ${o.table}</b><br>
+        ${o.items.join('<br>')}<br>
+        <b>Total: $${o.total.toFixed(2)}</b><br>
+        ${o.time}<br>
+        <button onclick="completeOrder('${id}')">Done</button>
+      `;
       out.appendChild(div);
     }
   });
