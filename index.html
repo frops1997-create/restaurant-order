@@ -17,7 +17,7 @@ body {
   font-family: Arial;
   display: flex;
   flex-wrap: wrap;
-  background-image: url("https://images.unsplash.com/photo-1504674900247-0877df9cc836");
+  background-image: url("https://images.unsplash.com/photo-150467490024-0879df9cc836");
   background-size: cover;
   background-position: center;
 }
@@ -67,7 +67,6 @@ body {
 </div>
 
 <script>
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
@@ -81,11 +80,11 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Get table number from URL
 const params = new URLSearchParams(window.location.search);
 let table = params.get('table');
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
+
 if (!isKitchen) {
   document.getElementById('kitchenSection').style.display = 'none';
 }
@@ -93,15 +92,12 @@ if (!isAdmin) {
   document.getElementById('qrSection').style.display = 'none';
 }
 
-// Auto generate table 1-20
 if (!table) {
   table = Math.floor(Math.random() * 20) + 1;
 }
 
-// Show table number
 document.getElementById('tableNo').innerText = table;
 
-// Update order total
 function updateOrderTotal() {
   const items = document.querySelectorAll('input[type=checkbox]:checked');
   let totalPrice = 0;
@@ -111,7 +107,6 @@ function updateOrderTotal() {
   document.getElementById('orderTotal').innerText = 'Current Order Total: $' + totalPrice.toFixed(2);
 }
 
-// Submit order (NO NAME REQUIRED)
 function submitOrder() {
   const items = document.querySelectorAll('input[type=checkbox]:checked');
 
@@ -119,6 +114,11 @@ function submitOrder() {
     alert('Please select food');
     return;
   }
+
+  let total = 0;
+  items.forEach(item => {
+    total += parseFloat(item.dataset.price);
+  });
 
   let orderItems = [];
   items.forEach(item => orderItems.push(item.value));
@@ -129,7 +129,8 @@ function submitOrder() {
     status: 'New',
     time: new Date().toLocaleTimeString()
   });
-// 顾客下单后显示桌号 + 总价
+
+  // 顾客下单后显示桌号 + 总价
   alert('Order Successful!\n\nTable: ' + table + '\nTotal: $' + total.toFixed(2));
 
   location.reload();
@@ -148,36 +149,20 @@ function loadOrders() {
       const order = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      
-  alert('Order sent!');
-  location.reload();
-}
-
-// Load orders for kitchen (NO NAME DISPLAYED)
-function loadOrders() {
-  const ordersDiv = document.getElementById('orders');
-
-  db.ref('orders').on('value', snapshot => {
-    ordersDiv.innerHTML = '';
-    const data = snapshot.val();
-
-    for (let id in data) {
-      const order = data[id];
-      const div = document.createElement('div');
-      div.className = 'order';
-      div.innerHTML = `<b>Table ${order.table}</b><br>${order.items.join(', ')}<br>${order.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
+      // 厨房端 不显示总价
+      div.innerHTML = `<b>Table ${order.table}</b><br>
+        ${order.items.join(', ')}<br>
+        ${order.time}<br>
+        <button onclick="completeOrder('${id}')">Done</button>`;
       ordersDiv.appendChild(div);
     }
   });
 }
 
-// Complete order
 function completeOrder(id) {
   db.ref('orders/' + id).remove();
 }
 
-// Generate QR code
 function generateQR() {
   const tableNum = document.getElementById('tableInput').value;
   if (!tableNum) return;
