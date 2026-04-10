@@ -6,7 +6,7 @@
 <title>QR Food Order</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
@@ -174,16 +174,18 @@ function submitOrder() {
   btn.innerText = "Order Sent";
 
   let total = 0;
-  let list = [];
+  let orderItems = [];
+  
   items.forEach(i => {
-    total += parseFloat(i.dataset.price);
-    list.push(i.nextSibling.textContent.trim());
+    let price = parseFloat(i.dataset.price);
+    let name = i.nextSibling.textContent.trim();
+    total += price;
+    orderItems.push({ name, price });
   });
 
-  // 把 total 一起传给厨房
   db.ref('orders').push({
     table: table,
-    items: list,
+    items: orderItems,
     total: total,
     time: new Date().toLocaleTimeString()
   });
@@ -204,10 +206,15 @@ function loadOrders() {
       const o = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      // 厨房显示总价
+      
+      let itemHtml = '';
+      o.items.forEach(item => {
+        itemHtml += `${item.name} - $${item.price.toFixed(2)}<br>`;
+      });
+
       div.innerHTML = `
         <b>Table ${o.table}</b><br>
-        ${o.items.join('<br>')}<br>
+        ${itemHtml}
         <b>Total: $${o.total.toFixed(2)}</b><br>
         ${o.time}<br>
         <button onclick="completeOrder('${id}')">Done</button>
