@@ -19,19 +19,21 @@
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-    
-    /* 背景恢复：50% 大小，居中，不重复 */
+
+    /* 背景 50% + 完全居中 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 50%;
-    background-position: center;
+    background-position: center center;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
-    
+
+    /* 让菜单居中 */
     display: flex;
+    justify-content: center;
     align-items: center;
   }
 
-  /* 菜单在左侧，半透明 */
+  /* 半透明菜单居中显示 */
   .menu-box {
     width: 380px;
     padding: 30px;
@@ -39,7 +41,6 @@
     border-radius: 16px;
     font-weight: bold;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    margin-left: 40px;
   }
 
   .order-confirm {
@@ -159,7 +160,6 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// 只能提交一次，防止重复下单
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
   if (btn.disabled) return;
