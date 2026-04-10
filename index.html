@@ -15,29 +15,23 @@
   }
 
   body {
-    font-family: 'Arial', sans-serif;
+    font-family: Arial;
     margin: 0;
     padding: 20px;
-    min-height: 100vh;
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-    background-size: 50%;
+    background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    background-repeat: no-repeat;
-    background-color: #f8f9fa;
-    display: flex;
-    align-items: center;
   }
 
-  /* 菜单移到左侧 + 半透明 */
+  /* 只给菜单加半透明 */
   .menu-box {
-    width: 380px;
-    padding: 30px;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 25px;
     background: rgba(255, 255, 255, 0.85);
-    border-radius: 16px;
+    border-radius: 14px;
     font-weight: bold;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    margin-left: 40px;
   }
 
   .order-confirm {
@@ -53,27 +47,26 @@
 
   label {
     display: block;
-    margin: 8px 0;
+    margin: 6px 0;
   }
 
   button {
     width: 100%;
-    padding: 12px;
-    margin-top: 12px;
+    padding: 10px;
+    margin-top: 10px;
     background: #007bff;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 16px;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background: #0056b3;
   }
 
   #kitchenSection, #qrSection {
-    display: none;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
   }
 
   .order {
@@ -87,25 +80,24 @@
 
 <body>
 
-<!-- 整个菜单已移动到左侧 -->
 <div class="menu-box">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
 
   <h3>Menu</h3>
-    <label><input type="checkbox" value="（1） Fried Rice" data-price="8.00" onchange="updateOrderTotal()"> (1) Fried Rice - $8.00</label><br>
-  <label><input type="checkbox" value="（2） Beef Noodles" data-price="10.00" onchange="updateOrderTotal()"> (2) Beef Noodles - $10.00</label><br>
-  <label><input type="checkbox" value="（3） BBQ Pork" data-price="12.00" onchange="updateOrderTotal()"> (3) BBQ Pork - $12.00</label><br>
-  <label><input type="checkbox" value="（4） BBQ Chicken" data-price="15.00" onchange="updateOrderTotal()"> (4) BBQ Chicken - $15.00</label><br>
-  <label><input type="checkbox" value="（5） BBQ Salmon" data-price="18.00" onchange="updateOrderTotal()"> (5) BBQ Salmon - $18.00</label><br>
-  <label><input type="checkbox" value="（6） Nasi Lemak Curry Chicken" data-price="13.00" onchange="updateOrderTotal()"> (6) Nasi Lemak Curry Chicken - $13.00</label><br>
-  <label><input type="checkbox" value="（7） Nasi Lemak Fried Chicken" data-price="12.00" onchange="updateOrderTotal()"> (7) Nasi Lemak Fried Chicken - $12.00</label><br>
-  <label><input type="checkbox" value="（8） Nasi Lemak Fried Egg" data-price="9.00" onchange="updateOrderTotal()"> (8) Nasi Lemak Fried Egg - $9.00</label><br
-
+  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
+  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
+  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
+  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
+  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
 
   <button onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
 
+  <!-- 下单后持续显示在这里 -->
   <div class="order-confirm" id="orderConfirm">
     <h3>Order Submitted!</h3>
     <p>Table: <span id="showTable"></span></p>
@@ -121,9 +113,9 @@
 
 <div id="qrSection">
   <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No">
+  <input type="number" id="tableInput" placeholder="Table No" style="width:100%; padding:10px; margin-bottom:10px;">
   <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode"></div>
+  <div id="qrcode" style="margin-top:20px;"></div>
 </div>
 
 <script>
@@ -154,6 +146,7 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
+// 下单不刷新，只显示订单信息在页面
 function submitOrder() {
   const items = Array.from(document.querySelectorAll('input:checked'));
   if (items.length === 0) {
@@ -168,12 +161,14 @@ function submitOrder() {
     list.push(i.nextSibling.textContent.trim());
   });
 
+  // 发送订单到 Firebase
   db.ref('orders').push({
     table: table,
     items: list,
     time: new Date().toLocaleTimeString()
   });
 
+  // 显示在页面上，不刷新
   document.getElementById('showTable').innerText = table;
   document.getElementById('showTotal').innerText = total.toFixed(2);
   document.getElementById('orderConfirm').style.display = 'block';
