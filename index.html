@@ -21,22 +21,32 @@
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
-    background-image: url('https://cdn.pixabay.com/photo/2017/07/11/11/35/meat-2492721_960_720.jpg');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background: #f5f5f5;
   }
 
-  /* 半透明点餐区域 */
+  /* 点餐区域：背景图 + 内层半透明 */
   #customer {
     flex: 1;
     min-width: 350px;
     padding: 30px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(255,255,255,0.5);
-    color: #222;
+
+    /* 背景图在这里 */
+    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
+    background-size: cover;
+    background-position: center;
+
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 半透明内层 */
+  #customer .inner {
+    position: relative;
+    z-index: 2;
+    background: rgba(255,255,255, 0.85);
+    padding: 25px;
+    border-radius: 10px;
     font-weight: bold;
   }
 
@@ -74,23 +84,25 @@
 
 <body>
 
-<!-- 顾客端（半透明背景） -->
+<!-- 顾客端（有背景 + 半透明） -->
 <div id="customer">
-  <h2>Scan & Order</h2>
-  <p>Table: <span id="tableNo"></span></p>
+  <div class="inner">
+    <h2>Scan & Order</h2>
+    <p>Table: <span id="tableNo"></span></p>
 
-  <h3>Menu</h3>
-  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
-  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
-  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
-  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
-  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
-  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
+    <h3>Menu</h3>
+    <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
+    <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
+    <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
+    <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+    <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
+    <label><input type="checkbox" data-price="13" onchange="updateTotal()"> Nasi Lemak Curry - $13</label>
+    <label><input type="checkbox" data-price="12" onchange="updateTotal()"> Nasi Lemak Chicken - $12</label>
+    <label><input type="checkbox" data-price="9" onchange="updateTotal()"> Nasi Lemak Egg - $9</label>
 
-  <button onclick="submitOrder()">Submit Order</button>
-  <p id="total">Total: $0.00</p>
+    <button onclick="submitOrder()">Submit Order</button>
+    <p id="total">Total: $0.00</p>
+  </div>
 </div>
 
 <!-- 厨房 -->
