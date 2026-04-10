@@ -15,30 +15,35 @@
   }
 
   body {
-    font-family: 'Arial', sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-
-    /* 背景放大 50% → 75% 居中 */
+    
+    /* 背景放大 + 垂直模式 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 75%;
-    background-position: center center;
+    background-position: center top;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
 
+    /* 垂直排版 */
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: center;
   }
 
+  /* 垂直半透明菜单 */
   .menu-box {
-    width: 380px;
-    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+    padding: 25px;
     background: rgba(255, 255, 255, 0.85);
     border-radius: 16px;
     font-weight: bold;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    margin-top: 30px;
   }
 
   .order-confirm {
@@ -54,12 +59,12 @@
 
   label {
     display: block;
-    margin: 8px 0;
+    margin: 10px 0;
   }
 
   button {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     margin-top: 12px;
     background: #007bff;
     color: white;
@@ -70,29 +75,19 @@
   }
 
   button:disabled {
-    background: #cccccc;
+    background: #ccc;
     cursor: not-allowed;
-  }
-
-  button:hover:not(:disabled) {
-    background: #0056b3;
   }
 
   #kitchenSection, #qrSection {
     display: none;
-  }
-
-  .order {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin: 10px 0;
-    background: white;
   }
 </style>
 </head>
 
 <body>
 
+<!-- 垂直模式点餐区 -->
 <div class="menu-box">
   <h2>Scan & Order</h2>
   <p>Table: <span id="tableNo"></span></p>
@@ -118,17 +113,8 @@
   </div>
 </div>
 
-<div id="kitchenSection">
-  <h2>Kitchen Orders</h2>
-  <div id="orders"></div>
-</div>
-
-<div id="qrSection">
-  <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No">
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode"></div>
-</div>
+<div id="kitchenSection"></div>
+<div id="qrSection"></div>
 
 <script>
 const firebaseConfig = {
@@ -195,7 +181,6 @@ function loadOrders() {
     const out = document.getElementById('orders');
     out.innerHTML = '';
     if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
-
     for (let id in data) {
       const o = data[id];
       const div = document.createElement('div');
