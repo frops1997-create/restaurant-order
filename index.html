@@ -19,14 +19,11 @@
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-
-    /* 背景放大 50% → 75% 居中 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 75%;
     background-position: center center;
     background-repeat: no-repeat;
     background-color: #f8f9fa;
-
     display: flex;
     justify-content: center;
     align-items: center;
@@ -152,6 +149,18 @@ if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none'
 if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
 document.getElementById('tableNo').textContent = table;
 
+// 菜品价格对照表（厨房自动算钱）
+const priceList = {
+  "Fried Rice - $8": 8,
+  "Beef Noodles - $10": 10,
+  "BBQ Pork - $12": 12,
+  "BBQ Chicken - $15": 15,
+  "BBQ Salmon - $18": 18,
+  "Nasi Lemak Curry - $13": 13,
+  "Nasi Lemak Chicken - $12": 12,
+  "Nasi Lemak Egg - $9": 9
+};
+
 function updateTotal() {
   let total = 0;
   document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
@@ -178,7 +187,6 @@ function submitOrder() {
     list.push(i.nextSibling.textContent.trim());
   });
 
-  // 存储订单时加入总金额
   db.ref('orders').push({
     table: table,
     items: list,
@@ -200,12 +208,22 @@ function loadOrders() {
 
     for (let id in data) {
       const o = data[id];
+      
+      // 自动计算总金额（新单+旧单都能用）
+      let autoTotal = 0;
+      if (o.total) {
+        autoTotal = o.total;
+      } else {
+        o.items.forEach(item => {
+          autoTotal += priceList[item] || 0;
+        });
+      }
+
       const div = document.createElement('div');
       div.className = 'order';
-      // 厨房显示：桌号 + 总金额 + 菜品 + 时间 + 完成按钮
       div.innerHTML = `
         <b>Table ${o.table}</b><br>
-        Total: $${o.total.toFixed(2)}<br>
+        Total: $${autoTotal.toFixed(2)}<br>
         Items: ${o.items.join(', ')}<br>
         ${o.time}<br>
         <button onclick="completeOrder('${id}')">Done</button>
