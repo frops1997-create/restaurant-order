@@ -20,18 +20,20 @@
     padding: 20px;
     min-height: 100vh;
     
-    /* 背景恢复：50% 大小，居中，不重复 */
+    /* 背景：完美居中 + 固定显示 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 50%;
-    background-position: center;
+    background-position: center center; /* 绝对居中 */
     background-repeat: no-repeat;
+    background-attachment: fixed;
     background-color: #f8f9fa;
     
     display: flex;
-    align-items: center;
+    justify-content: center; /* 水平居中 */
+    align-items: center;     /* 垂直居中 */
   }
 
-  /* 菜单在左侧，半透明 */
+  /* 菜单盒子居中显示 */
   .menu-box {
     width: 380px;
     padding: 30px;
@@ -39,7 +41,6 @@
     border-radius: 16px;
     font-weight: bold;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    margin-left: 40px;
   }
 
   .order-confirm {
