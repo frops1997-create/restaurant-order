@@ -149,8 +149,8 @@ if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none'
 if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
 document.getElementById('tableNo').textContent = table;
 
-// 菜品价格对照表（厨房自动算钱）
-const priceList = {
+// 强制价格对照表，厨房一定能算出钱
+const itemPrices = {
   "Fried Rice - $8": 8,
   "Beef Noodles - $10": 10,
   "BBQ Pork - $12": 12,
@@ -208,14 +208,14 @@ function loadOrders() {
 
     for (let id in data) {
       const o = data[id];
-      
-      // 自动计算总金额（新单+旧单都能用）
-      let autoTotal = 0;
-      if (o.total) {
-        autoTotal = o.total;
+
+      // 强制计算总价：新单+旧单都一定显示
+      let calculatedTotal = 0;
+      if (o.total && o.total > 0) {
+        calculatedTotal = o.total;
       } else {
         o.items.forEach(item => {
-          autoTotal += priceList[item] || 0;
+          calculatedTotal += itemPrices[item] || 0;
         });
       }
 
@@ -223,9 +223,9 @@ function loadOrders() {
       div.className = 'order';
       div.innerHTML = `
         <b>Table ${o.table}</b><br>
-        Total: $${autoTotal.toFixed(2)}<br>
+        <b>Total: $${calculatedTotal.toFixed(2)}</b><br>
         Items: ${o.items.join(', ')}<br>
-        ${o.time}<br>
+        Time: ${o.time}<br>
         <button onclick="completeOrder('${id}')">Done</button>
       `;
       out.appendChild(div);
