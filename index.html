@@ -6,7 +6,7 @@
 <title>QR Food Order</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
@@ -15,11 +15,12 @@
   }
 
   body {
-    font-family: Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-    
+
+    /* 背景放大 50% → 75% 居中 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: 75%;
     background-position: center center;
@@ -27,15 +28,13 @@
     background-color: #f8f9fa;
 
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
   }
 
   .menu-box {
-    width: 100%;
-    max-width: 400px;
-    padding: 25px;
+    width: 380px;
+    padding: 30px;
     background: rgba(255, 255, 255, 0.85);
     border-radius: 16px;
     font-weight: bold;
@@ -55,12 +54,12 @@
 
   label {
     display: block;
-    margin: 10px 0;
+    margin: 8px 0;
   }
 
   button {
     width: 100%;
-    padding: 14px;
+    padding: 12px;
     margin-top: 12px;
     background: #007bff;
     color: white;
@@ -71,17 +70,16 @@
   }
 
   button:disabled {
-    background: #ccc;
+    background: #cccccc;
     cursor: not-allowed;
   }
 
+  button:hover:not(:disabled) {
+    background: #0056b3;
+  }
+
   #kitchenSection, #qrSection {
-    width: 100%;
-    max-width: 400px;
-    background: white;
-    padding: 20px;
-    border-radius: 12px;
-    margin-top: 20px;
+    display: none;
   }
 
   .order {
@@ -127,9 +125,9 @@
 
 <div id="qrSection">
   <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No" style="width:100%; padding:10px; margin-bottom:10px;">
+  <input type="number" id="tableInput" placeholder="Table No">
   <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode" style="margin-top:20px;"></div>
+  <div id="qrcode"></div>
 </div>
 
 <script>
@@ -174,19 +172,15 @@ function submitOrder() {
   btn.innerText = "Order Sent";
 
   let total = 0;
-  let orderItems = [];
-  
+  let list = [];
   items.forEach(i => {
-    let price = parseFloat(i.dataset.price);
-    let name = i.nextSibling.textContent.trim();
-    total += price;
-    orderItems.push({ name, price });
+    total += parseFloat(i.dataset.price);
+    list.push(i.nextSibling.textContent.trim());
   });
 
   db.ref('orders').push({
     table: table,
-    items: orderItems,
-    total: total,
+    items: list,
     time: new Date().toLocaleTimeString()
   });
 
@@ -206,19 +200,8 @@ function loadOrders() {
       const o = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      
-      let itemHtml = '';
-      o.items.forEach(item => {
-        itemHtml += `${item.name} - $${item.price.toFixed(2)}<br>`;
-      });
-
-      div.innerHTML = `
-        <b>Table ${o.table}</b><br>
-        ${itemHtml}
-        <b>Total: $${o.total.toFixed(2)}</b><br>
-        ${o.time}<br>
-        <button onclick="completeOrder('${id}')">Done</button>
-      `;
+      div.innerHTML = `<b>Table ${o.table}</b><br>${o.items.join(', ')}<br>${o.time}<br>
+      <button onclick="completeOrder('${id}')">Done</button>`;
       out.appendChild(div);
     }
   });
