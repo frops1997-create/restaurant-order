@@ -1,23 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter - Payment & Orders</title>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<title>收银柜台系统</title>
 <style>
-  * {
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-  }
-<style>
-body {
+* {
   margin: 0;
   padding: 0;
-  background: url("") center center / cover no-repeat fixed;
-  position: relative;
+  box-sizing: border-box;
+  font-family: "Microsoft YaHei", sans-serif;
 }
+
+body {
+  position: relative;
+  min-height: 100vh;
+  color: #333;
+  padding: 20px;
+}
+
+/* 半透明美食背景 */
 body::before {
   content: "";
   position: fixed;
@@ -25,156 +26,119 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: url("https://img0.baidu.com/it/u=889623208,250419972&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=500") center center / cover no-repeat fixed;
-  opacity: 0.25; /* 透明度：0完全透明，1不透明 */
+  background-image: url("https://img0.baidu.com/it/u=889623208,250419972&fm=253&fmt=auto&app=138&f=JPEG?w=800&h=500");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.18; /* 透明度，越小越淡 */
   z-index: -1;
 }
-</style>
-  }
-  .container {
-    max-width: 900px;
-    margin: auto;
-  }
-  h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px;
-  }
-  .order-box {
-    background: white;
-    padding: 18px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  .order-table {
-    font-size: 20px;
-    font-weight: bold;
-    color: #0066cc;
-    margin-bottom: 8px;
-  }
-  .order-items {
-    font-size: 16px;
-    line-height: 1.6;
-    margin-bottom: 10px;
-  }
-  .price {
-    color: #d35400;
-    font-weight: bold;
-  }
-  .total {
-    font-size: 18px;
-    font-weight: bold;
-    color: #27ae60;
-    margin: 10px 0;
-  }
-  .time {
-    font-size: 13px;
-    color: #777;
-    margin-bottom: 10px;
-  }
-  .done-btn {
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-  }
-  .done-btn:hover {
-    background: #219653;
-  }
-  .no-order {
-    text-align: center;
-    font-size: 18px;
-    color: #666;
-    padding: 40px 0;
-  }
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #c72e2e;
+}
+
+.table-area {
+  margin-bottom: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+th {
+  background: #f8f8f8;
+}
+
+.btns {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #c72e2e;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #a82424;
+}
+
+.total {
+  font-size: 20px;
+  font-weight: bold;
+  text-align: right;
+  color: #c72e2e;
+}
 </style>
 </head>
+
 <body>
-
 <div class="container">
-  <h1>Counter - Orders & Payment</h1>
-  <div id="orderList"></div>
+  <h1>美食柜台收银系统</h1>
+
+  <div class="btns">
+    <button>新增菜品</button>
+    <button>删除选中</button>
+    <button>清空订单</button>
+    <button>结账收款</button>
+  </div>
+
+  <div class="table-area">
+    <table>
+      <tr>
+        <th>序号</th>
+        <th>菜品名称</th>
+        <th>单价</th>
+        <th>数量</th>
+        <th>小计</th>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>汉堡套餐</td>
+        <td>28</td>
+        <td>1</td>
+        <td>28</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>炸鸡</td>
+        <td>22</td>
+        <td>1</td>
+        <td>22</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="total">
+    合计：¥50.00
+  </div>
 </div>
-
-<script>
-// 🔥 直接用你现有的 Firebase，完全通用
-const firebaseConfig = {
-  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-  authDomain: "restaurants-cs.firebaseapp.com",
-  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
-  storageBucket: "restaurants-cs.firebasestorage.app",
-  messagingSenderId: "209872919844",
-  appId: "1:209872919844:web:c1730801cd51d615e867b1"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// 菜品价格表（自动计算价格）
-const priceList = {
-  "1) Fried Rice - $8": 8,
-  "2) Beef Noodles - $10": 10,
-  "3) BBQ Pork - $12": 12,
-  "4) BBQ Chicken - $15": 15,
-  "5) BBQ Salmon - $18": 18,
-  "6) Nasi Lemak Curry - $13": 13,
-  "7) Nasi Lemak Chicken - $12": 12,
-  "8) Nasi Lemak Egg - $9": 9
-};
-
-// 实时加载订单
-function loadCounterOrders() {
-  db.ref('orders').on('value', (snapshot) => {
-    const data = snapshot.val();
-    const list = document.getElementById('orderList');
-    list.innerHTML = '';
-
-    if (!data) {
-      list.innerHTML = '<div class="no-order">No Orders Yet</div>';
-      return;
-    }
-
-    for (let orderId in data) {
-      const o = data[orderId];
-
-      // 自动计算总价（兼容所有订单）
-      let total = 0;
-      let itemHtml = '';
-
-      o.items.forEach(item => {
-        const price = priceList[item] || 0;
-        total += price;
-        itemHtml += `${item} <span class="price">$${price.toFixed(2)}</span><br>`;
-      });
-
-      // 渲染柜台显示样式
-      const div = document.createElement('div');
-      div.className = 'order-box';
-      div.innerHTML = `
-        <div class="order-table">Table ${o.table}</div>
-        <div class="order-items">${itemHtml}</div>
-        <div class="total">TOTAL PAYMENT: $${total.toFixed(2)}</div>
-        <div class="time">Time: ${o.time}</div>
-        <button class="done-btn" onclick="complete('${orderId}')">✅ Order Completed</button>
-      `;
-      list.appendChild(div);
-    }
-  });
-}
-
-// 完成订单
-function complete(orderId) {
-  if(confirm("Mark this order as completed?")){
-    db.ref('orders/' + orderId).remove();
-  }
-}
-
-loadCounterOrders();
-</script>
-
 </body>
 </html>
