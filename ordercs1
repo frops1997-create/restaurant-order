@@ -3,203 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Food Order</title>
-
+<title>Kitchen Pro Display (McD Style)</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-  * {
-    box-sizing: border-box;
-  }
-
-  body {
-    font-family: Arial;
-    margin: 0;
-    padding: 20px;
-    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-  }
-
-  /* 只给菜单加半透明 */
-  .menu-box {
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 25px;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 14px;
-    font-weight: bold;
-  }
-
-  .order-confirm {
-    background: rgba(0, 150, 0, 0.8);
-    color: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 15px;
-    font-size: 16px;
-    text-align: center;
-    display: none;
-  }
-
-  label {
-    display: block;
-    margin: 6px 0;
-  }
-
-  button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 16px;
-  }
-
-  #kitchenSection, #qrSection {
-    max-width: 400px;
-    margin: 20px auto;
-    padding: 20px;
-    background: white;
-    border-radius: 12px;
-  }
-
-  .order {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin: 10px 0;
-    background: white;
-  }
+body { margin:0; font-family:Arial; background:#000; color:#fff; }
+h1 { text-align:center; padding:10px; margin:0; }
+.board {
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: calc(100vh - 50px);
+}
+.column {
+  padding:10px;
+  overflow-y:auto;
+}
+.new { background:#330000; }
+.preparing { background:#332200; }
+.ready { background:#003300; }
+.column h2 { text-align:center; }
+.order {
+  background:#111;
+  margin-bottom:10px;
+  padding:10px;
+  border-radius:8px;
+}
+button {
+  width:100%;
+  margin-top:5px;
+  padding:8px;
+  border:none;
+  border-radius:5px;
+}
+.btn-prep { background:orange; }
+.btn-ready { background:green; color:#fff; }
+.btn-done { background:red; color:#fff; }
 </style>
 </head>
-
 <body>
 
-<div class="menu-box">
-  <h2>Scan & Order</h2>
-  <p>Table: <span id="tableNo"></span></p>
+<h1>🍔 Kitchen Display System</h1>
 
-  <h3>Menu</h3>
-  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> (1)Fried Rice - $8</label>
-  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> (2) Beef Noodles - $10</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> (3) BBQ Pork - $12</label>
-  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> (4) BBQ Chicken - $15</label>
-  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> (5) BBQ Salmon - $18</label>
-  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> (6) Nasi Lemak Curry - $13</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> (7) Nasi Lemak Chicken - $12</label>
-  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> (8) Nasi Lemak Egg - $9</label>
-
-  <button onclick="submitOrder()">Submit Order</button>
-  <p id="total">Total: $0.00</p>
-
-  <!-- 下单后持续显示在这里 -->
-  <div class="order-confirm" id="orderConfirm">
-    <h3>Order Submitted!</h3>
-    <p>Table: <span id="showTable"></span></p>
-    <p>Total: $<span id="showTotal"></span></p>
-    <small>Please wait for your food</small>
+<div class="board">
+  <div class="column new">
+    <h2>NEW</h2>
+    <div id="newOrders"></div>
   </div>
-</div>
-
-<div id="kitchenSection">
-  <h2>Kitchen Orders</h2>
-  <div id="orders"></div>
-</div>
-
-<div id="qrSection">
-  <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No" style="width:100%; padding:10px; margin-bottom:10px;">
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode" style="margin-top:20px;"></div>
+  <div class="column preparing">
+    <h2>PREPARING</h2>
+    <div id="preparingOrders"></div>
+  </div>
+  <div class="column ready">
+    <h2>READY</h2>
+    <div id="readyOrders"></div>
+  </div>
 </div>
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-  authDomain: "restaurants-cs.firebaseapp.com",
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
-  storageBucket: "restaurants-cs.firebasestorage.app",
-  messagingSenderId: "209872919844",
-  appId: "1:209872919844:web:c1730801cd51d615e867b1"
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const params = new URLSearchParams(location.search);
-let table = params.get('table') || Math.floor(Math.random()*20)+1;
-const isKitchen = params.get('kitchen');
-const isAdmin = params.get('admin');
+function renderOrders(data) {
+  const newDiv = document.getElementById('newOrders');
+  const prepDiv = document.getElementById('preparingOrders');
+  const readyDiv = document.getElementById('readyOrders');
 
-if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
-if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
-document.getElementById('tableNo').textContent = table;
+  newDiv.innerHTML = '';
+  prepDiv.innerHTML = '';
+  readyDiv.innerHTML = '';
 
-function updateTotal() {
-  let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
-  document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
-}
+  for (let id in data) {
+    const order = data[id];
+    const status = order.status || 'New';
 
-// 下单不刷新，只显示订单信息在页面
-function submitOrder() {
-  const items = Array.from(document.querySelectorAll('input:checked'));
-  if (items.length === 0) {
-    alert('Please select food!');
-    return;
+    const div = document.createElement('div');
+    div.className = 'order';
+
+    div.innerHTML = `
+      <h3>Table ${order.table}</h3>
+      <p>${order.items.join(', ')}</p>
+      <p>${order.time}</p>
+      ${status === 'New' ? `<button class="btn-prep" onclick="setPreparing('${id}')">Start</button>` : ''}
+      ${status === 'Preparing' ? `<button class="btn-ready" onclick="setReady('${id}')">Ready</button>` : ''}
+      ${status === 'Ready' ? `<button class="btn-done" onclick="completeOrder('${id}')">Done</button>` : ''}
+    `;
+
+    if (status === 'New') newDiv.appendChild(div);
+    else if (status === 'Preparing') prepDiv.appendChild(div);
+    else readyDiv.appendChild(div);
   }
-
-  let total = 0;
-  let list = [];
-  items.forEach(i => {
-    total += parseFloat(i.dataset.price);
-    list.push(i.nextSibling.textContent.trim());
-  });
-
-  // 发送订单到 Firebase
-  db.ref('orders').push({
-    table: table,
-    items: list,
-    time: new Date().toLocaleTimeString()
-  });
-
-  // 显示在页面上，不刷新
-  document.getElementById('showTable').innerText = table;
-  document.getElementById('showTotal').innerText = total.toFixed(2);
-  document.getElementById('orderConfirm').style.display = 'block';
 }
 
 function loadOrders() {
-  db.ref('orders').on('value', snap => {
-    const data = snap.val();
-    const out = document.getElementById('orders');
-    out.innerHTML = '';
-    if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
-
-    for (let id in data) {
-      const o = data[id];
-      const div = document.createElement('div');
-      div.className = 'order';
-      div.innerHTML = `<b>Table ${o.table}</b><br>${o.items.join(', ')}<br>${o.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
-      out.appendChild(div);
-    }
+  db.ref('orders').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    renderOrders(data);
   });
 }
 
-function completeOrder(id) {
-  db.ref('orders/'+id).remove();
+function setPreparing(id) {
+  db.ref('orders/' + id).update({ status: 'Preparing' });
 }
 
-function generateQR() {
-  const t = document.getElementById('tableInput').value;
-  if (!t) { alert('Enter table!'); return; }
-  QRCode.toCanvas(document.getElementById('qrcode'), `${location.origin}${location.pathname}?table=${t}`, {width:180});
+function setReady(id) {
+  db.ref('orders/' + id).update({ status: 'Ready' });
+}
+
+function completeOrder(id) {
+  db.ref('orders/' + id).remove();
 }
 
 loadOrders();
@@ -207,3 +129,4 @@ loadOrders();
 
 </body>
 </html>
+https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app
