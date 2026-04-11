@@ -174,12 +174,14 @@ function submitOrder() {
   btn.disabled = true;
   btn.innerText = "Order Sent";
 
-  let total = 0;
-  let list = [];
-  items.forEach(i => {
-    total += parseFloat(i.dataset.price);
-    list.push(i.nextSibling.textContent.trim());
+ let orderItems = [];
+
+items.forEach(item => {
+  orderItems.push({
+    name: item.value,
+    price: item.getAttribute('data-price')
   });
+});
 
   db.ref('orders').push({
     table: table,
