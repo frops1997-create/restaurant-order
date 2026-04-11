@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Counter</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<style>
+body{font-family:Arial;padding:20px;background:#eee}
+.order{background:white;padding:10px;margin:5px}
+.total{background:black;color:white;padding:15px;margin-top:10px}
+</style>
+</head>
+
+<body>
+
+<h2>Counter</h2>
+<div id="orders"></div>
+<div class="total" id="total"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+db.ref('orders').on('value', snap=>{
+  orders.innerHTML="";
+  let totalAll=0;
+
+  const data=snap.val()||{};
+  for(let id in data){
+    const o=data[id];
+
+    let total=0;
+    let items="";
+
+    o.items.forEach(i=>{
+      total+=parseFloat(i.price);
+      items+=i.name+" ($"+i.price+")<br>";
+    });
+
+    totalAll+=total;
+
+    let div=document.createElement('div');
+    div.className="order";
+    div.innerHTML=`
+      Table ${o.table}<br>
+      ${items}
+      💰 $${total.toFixed(2)}
+    `;
+
+    orders.appendChild(div);
+  }
+
+  document.getElementById('total').innerHTML="Total Sales: $"+totalAll.toFixed(2);
+});
+</script>
+
+</body>
+</html>
