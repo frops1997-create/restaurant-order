@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kitchen Pro Display (McD Style)</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<style>
+body { margin:0; font-family:Arial; background:#000; color:#fff; }
+h1 { text-align:center; padding:10px; margin:0; }
+.board {
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: calc(100vh - 50px);
+}
+.column {
+  padding:10px;
+  overflow-y:auto;
+}
+.new { background:#330000; }
+.preparing { background:#332200; }
+.ready { background:#003300; }
+.column h2 { text-align:center; }
+.order {
+  background:#111;
+  margin-bottom:10px;
+  padding:10px;
+  border-radius:8px;
+}
+button {
+  width:100%;
+  margin-top:5px;
+  padding:8px;
+  border:none;
+  border-radius:5px;
+}
+.btn-prep { background:orange; }
+.btn-ready { background:green; color:#fff; }
+.btn-done { background:red; color:#fff; }
+</style>
+</head>
+<body>
+
+<h1>🍔 Kitchen Display System</h1>
+
+<div class="board">
+  <div class="column new">
+    <h2>NEW</h2>
+    <div id="newOrders"></div>
+  </div>
+  <div class="column preparing">
+    <h2>PREPARING</h2>
+    <div id="preparingOrders"></div>
+  </div>
+  <div class="column ready">
+    <h2>READY</h2>
+    <div id="readyOrders"></div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function renderOrders(data) {
+  const newDiv = document.getElementById('newOrders');
+  const prepDiv = document.getElementById('preparingOrders');
+  const readyDiv = document.getElementById('readyOrders');
+
+  newDiv.innerHTML = '';
+  prepDiv.innerHTML = '';
+  readyDiv.innerHTML = '';
+
+  for (let id in data) {
+    const order = data[id];
+    const status = order.status || 'New';
+
+    const div = document.createElement('div');
+    div.className = 'order';
+
+    div.innerHTML = `
+      <h3>Table ${order.table}</h3>
+      <p>${order.items.join(', ')}</p>
+      <p>${order.time}</p>
+      ${status === 'New' ? `<button class="btn-prep" onclick="setPreparing('${id}')">Start</button>` : ''}
+      ${status === 'Preparing' ? `<button class="btn-ready" onclick="setReady('${id}')">Ready</button>` : ''}
+      ${status === 'Ready' ? `<button class="btn-done" onclick="completeOrder('${id}')">Done</button>` : ''}
+    `;
+
+    if (status === 'New') newDiv.appendChild(div);
+    else if (status === 'Preparing') prepDiv.appendChild(div);
+    else readyDiv.appendChild(div);
+  }
+}
+
+function loadOrders() {
+  db.ref('orders').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    renderOrders(data);
+  });
+}
+
+function setPreparing(id) {
+  db.ref('orders/' + id).update({ status: 'Preparing' });
+}
+
+function setReady(id) {
+  db.ref('orders/' + id).update({ status: 'Ready' });
+}
+
+function completeOrder(id) {
+  db.ref('orders/' + id).remove();
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>
+https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app
