@@ -25,11 +25,11 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c");
+    background-image: url("https://img0.baidu.com/it/u=889623208,250419972&fm=253&fmt=auto&app=138&f=JPEG");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    opacity: 0.90; /* 透明度，越小越淡 */
+    opacity: 0.15;
     z-index: -1;
   }
 
@@ -44,8 +44,47 @@
     color: #333;
     margin-bottom: 20px;
   }
+
+  /* 登录框 */
+  .login-box {
+    background: rgba(255,255,255,0.9);
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 400px;
+    margin: 60px auto;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  .login-box input {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    outline: none;
+  }
+  .login-box button {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+  }
+  .login-box button:hover {
+    background: #219653;
+  }
+  .error {
+    color: #e74c3c;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
   .order-box {
-    background: white;
+    background: rgba(255, 255, 255, 0.85);
     padding: 18px;
     border-radius: 12px;
     margin-bottom: 15px;
@@ -100,15 +139,32 @@
 <body>
 
 <div class="container">
-  <h1>Counter - Orders & Payment</h1>
-  <div id="orderList"></div>
+  <!-- 登录区域 -->
+  <div id="loginSection">
+    <div class="login-box">
+      <h2>Counter Login</h2>
+      <input type="password" id="passwordInput" placeholder="Enter Counter Password">
+      <button onclick="login()">Login</button>
+      <div class="error" id="errorMsg"></div>
+    </div>
+  </div>
+
+  <!-- 订单区域（默认隐藏） -->
+  <div id="orderSection" style="display: none;">
+    <h1>Counter - Orders & Payment</h1>
+    <div id="orderList"></div>
+  </div>
 </div>
 
 <script>
+// ==================== 密码在这里修改 ====================
+const CORRECT_PASSWORD = "123456";
+// ======================================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
-  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasestorage.app",
   projectId: "restaurants-cs",
   storageBucket: "restaurants-cs.firebasestorage.app",
   messagingSenderId: "209872919844",
@@ -128,6 +184,21 @@ const priceList = {
   "8) Nasi Lemak Egg - $9": 9
 };
 
+// 登录
+function login() {
+  const input = document.getElementById("passwordInput").value.trim();
+  const err = document.getElementById("errorMsg");
+
+  if (input === CORRECT_PASSWORD) {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("orderSection").style.display = "block";
+    loadCounterOrders();
+  } else {
+    err.textContent = "Wrong Password";
+  }
+}
+
+// 加载订单
 function loadCounterOrders() {
   db.ref('orders').on('value', (snapshot) => {
     const data = snapshot.val();
@@ -141,7 +212,6 @@ function loadCounterOrders() {
 
     for (let orderId in data) {
       const o = data[orderId];
-
       let total = 0;
       let itemHtml = '';
 
@@ -170,8 +240,6 @@ function complete(orderId) {
     db.ref('orders/' + orderId).remove();
   }
 }
-
-loadCounterOrders();
 </script>
 
 </body>
