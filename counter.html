@@ -44,45 +44,6 @@
     color: #333;
     margin-bottom: 20px;
   }
-
-  /* 登录框 */
-  .login-box {
-    background: rgba(255,255,255,0.9);
-    padding: 30px;
-    border-radius: 12px;
-    max-width: 400px;
-    margin: 60px auto;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  }
-  .login-box input {
-    width: 100%;
-    padding: 12px 15px;
-    font-size: 16px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 15px;
-    outline: none;
-  }
-  .login-box button {
-    background: #27ae60;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-    width: 100%;
-  }
-  .login-box button:hover {
-    background: #219653;
-  }
-  .error {
-    color: #e74c3c;
-    margin-top: 10px;
-    font-size: 14px;
-  }
-
   .order-box {
     background: white;
     padding: 18px;
@@ -144,14 +105,10 @@
 </div>
 
 <script>
-// ==================== 密码在这里修改 ====================
-const CORRECT_PASSWORD = "12345";
-// ======================================================
-
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
-  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasestorage.app",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "restaurants-cs",
   storageBucket: "restaurants-cs.firebasestorage.app",
   messagingSenderId: "209872919844",
@@ -171,21 +128,6 @@ const priceList = {
   "8) Nasi Lemak Egg - $9": 9
 };
 
-// 登录
-function login() {
-  const input = document.getElementById("passwordInput").value.trim();
-  const err = document.getElementById("errorMsg");
-
-  if (input === CORRECT_PASSWORD) {
-    document.getElementById("loginSection").style.display = "none";
-    document.getElementById("orderSection").style.display = "block";
-    loadCounterOrders();
-  } else {
-    err.textContent = "Wrong Password";
-  }
-}
-
-// 加载订单
 function loadCounterOrders() {
   db.ref('orders').on('value', (snapshot) => {
     const data = snapshot.val();
@@ -199,6 +141,7 @@ function loadCounterOrders() {
 
     for (let orderId in data) {
       const o = data[orderId];
+
       let total = 0;
       let itemHtml = '';
 
