@@ -13,17 +13,15 @@
 * { box-sizing: border-box; }
 
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: Arial;
   margin: 0;
   padding: 20px;
   min-height: 100vh;
 
   background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
   background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
+  background-position: center;
   background-attachment: fixed;
-  background-color: #f8f9fa;
 
   display: flex;
   justify-content: center;
@@ -33,48 +31,40 @@ body {
 .menu-box {
   width: 380px;
   padding: 30px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255,255,255,0.9);
   border-radius: 16px;
-  font-weight: bold;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
 }
 
 .order-confirm {
-  background: rgba(0, 150, 0, 0.8);
+  background: green;
   color: white;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 15px;
-  text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 10px;
   display: none;
 }
 
-label { display: block; margin: 8px 0; }
+label { display:block; margin:6px 0; }
 
 button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: #ccc;
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  background:#007bff;
+  color:white;
+  border:none;
+  border-radius:6px;
 }
 
 #kitchenSection, #qrSection {
-  display: none;
+  display:none;
 }
 
 .order {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin: 10px 0;
-  background: white;
+  border:1px solid #ccc;
+  padding:10px;
+  margin:10px;
+  background:white;
 }
 </style>
 </head>
@@ -86,20 +76,17 @@ button:disabled {
   <p>Table: <span id="tableNo"></span></p>
 
   <h3>Menu</h3>
-  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> (1) Fried Rice - $8</label>
-  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> (2) Beef Noodles - $10</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> (3) BBQ Pork - $12</label>
-  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> (4) BBQ Chicken - $15</label>
-  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> (5) BBQ Salmon - $18</label>
-  <label><input type="checkbox" data-price="13" onchange="updateTotal()"> (6) Nasi Lemak Curry - $13</label>
-  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> (7) Nasi Lemak Chicken - $12</label>
-  <label><input type="checkbox" data-price="9" onchange="updateTotal()"> (8) Nasi Lemak Egg - $9</label>
+  <label><input type="checkbox" data-price="8" onchange="updateTotal()"> Fried Rice - $8</label>
+  <label><input type="checkbox" data-price="10" onchange="updateTotal()"> Beef Noodles - $10</label>
+  <label><input type="checkbox" data-price="12" onchange="updateTotal()"> BBQ Pork - $12</label>
+  <label><input type="checkbox" data-price="15" onchange="updateTotal()"> BBQ Chicken - $15</label>
+  <label><input type="checkbox" data-price="18" onchange="updateTotal()"> BBQ Salmon - $18</label>
 
   <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
   <p id="total">Total: $0.00</p>
 
   <div class="order-confirm" id="orderConfirm">
-    <h3>Order Submitted!</h3>
+    <p>Order Sent!</p>
     <p>Table: <span id="showTable"></span></p>
     <p>Total: $<span id="showTotal"></span></p>
   </div>
@@ -111,9 +98,9 @@ button:disabled {
 </div>
 
 <div id="qrSection">
-  <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No">
-  <button onclick="generateQR()">Generate QR</button>
+  <h2>QR</h2>
+  <input id="tableInput" placeholder="Table">
+  <button onclick="generateQR()">Generate</button>
   <div id="qrcode"></div>
 </div>
 
@@ -122,17 +109,12 @@ const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
-  storageBucket: "restaurants-cs.firebasestorage.app",
-  messagingSenderId: "209872919844",
-  appId: "1:209872919844:web:c1730801cd51d615e867b1"
+  projectId: "restaurants-cs"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const params = new URLSearchParams(location.search);
-
-// ✅ Table 固定（不再随机）
 let table = params.get('table') || 1;
 
 const isKitchen = params.get('kitchen');
@@ -141,69 +123,59 @@ const isAdmin = params.get('admin');
 if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
 if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
 
-document.getElementById('tableNo').textContent = table;
+document.getElementById('tableNo').innerText = table;
 
 function updateTotal() {
   let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => {
+  document.querySelectorAll('input:checked').forEach(i=>{
     total += parseFloat(i.dataset.price);
   });
-  document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
+  document.getElementById('total').innerText = "Total: $" + total.toFixed(2);
 }
 
-// ✅ 提交订单 + Order Number
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
   if (btn.disabled) return;
 
   const items = Array.from(document.querySelectorAll('input:checked'));
   if (items.length === 0) {
-    alert('Please select food!');
+    alert("Select food");
     return;
   }
 
   btn.disabled = true;
-  btn.innerText = "Order Sent";
 
   let total = 0;
   let list = [];
 
-  items.forEach(i => {
+  items.forEach(i=>{
     total += parseFloat(i.dataset.price);
-    list.push(i.nextSibling.textContent.trim());
+    list.push(i.parentElement.textContent.trim());
   });
 
-  const ordersRef = db.ref('orders');
+  // ⭐ 不重复 Order Number
+  const orderNo = Date.now();
 
-  // ⭐ 自动生成 Order Number
-  ordersRef.once('value', snap => {
-    const orderNo = snap.numChildren() + 1;
-
-    ordersRef.push({
-      orderNumber: orderNo,
-      table: table,
-      items: list,
-      total: total,
-      time: new Date().toLocaleTimeString()
-    });
-
-    document.getElementById('showTable').innerText = table;
-    document.getElementById('showTotal').innerText = total.toFixed(2);
-    document.getElementById('orderConfirm').style.display = 'block';
+  db.ref('orders').push({
+    orderNumber: orderNo,
+    table: table,
+    items: list,
+    total: total,
+    time: new Date().toLocaleTimeString()
   });
+
+  document.getElementById('showTable').innerText = table;
+  document.getElementById('showTotal').innerText = total.toFixed(2);
+  document.getElementById('orderConfirm').style.display = 'block';
 }
 
-// ✅ 厨房显示 Order Number
 function loadOrders() {
-  db.ref('orders').on('value', snap => {
+  db.ref('orders').on('value', snap=>{
     const data = snap.val();
     const out = document.getElementById('orders');
     out.innerHTML = '';
 
-    if (!data) {
-      out.innerHTML = '<p>No orders</p>';
-      return;
-    }
+    if (!data) return;
 
     for (let id in data) {
       const o = data[id];
@@ -211,7 +183,7 @@ function loadOrders() {
       div.className = 'order';
 
       div.innerHTML = `
-        <b>Order #${o.orderNumber || '-'} - Table ${o.table}</b><br>
+        <b>Order #${o.orderNumber} - Table ${o.table}</b><br>
         ${o.items.join(', ')}<br>
         ${o.time}<br>
         <button onclick="completeOrder('${id}')">Done</button>
@@ -222,19 +194,14 @@ function loadOrders() {
   });
 }
 
-function completeOrder(id) {
-  db.ref('orders/' + id).remove();
+function completeOrder(id){
+  db.ref('orders/'+id).remove();
 }
 
-function generateQR() {
+function generateQR(){
   const t = document.getElementById('tableInput').value;
-  if (!t) { alert('Enter table!'); return; }
-
-  QRCode.toCanvas(
-    document.getElementById('qrcode'),
-    `${location.origin}${location.pathname}?table=${t}`,
-    { width: 180 }
-  );
+  QRCode.toCanvas(document.getElementById('qrcode'),
+    location.origin + location.pathname + "?table=" + t);
 }
 
 loadOrders();
