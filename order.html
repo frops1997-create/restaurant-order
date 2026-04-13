@@ -10,86 +10,72 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-  * {
-    box-sizing: border-box;
-  }
+* { box-sizing: border-box; }
 
-  body {
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-    
-    /* 背景：完美居中 + 固定显示 */
-    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-    background-size: cover;
-    background-position: center center; /* 绝对居中 */
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-color: #f8f9fa;
-    
-    display: flex;
-    justify-content: center; /* 水平居中 */
-    align-items: center;     /* 垂直居中 */
-  }
+body {
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
 
-  /* 菜单盒子居中显示 */
-  .menu-box {
-    width: 380px;
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.85);
-    border-radius: 16px;
-    font-weight: bold;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  }
+  background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-color: #f8f9fa;
 
-  .order-confirm {
-    background: rgba(0, 150, 0, 0.8);
-    color: white;
-    padding: 15px;
-    border-radius: 10px;
-    margin-top: 15px;
-    font-size: 16px;
-    text-align: center;
-    display: none;
-  }
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  label {
-    display: block;
-    margin: 8px 0;
-  }
+.menu-box {
+  width: 380px;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  font-weight: bold;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
 
-  button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 12px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-  }
+.order-confirm {
+  background: rgba(0, 150, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+  text-align: center;
+  display: none;
+}
 
-  button:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
-  }
+label { display: block; margin: 8px 0; }
 
-  button:hover:not(:disabled) {
-    background: #0056b3;
-  }
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-  #kitchenSection, #qrSection {
-    display: none;
-  }
+button:disabled {
+  background: #ccc;
+}
 
-  .order {
-    border: 1px solid #ccc;
-    padding: 10px;
-    margin: 10px 0;
-    background: white;
-  }
+#kitchenSection, #qrSection {
+  display: none;
+}
+
+.order {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 10px 0;
+  background: white;
+}
 </style>
 </head>
 
@@ -116,7 +102,6 @@
     <h3>Order Submitted!</h3>
     <p>Table: <span id="showTable"></span></p>
     <p>Total: $<span id="showTotal"></span></p>
-    <small>Please wait for your food</small>
   </div>
 </div>
 
@@ -146,21 +131,27 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const params = new URLSearchParams(location.search);
-let table = params.get('table') || Math.floor(Math.random()*20)+1;
+
+// ✅ Table 固定（不再随机）
+let table = params.get('table') || 1;
+
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
 
 if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
 if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
+
 document.getElementById('tableNo').textContent = table;
 
 function updateTotal() {
   let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
+  document.querySelectorAll('input:checked').forEach(i => {
+    total += parseFloat(i.dataset.price);
+  });
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// 只能提交一次，防止重复下单
+// ✅ 提交订单 + Order Number
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
   if (btn.disabled) return;
@@ -174,50 +165,76 @@ function submitOrder() {
   btn.disabled = true;
   btn.innerText = "Order Sent";
 
- let total = 0;
+  let total = 0;
   let list = [];
+
   items.forEach(i => {
     total += parseFloat(i.dataset.price);
     list.push(i.nextSibling.textContent.trim());
   });
 
-  db.ref('orders').push({
-    table: table,
-    items: list,
-    time: new Date().toLocaleTimeString()
-  });
+  const ordersRef = db.ref('orders');
 
-  document.getElementById('showTable').innerText = table;
-  document.getElementById('showTotal').innerText = total.toFixed(2);
-  document.getElementById('orderConfirm').style.display = 'block';
+  // ⭐ 自动生成 Order Number
+  ordersRef.once('value', snap => {
+    const orderNo = snap.numChildren() + 1;
+
+    ordersRef.push({
+      orderNumber: orderNo,
+      table: table,
+      items: list,
+      total: total,
+      time: new Date().toLocaleTimeString()
+    });
+
+    document.getElementById('showTable').innerText = table;
+    document.getElementById('showTotal').innerText = total.toFixed(2);
+    document.getElementById('orderConfirm').style.display = 'block';
+  });
 }
 
+// ✅ 厨房显示 Order Number
 function loadOrders() {
   db.ref('orders').on('value', snap => {
     const data = snap.val();
     const out = document.getElementById('orders');
     out.innerHTML = '';
-    if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
+
+    if (!data) {
+      out.innerHTML = '<p>No orders</p>';
+      return;
+    }
 
     for (let id in data) {
       const o = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      div.innerHTML = `<b>Table ${o.table}</b><br>${o.items.join(', ')}<br>${o.time}<br>
-      <button onclick="completeOrder('${id}')">Done</button>`;
+
+      div.innerHTML = `
+        <b>Order #${o.orderNumber || '-'} - Table ${o.table}</b><br>
+        ${o.items.join(', ')}<br>
+        ${o.time}<br>
+        <button onclick="completeOrder('${id}')">Done</button>
+      `;
+
       out.appendChild(div);
     }
   });
 }
 
 function completeOrder(id) {
-  db.ref('orders/'+id).remove();
+  db.ref('orders/' + id).remove();
 }
 
 function generateQR() {
   const t = document.getElementById('tableInput').value;
   if (!t) { alert('Enter table!'); return; }
-  QRCode.toCanvas(document.getElementById('qrcode'), `${location.origin}${location.pathname}?table=${t}`, {width:180});
+
+  QRCode.toCanvas(
+    document.getElementById('qrcode'),
+    `${location.origin}${location.pathname}?table=${t}`,
+    { width: 180 }
+  );
 }
 
 loadOrders();
