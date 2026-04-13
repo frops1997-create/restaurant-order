@@ -20,20 +20,18 @@
     padding: 20px;
     min-height: 100vh;
     
-    /* 背景：完美居中 + 固定显示 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: cover;
-    background-position: center center; /* 绝对居中 */
+    background-position: center center;
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-color: #f8f9fa;
     
     display: flex;
-    justify-content: center; /* 水平居中 */
-    align-items: center;     /* 垂直居中 */
+    justify-content: center;
+    align-items: center;
   }
 
-  /* 菜单盒子居中显示 */
   .menu-box {
     width: 380px;
     padding: 30px;
@@ -147,9 +145,11 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const params = new URLSearchParams(location.search);
-let table = params.get('table') || Math.floor(Math.random()*20)+1;
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
+
+// ✅ 桌号彻底固定，永远是 1（你可以自己改成 2/3/任意数字）
+const table = 1;
 
 if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
 if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
@@ -195,7 +195,6 @@ function submitOrder() {
   // 生成订单号并自增
   const orderNo = currentOrderNo;
   currentOrderNo++;
-  // 保存最新订单号到数据库
   db.ref('orderCounter').set(currentOrderNo);
 
   db.ref('orders').push({
