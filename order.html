@@ -5,238 +5,218 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>QR Food Order</title>
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
 
 <style>
-* { box-sizing: border-box; }
-
 body {
   font-family: Arial;
-  margin: 0;
   padding: 20px;
-  min-height: 100vh;
+  background: #f4f6f8;
+}
 
-  background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
+/* 卡片 */
+.container {
+  max-width: 500px;
+  margin: auto;
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
 
+/* 菜单 */
+.menu {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.menu-item {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 8px;
 }
 
-.menu-box {
-  width: 380px;
-  padding: 30px;
-  background: rgba(255,255,255,0.9);
-  border-radius: 16px;
+.name {
+  flex: 1;
+  margin-left: 10px;
 }
 
-.order-confirm {
-  background: green;
-  color: white;
-  padding: 15px;
-  border-radius: 10px;
-  margin-top: 15px;
-  display: none;
+.price {
+  font-weight: bold;
+  color: #e67e22;
 }
 
+/* 按钮 */
 button {
   width: 100%;
   padding: 12px;
-  margin-top: 10px;
-  background: #007bff;
-  color: white;
+  margin-top: 15px;
   border: none;
   border-radius: 8px;
+  background: #27ae60;
+  color: white;
+  font-size: 16px;
   cursor: pointer;
 }
 
-#kitchenSection, #qrSection { display: none; }
+button:hover {
+  background: #219150;
+}
 
-.order {
-  background: white;
-  padding: 10px;
-  margin: 10px 0;
-  border: 1px solid #ccc;
+/* Total */
+#orderTotal {
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #e74c3c;
 }
 </style>
 </head>
 
 <body>
 
-<div class="menu-box">
+<div class="container">
   <h2>Scan & Order</h2>
+
   <p>Table: <span id="tableNo"></span></p>
+
+  <input type="text" id="customerName" placeholder="Your Name" style="width:100%; padding:10px; margin-bottom:10px;">
 
   <h3>Menu</h3>
 
-<label><input type="checkbox" data-price="8" onchange="updateTotal()"> 1) Fried Rice - $8</label>
+  <div class="menu">
 
-<label><input type="checkbox" data-price="10" onchange="updateTotal()"> 2) Beef Noodles - $10</label>
+    <label class="menu-item">
+      <input type="checkbox" value="Fried Rice" data-price="8.00">
+      <span class="name">Fried Rice</span>
+      <span class="price">$8.00</span>
+    </label>
 
-<label><input type="checkbox" data-price="12" onchange="updateTotal()"> 3) BBQ Pork - $12</label>
+    <label class="menu-item">
+      <input type="checkbox" value="Beef Noodles" data-price="10.00">
+      <span class="name">Beef Noodles</span>
+      <span class="price">$10.00</span>
+    </label>
 
-<label><input type="checkbox" data-price="15" onchange="updateTotal()"> 4) BBQ Chicken - $15</label>
+    <label class="menu-item">
+      <input type="checkbox" value="BBQ Pork" data-price="12.00">
+      <span class="name">BBQ Pork</span>
+      <span class="price">$12.00</span>
+    </label>
 
-<label><input type="checkbox" data-price="18" onchange="updateTotal()"> 5) BBQ Salmon - $18</label>
+    <label class="menu-item">
+      <input type="checkbox" value="BBQ Chicken" data-price="15.00">
+      <span class="name">BBQ Chicken</span>
+      <span class="price">$15.00</span>
+    </label>
 
-<label><input type="checkbox" data-price="13" onchange="updateTotal()"> 6) Nasi Lemak Curry - $13</label>
+    <label class="menu-item">
+      <input type="checkbox" value="BBQ Salmon" data-price="18.00">
+      <span class="name">BBQ Salmon</span>
+      <span class="price">$18.00</span>
+    </label>
 
-<label><input type="checkbox" data-price="12" onchange="updateTotal()"> 7) Nasi Lemak Chicken - $12</label>
+    <label class="menu-item">
+      <input type="checkbox" value="Nasi Lemak Curry Chicken" data-price="13.00">
+      <span class="name">Nasi Lemak Curry Chicken</span>
+      <span class="price">$13.00</span>
+    </label>
 
-<label><input type="checkbox" data-price="9" onchange="updateTotal()"> 8) Nasi Lemak Egg - $9</label>
+    <label class="menu-item">
+      <input type="checkbox" value="Nasi Lemak Fried Chicken" data-price="12.00">
+      <span class="name">Nasi Lemak Fried Chicken</span>
+      <span class="price">$12.00</span>
+    </label>
 
-  <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
-  <p id="total">Total: $0.00</p>
+    <label class="menu-item">
+      <input type="checkbox" value="Nasi Lemak Fried Egg" data-price="9.00">
+      <span class="name">Nasi Lemak Fried Egg</span>
+      <span class="price">$9.00</span>
+    </label>
 
-  <div class="order-confirm" id="orderConfirm">
-    <h3>Order Submitted!</h3>
-    <p>Order #: <span id="showOrderNo"></span></p>
-    <p>Table: <span id="showTable"></span></p>
-    <p>Total: $<span id="showTotal"></span></p>
   </div>
-</div>
 
-<div id="kitchenSection">
-  <h2>Kitchen Orders</h2>
-  <div id="orders"></div>
-</div>
+  <div id="orderTotal">Total: $0.00</div>
 
-<div id="qrSection">
-  <h2>Table QR</h2>
-  <input type="number" id="tableInput" placeholder="Table No">
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode"></div>
+  <button onclick="submitOrder()">Submit Order</button>
+
 </div>
 
 <script>
-// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// URL 参数
-const params = new URLSearchParams(location.search);
-let table = params.get('table') || 1;
-const isKitchen = params.get('kitchen');
-const isAdmin = params.get('admin');
+// 获取桌号
+const params = new URLSearchParams(window.location.search);
+let table = params.get('table') || Math.floor(Math.random() * 20 + 1);
+document.getElementById('tableNo').innerText = table;
 
-if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
-if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
+// 实时计算总价
+const checkboxes = document.querySelectorAll('input[type=checkbox]');
+checkboxes.forEach(box => {
+  box.addEventListener('change', updateTotal);
+});
 
-document.getElementById('tableNo').textContent = table;
-
-// 计算总价
 function updateTotal() {
   let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => {
-    total += parseFloat(i.dataset.price);
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(item => {
+    total += parseFloat(item.getAttribute('data-price'));
   });
-  document.getElementById('total').innerText = "Total: $" + total.toFixed(2);
-}
-
-// ⭐ 获取 Order Number（核心）
-function getNextOrderNumber(callback) {
-  const ref = db.ref('orderCounter');
-  ref.transaction(current => (current || 0) + 1, (err, committed, snap) => {
-    if (committed) callback(snap.val());
-  });
+  document.getElementById('orderTotal').innerText = "Total: $" + total.toFixed(2);
 }
 
 // 提交订单
 function submitOrder() {
-  const btn = document.getElementById('submitBtn');
-  if (btn.disabled) return;
+  const name = document.getElementById('customerName').value;
+  const items = document.querySelectorAll('input[type=checkbox]:checked');
 
-  const items = Array.from(document.querySelectorAll('input:checked'));
-  if (items.length === 0) {
-    alert("Please select food!");
+  if (!name || items.length === 0) {
+    alert("Please enter name and select food");
     return;
   }
 
-  btn.disabled = true;
-  btn.innerText = "Order Sent";
-
+  let orderItems = [];
   let total = 0;
-  let list = [];
 
-  items.forEach(i => {
-    total += parseFloat(i.dataset.price);
-    list.push(i.parentNode.textContent.trim());
-  });
-
-  getNextOrderNumber(orderNo => {
-    db.ref('orders').push({
-      orderNo: orderNo,
-      table: table,
-      items: list,
-      total: total.toFixed(2),
-      time: new Date().toLocaleTimeString()
+  items.forEach(item => {
+    const price = parseFloat(item.getAttribute('data-price'));
+    orderItems.push({
+      name: item.value,
+      price: price
     });
-
-    document.getElementById('showOrderNo').innerText = orderNo;
-    document.getElementById('showTable').innerText = table;
-    document.getElementById('showTotal').innerText = total.toFixed(2);
-    document.getElementById('orderConfirm').style.display = 'block';
+    total += price;
   });
-}
 
-// 厨房订单
-function loadOrders() {
-  db.ref('orders').on('value', snap => {
-    const data = snap.val();
-    const out = document.getElementById('orders');
-    out.innerHTML = '';
-
-    if (!data) {
-      out.innerHTML = "<p>No orders</p>";
-      return;
-    }
-
-    for (let id in data) {
-      const o = data[id];
-      const div = document.createElement('div');
-      div.className = 'order';
-
-      div.innerHTML = `
-        <b>Order #${o.orderNo}</b><br>
-        Table ${o.table}<br>
-        ${o.items.join(', ')}<br>
-        Total: $${o.total}<br>
-        ${o.time}<br>
-        <button onclick="completeOrder('${id}')">Done</button>
-      `;
-
-      out.appendChild(div);
-    }
+  db.ref('orders').push({
+    table: table,
+    name: name,
+    items: orderItems,
+    total: total,
+    status: "New",
+    time: new Date().toLocaleTimeString()
   });
-}
 
-// 完成订单
-function completeOrder(id) {
-  db.ref('orders/' + id).remove();
-}
+  alert("Order sent! Total: $" + total.toFixed(2));
 
-// QR 生成
-function generateQR() {
-  const t = document.getElementById('tableInput').value;
-  if (!t) return alert("Enter table!");
-  QRCode.toCanvas(document.getElementById('qrcode'),
-    location.origin + location.pathname + "?table=" + t,
-    { width: 180 }
-  );
+  location.reload();
 }
-
-loadOrders();
 </script>
 
 </body>
