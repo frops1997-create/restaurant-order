@@ -8,6 +8,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<!-- 新增：SheetJS 导出Excel库 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
   * {
@@ -88,10 +90,12 @@
     margin-top: 5px;
   }
 
+  /* ========== 菜单文字放大 ========== */
   label {
     display: block;
-    margin: 10px 0;
-    font-size: 15px;
+    margin: 12px 0;
+    font-size: 18px; /* 从15px → 18px */
+    line-height: 1.4;
   }
 
   button {
@@ -131,8 +135,13 @@
     background: #e74c3c;
   }
 
+  /* 新增：导出按钮样式 */
+  .btn-export {
+    background: #f39c12;
+  }
+
   #total {
-    font-size: 18px;
+    font-size: 20px;
     color: #d32f2f;
     text-align: center;
     margin: 15px 0;
@@ -150,6 +159,7 @@
   .item {
     padding: 6px 0;
     border-bottom: 1px dashed #eee;
+    font-size: 17px;
   }
 
   .money-box {
@@ -323,6 +333,8 @@
 <!-- 第4页：历史订单 -->
 <div class="page" id="page4">
   <h2>📜 History Orders</h2>
+  <!-- 新增：导出Excel按钮 -->
+  <button class="btn-export" onclick="exportHistoryToExcel()">📥 Export History to Excel</button>
   <div class="history-box" id="historyList"></div>
   <button onclick="goToPage(1)">← Back</button>
 </div>
@@ -330,6 +342,8 @@
 <!-- 第5页：取消订单 -->
 <div class="page" id="page5">
   <h2>❌ Cancelled Orders</h2>
+  <!-- 新增：导出Excel按钮 -->
+  <button class="btn-export" onclick="exportCancelledToExcel()">📥 Export Cancelled to Excel</button>
   <div class="cancel-box" id="cancelledList"></div>
   <button onclick="goToPage(1)">← Back</button>
 </div>
@@ -601,6 +615,68 @@ function loadKitchenOrders() {
 
 function completeOrder(id) {
   db.ref('orders/'+id).remove();
+}
+
+// ====================== 新增：导出Excel功能 ======================
+// 导出历史订单
+function exportHistoryToExcel() {
+  db.ref('historyOrders').once('value', snap => {
+    const data = snap.val();
+    if (!data) { alert("No history data to export!"); return; }
+
+    const excelData = [
+      ["Order No", "Status", "Total ($)", "Payment", "Received ($)", "Change ($)", "Time", "Items"]
+    ];
+
+    for (let id in data) {
+      const o = data[id];
+      const items = o.items ? o.items.map(i => i.name || i).join("; ") : "";
+      excelData.push([
+        o.orderNo,
+        o.status || "",
+        o.total || "",
+        o.payment || "",
+        o.received || "",
+        o.change || "",
+        o.time || "",
+        items
+      ]);
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, "History Orders");
+    XLSX.writeFile(wb, `History_Orders_${new Date().toLocaleDateString()}.xlsx`);
+  });
+}
+
+// 导出取消订单
+function exportCancelledToExcel() {
+  db.ref('cancelledOrders').once('value', snap => {
+    const data = snap.val();
+    if (!data) { alert("No cancelled data to export!"); return; }
+
+    const excelData = [
+      ["Order No", "Status", "Total ($)", "Time", "Items"]
+    ];
+
+    for (let id in data) {
+      const o = data[id];
+      const items = o.items ? o.items.map(i => i.name || i).join("; ") : "";
+      excelData.push([
+        o.orderNo,
+        o.status || "",
+        o.total || "",
+        o.time || "",
+        items
+      ]);
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, "Cancelled Orders");
+    XLSX.writeFile(wb, `Cancelled_Orders_${new Date().toLocaleDateString()}.xlsx`);
+  });
 }
 </script>
 </body>
