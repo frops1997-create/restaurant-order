@@ -55,6 +55,7 @@ body::before {
   margin:5px;
   padding:8px 12px;
 }
+.clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
 </style>
 </head>
 
@@ -76,6 +77,7 @@ body::before {
     <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
     <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
     <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
+    <button class="clear-btn" onclick="clearAllHistory()">🗑️ Clear All History</button>
   </div>
 
   <div id="orderList"></div>
@@ -119,6 +121,18 @@ const priceList = {
   "Nasi Lemak Chicken": 12,
   "Nasi Lemak Egg": 9
 };
+
+// 🔥 新增：清除所有历史记录（History + Cancelled）
+function clearAllHistory() {
+  if (!confirm("⚠️ Confirm to clear ALL history and cancelled orders? This cannot be undone!")) return;
+  
+  // 同时清除历史订单 + 取消订单
+  db.ref("historyOrders").remove();
+  db.ref("cancelledOrders").remove();
+  
+  alert("✅ All history cleared successfully!");
+  loadOrders();
+}
 
 /* 加载订单 */
 function loadOrders(){
