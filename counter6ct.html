@@ -78,6 +78,10 @@
     background: #dc3545;
   }
 
+  .btn-pay-nokitchen {
+    background: #16a085;
+  }
+
   .btn-cancel {
     background: #ff6b35;
   }
@@ -234,7 +238,8 @@
   <h3 id="payTotal">Amount: $0.00</h3>
 
   <div class="pay-method">
-    <label><input type="radio" name="payType" value="Credit Card" checked> Credit Card</label>
+    <label><input type="radio" name="payType" value="Cash" checked> 💵 Cash (现金)</label>
+    <label><input type="radio" name="payType" value="Credit Card"> Credit Card</label>
     <label><input type="radio" name="payType" value="NETS"> NETS</label>
     <label><input type="radio" name="payType" value="Alipay"> Alipay</label>
     <label><input type="radio" name="payType" value="PayNow"> PayNow</label>
@@ -252,10 +257,15 @@
 
   <button onclick="goToPage(2)">← Back</button>
   <button class="btn-cancel" onclick="cancelCurrentOrder()">❌ Cancel Order</button>
-  <button class="btn-pay" onclick="finishPayment()">✅ Confirm Payment</button>
+  
+  <!-- 原有按钮：发送到厨房 -->
+  <button class="btn-pay" onclick="finishPayment()">✅ Confirm (Send Kitchen)</button>
+  
+  <!-- 新增按钮：不发送到厨房 -->
+  <button class="btn-pay-nokitchen" onclick="finishPayment_NoKitchen()">✅ Confirm (No Kitchen)</button>
 
   <div id="paySuccess" style="display:none;" class="success">
-    Payment Successful!<br>Order sent to kitchen
+    Payment Successful!<br>Order Completed
   </div>
 </div>
 
@@ -359,35 +369,63 @@ function calculateChange() {
   document.getElementById('change').innerText = `$${c.toFixed(2)}`;
 }
 
-// ✅ 完成付款 → 存入历史
+// ------------------------------
+// 按钮1：确认付款 + 发送到厨房
+// ------------------------------
 function finishPayment() {
   const received = parseFloat(document.getElementById('received').value) || 0;
   if (received < totalAmount) { alert('Insufficient amount'); return; }
   if (selectedList.length === 0) { alert('Select items first'); return; }
+  if(!confirm(`Confirm Payment?\nTotal: $${totalAmount.toFixed(2)}`)) return;
 
   const payType = document.querySelector('input[name="payType"]:checked').value;
   const orderNo = currentOrderNo;
   currentOrderNo++;
   db.ref('orderCounter').set(currentOrderNo);
 
-  // 厨房订单
+  // 发送厨房
   db.ref('orders').push({
     orderNo, items: selectedList.map(i=>i.name), total: totalAmount.toFixed(2),
     payment: payType, time: new Date().toLocaleString()
   });
 
-  // 收银历史
+  // 保存历史
   db.ref('historyOrders').push({
     orderNo, items: selectedList, total: totalAmount.toFixed(2),
     received: received.toFixed(2), change: (received-totalAmount).toFixed(2),
-    payment: payType, time: new Date().toLocaleString(), status: "PAID"
+    payment: payType, time: new Date().toLocaleString(), status: "PAID (Kitchen)"
   });
 
   document.getElementById('paySuccess').style.display = 'block';
   setTimeout(() => location.reload(), 2800);
 }
 
-// ❌ 取消当前订单 → 存入取消记录
+// ------------------------------
+// 按钮2：确认付款 + 不发送厨房（你要的新功能）
+// ------------------------------
+function finishPayment_NoKitchen() {
+  const received = parseFloat(document.getElementById('received').value) || 0;
+  if (received < totalAmount) { alert('Insufficient amount'); return; }
+  if (selectedList.length === 0) { alert('Select items first'); return; }
+  if(!confirm(`Confirm Payment (No Kitchen)?\nTotal: $${totalAmount.toFixed(2)}`)) return;
+
+  const payType = document.querySelector('input[name="payType"]:checked').value;
+  const orderNo = currentOrderNo;
+  currentOrderNo++;
+  db.ref('orderCounter').set(currentOrderNo);
+
+  // 只保存历史，不发送厨房
+  db.ref('historyOrders').push({
+    orderNo, items: selectedList, total: totalAmount.toFixed(2),
+    received: received.toFixed(2), change: (received-totalAmount).toFixed(2),
+    payment: payType, time: new Date().toLocaleString(), status: "PAID (No Kitchen)"
+  });
+
+  document.getElementById('paySuccess').style.display = 'block';
+  setTimeout(() => location.reload(), 2800);
+}
+
+// ❌ 取消当前订单
 function cancelCurrentOrder() {
   if (selectedList.length === 0) { alert('No order to cancel'); return; }
   if (!confirm('Cancel this order?')) return;
