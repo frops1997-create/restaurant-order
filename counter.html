@@ -42,7 +42,7 @@ body::before {
 }
 .order-table { font-size:18px; font-weight:bold; color:#0066cc; }
 .price { color:#d35400; }
-.total { color:#27ae60; font-weight:bold; }
+.total { color:#27ae60; font-weight:bold; font-size:16px; margin:8px 0; }
 
 .done-btn { background:#27ae60; color:white; padding:6px 10px; border:none; }
 .cancel-btn { background:#c0392b; color:white; padding:6px 10px; border:none; margin-left:5px; }
@@ -97,32 +97,34 @@ function login(){
 
 /* Firebase */
 const firebaseConfig = {
-  apiKey: "AIzaSy...",
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* 菜单价格 */
+/* 🔥 修复：价格名称 100% 匹配你的点餐系统 */
 const priceList = {
-  "1) Roasted Chicken Drumstick 烧鸡腿饭 - $7.00": 7,
-  "2) Roasted Chicken Rice 烧鸡饭- $6.20": 6.2,
-  "3) Roasted Duck Rice 烧鸭饭 - $6.50": 6.5,
-  "4) Roasted Pork Rice 烧肉饭 - $6.80": 6.8,
-  "5) Char Siew Rice 叉烧饭 - $6.50": 6.5,
-  "6) Char Siew Wanton Noodle 叉烧云台面 - $6.70": 6.7,
-  "7) Roasted Chicken & Roasted Pork Rice 烧鸡烧肉饭 -$7.20": 7.2,
-  "8) Wanton Soup 云台汤 -$6.00": 6,
-  "9) Roasted Pork 烧肉 -$5.50": 5.5,
-  "10) Roasted Duck 烧鸭肉 -$5.70": 5.7,
+  "Fried Rice": 8,
+  "Beef Noodles": 10,
+  "BBQ Pork": 12,
+  "BBQ Chicken": 15,
+  "BBQ Salmon": 18,
+  "Nasi Lemak Curry": 13,
+  "Nasi Lemak Chicken": 12,
+  "Nasi Lemak Egg": 9
 };
 
 /* 加载订单 */
 function loadOrders(){
   let path = "orders";
-  if(viewMode==="history") path="history_orders";
-  if(viewMode==="cancelled") path="cancelled_orders";
+  if(viewMode==="history") path="historyOrders";
+  if(viewMode==="cancelled") path="cancelledOrders";
 
   db.ref(path).on("value", snap=>{
     const data = snap.val();
@@ -137,20 +139,40 @@ function loadOrders(){
     for(let id in data){
       const o = data[id];
 
-      let total=0, html="";
-      o.items.forEach(item=>{
-        const p = priceList[item]||0;
-        total+=p;
-        html+=`${item} - $${p}<br>`;
-      });
+      let total = 0;
+      let html = "";
+
+      // 🔥 修复：自动计算总额（从订单里直接拿，不用匹配文字）
+      if(o.items){
+        o.items.forEach(item=>{
+          let itemName = item;
+          let itemPrice = 0;
+
+          if(typeof item === "object"){
+            itemName = item.name;
+            itemPrice = item.price || 0;
+            total += itemPrice;
+            html += `${itemName} - $${itemPrice.toFixed(2)}<br>`;
+          } else {
+            itemPrice = priceList[item] || 0;
+            total += itemPrice;
+            html += `${item} - $${itemPrice.toFixed(2)}<br>`;
+          }
+        });
+      }
+
+      // 🔥 终极修复：如果订单有 total 字段，直接用！
+      if(o.total){
+        total = parseFloat(o.total);
+      }
 
       const div = document.createElement("div");
       div.className="order-box";
 
       div.innerHTML=`
-        <div class="order-table">Order #${o.orderNo} | Table ${o.table}</div>
+        <div class="order-table">Order #${o.orderNo} | Payment: ${o.payment || 'Cash'}</div>
         <div>${html}</div>
-        <div class="total">TOTAL: $${total}</div>
+        <div class="total">✅ TOTAL BILL: $${total.toFixed(2)}</div>
         <div>${o.time}</div>
         ${viewMode==="current" ? `
           <button class="done-btn" onclick="complete('${id}')">✅ Complete</button>
@@ -167,7 +189,7 @@ function loadOrders(){
 function complete(id){
   if(confirm("Complete this order?")){
     db.ref("orders/"+id).once("value", snap=>{
-      db.ref("history_orders/"+id).set(snap.val());
+      db.ref("historyOrders/"+id).set(snap.val());
       db.ref("orders/"+id).remove();
     });
   }
@@ -177,7 +199,7 @@ function complete(id){
 function cancelOrder(id){
   if(confirm("Cancel this order?")){
     db.ref("orders/"+id).once("value", snap=>{
-      db.ref("cancelled_orders/"+id).set(snap.val());
+      db.ref("cancelledOrders/"+id).set(snap.val());
       db.ref("orders/"+id).remove();
     });
   }
