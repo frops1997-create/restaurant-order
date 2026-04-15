@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>柜台收银系统</title>
+<title>商场收银系统</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -25,6 +25,47 @@
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+
+  /* 登录页面样式 */
+  .login-container {
+    width: 420px;
+    padding: 40px 30px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    text-align: center;
+  }
+  .login-container h2 {
+    margin-bottom: 25px;
+    color: #222;
+  }
+  .login-container input {
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  .login-container button {
+    width: 100%;
+    padding: 14px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+  .login-container button:hover {
+    background: #0056b3;
+  }
+  .error {
+    color: red;
+    margin-top: 10px;
+    font-size: 14px;
   }
 
   .page {
@@ -84,6 +125,10 @@
 
   .btn-cancel {
     background: #ff6b35;
+  }
+
+  .btn-clear {
+    background: #e74c3c;
   }
 
   #total {
@@ -193,6 +238,14 @@
 
 <body>
 
+<!-- 登录页面 -->
+<div class="login-container" id="loginPage">
+  <h2>🔐 系统登录</h2>
+  <input type="password" id="loginPassword" placeholder="请输入登录密码">
+  <button onclick="userLogin()">登录系统</button>
+  <div class="error" id="loginError"></div>
+</div>
+
 <!-- 厨房页面 -->
 <div id="kitchenSection">
   <h2>🍳 厨房订单</h2>
@@ -200,7 +253,7 @@
 </div>
 
 <!-- 第1页：点餐 -->
-<div class="page active" id="page1">
+<div class="page" id="page1">
   <h2>🛒 商场点餐</h2>
   <label><input type="checkbox" data-price="7" data-name="1)Roasted Chicken Drumstick 烧鸡腿饭" onchange="updateTotal()"> 1)Roasted Chicken Drumstick 烧鸡腿饭 -$7.00</label>
   <label><input type="checkbox" data-price="6.2" data-name="2)Roasted Chicken Rice 烧鸡饭" onchange="updateTotal()"> 2)Roasted Chicken Rice 烧鸡饭- $6.20</label>
@@ -221,6 +274,7 @@
   </div>
 
   <button class="btn-next" onclick="goToPage(2)">Next → Summary</button>
+  <button class="btn-clear" onclick="clearAllRecordsWithPassword()">🗑️ 清除所有历史记录</button>
 </div>
 
 <!-- 第2页：统计 -->
@@ -258,10 +312,7 @@
   <button onclick="goToPage(2)">← Back</button>
   <button class="btn-cancel" onclick="cancelCurrentOrder()">❌ Cancel Order</button>
   
-  <!-- 原有按钮：发送到厨房 -->
   <button class="btn-pay" onclick="finishPayment()">✅ Confirm (Send Kitchen)</button>
-  
-  <!-- 新增按钮：不发送到厨房 -->
   <button class="btn-pay-nokitchen" onclick="finishPayment_NoKitchen()">✅ Confirm (No Kitchen)</button>
 
   <div id="paySuccess" style="display:none;" class="success">
@@ -284,6 +335,44 @@
 </div>
 
 <script>
+// ====================== 新增配置 ======================
+const SYSTEM_PASSWORD = "1234"; // 登录 & 清除记录 统一密码
+
+// 页面加载检查登录
+window.onload = function() {
+  if (localStorage.getItem("loggedIn") === "true") {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("page1").classList.add("active");
+  }
+};
+
+// 登录功能
+function userLogin() {
+  const input = document.getElementById('loginPassword').value;
+  if (input === SYSTEM_PASSWORD) {
+    document.getElementById('loginPage').style.display = "none";
+    document.getElementById('page1').classList.add('active');
+    localStorage.setItem("loggedIn", "true");
+  } else {
+    document.getElementById('loginError').innerText = "密码错误！";
+  }
+}
+
+// 清除所有历史记录（需密码）
+function clearAllRecordsWithPassword() {
+  const input = prompt("请输入密码清除所有记录：");
+  if (input !== SYSTEM_PASSWORD) {
+    alert("密码错误！");
+    return;
+  }
+  if (!confirm("⚠️ 确定要清空所有历史记录吗？不可恢复！")) return;
+
+  db.ref('historyOrders').remove();
+  db.ref('cancelledOrders').remove();
+  alert("✅ 所有历史记录已清空！");
+}
+// ======================================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
@@ -397,11 +486,15 @@ function finishPayment() {
   });
 
   document.getElementById('paySuccess').style.display = 'block';
-  setTimeout(() => location.reload(), 2800);
+  setTimeout(() => {
+    goToPage(1);
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateTotal();
+  }, 1500);
 }
 
 // ------------------------------
-// 按钮2：确认付款 + 不发送厨房（你要的新功能）
+// 按钮2：确认付款 + 不发送厨房
 // ------------------------------
 function finishPayment_NoKitchen() {
   const received = parseFloat(document.getElementById('received').value) || 0;
@@ -422,7 +515,11 @@ function finishPayment_NoKitchen() {
   });
 
   document.getElementById('paySuccess').style.display = 'block';
-  setTimeout(() => location.reload(), 2800);
+  setTimeout(() => {
+    goToPage(1);
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateTotal();
+  }, 1500);
 }
 
 // ❌ 取消当前订单
@@ -437,7 +534,9 @@ function cancelCurrentOrder() {
   });
 
   alert('Order cancelled');
-  location.reload();
+  goToPage(1);
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  updateTotal();
 }
 
 // 📜 加载历史订单
