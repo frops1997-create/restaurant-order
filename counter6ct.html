@@ -8,28 +8,27 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-<!-- 新增：SheetJS 导出Excel库 -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
   * {
     box-sizing: border-box;
   }
-
   body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
-    background-size: cover;
-    background-position: center;
+    background: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c') center/cover;
     display: flex;
     justify-content: center;
     align-items: center;
   }
 
-  /* 登录页面样式 */
+  .login-container, .page, #kitchenSection {
+    display: none;
+  }
+
   .login-container {
     width: 420px;
     padding: 40px 30px;
@@ -38,217 +37,71 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
     text-align: center;
   }
-  .login-container h2 {
-    margin-bottom: 25px;
-    color: #222;
-  }
+  .login-container h2 { margin-bottom:25px; color:#222; }
   .login-container input {
-    width: 100%;
-    padding: 14px;
-    margin: 10px 0;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    font-size: 16px;
+    width:100%; padding:14px; margin:10px 0;
+    border:1px solid #ccc; border-radius:8px; font-size:16px;
   }
   .login-container button {
-    width: 100%;
-    padding: 14px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    margin-top: 10px;
-    cursor: pointer;
+    width:100%; padding:14px; background:#007bff; color:white;
+    border:none; border-radius:8px; font-size:16px; margin-top:10px; cursor:pointer;
   }
-  .login-container button:hover {
-    background: #0056b3;
-  }
-  .error {
-    color: red;
-    margin-top: 10px;
-    font-size: 14px;
-  }
+  .login-container button:hover { background:#0056b3; }
+  .error { color:red; margin-top:10px; font-size:14px; }
 
   .page {
-    width: 420px;
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 16px;
-    font-weight: bold;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-    display: none;
+    width:420px; padding:30px;
+    background: rgba(255,255,255,0.92);
+    border-radius:16px; font-weight:bold;
+    box-shadow:0 8px 32px rgba(0,0,0,0.15);
   }
+  .active { display:block !important; }
 
-  .active {
-    display: block !important;
-  }
-
-  h2, h3 {
-    text-align: center;
-    color: #222;
-    margin-top: 5px;
-  }
-
-  /* ========== 菜单文字放大 ========== */
-  label {
-    display: block;
-    margin: 12px 0;
-    font-size: 18px; /* 从15px → 18px */
-    line-height: 1.4;
-  }
-
+  h2,h3 { text-align:center; color:#222; margin-top:5px; }
+  label { display:block; margin:12px 0; font-size:18px; line-height:1.4; }
   button {
-    width: 100%;
-    padding: 14px;
-    margin: 8px 0;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: bold;
+    width:100%; padding:14px; margin:8px 0; background:#007bff; color:white;
+    border:none; border-radius:8px; font-size:16px; cursor:pointer; font-weight:bold;
   }
+  button:hover { background:#0056b3; }
+  .btn-next { background:#28a745; }
+  .btn-pay { background:#dc3545; }
+  .btn-pay-nokitchen { background:#16a085; }
+  .btn-cancel { background:#ff6b35; }
+  .btn-clear { background:#e74c3c; }
+  .btn-export { background:#f39c12; }
+  .btn-logout { background:#6c757d; } /* 退出按钮灰色 */
 
-  button:hover {
-    background: #0056b3;
-  }
-
-  .btn-next {
-    background: #28a745;
-  }
-
-  .btn-pay {
-    background: #dc3545;
-  }
-
-  .btn-pay-nokitchen {
-    background: #16a085;
-  }
-
-  .btn-cancel {
-    background: #ff6b35;
-  }
-
-  .btn-clear {
-    background: #e74c3c;
-  }
-
-  /* 新增：导出按钮样式 */
-  .btn-export {
-    background: #f39c12;
-  }
-
-  #total {
-    font-size: 20px;
-    color: #d32f2f;
-    text-align: center;
-    margin: 15px 0;
-  }
-
+  #total { font-size:20px; color:#d32f2f; text-align:center; margin:15px 0; }
   .item-list {
-    max-height: 220px;
-    overflow-y: auto;
-    margin: 15px 0;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    max-height:220px; overflow-y:auto; margin:15px 0;
+    padding:10px; border:1px solid #ddd; border-radius:8px;
   }
-
-  .item {
-    padding: 6px 0;
-    border-bottom: 1px dashed #eee;
-    font-size: 17px;
-  }
-
-  .money-box {
-    margin: 12px 0;
-  }
-
+  .item { padding:6px 0; border-bottom:1px dashed #eee; font-size:17px; }
+  .money-box { margin:12px 0; }
   input[type="number"] {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    margin: 6px 0;
+    width:100%; padding:12px; font-size:16px;
+    border:1px solid #ccc; border-radius:8px; margin:6px 0;
   }
-
-  .result {
-    font-size: 17px;
-    color: #d32f2f;
-    text-align: center;
-    margin: 10px 0;
-  }
-
+  .result { font-size:17px; color:#d32f2f; text-align:center; margin:10px 0; }
   .success {
-    color: #28a745;
-    font-size: 18px;
-    text-align: center;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    color:#28a745; font-size:18px; text-align:center; padding:15px;
+    background:#f8f9fa; border-radius:8px;
   }
-
-  .pay-method {
-    margin: 10px 0;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-  }
-
-  .pay-method label {
-    margin: 6px 0;
-    font-weight: normal;
-  }
-
-  #kitchenSection {
-    display: none;
-    width: 90%;
-    max-width: 600px;
-  }
-
+  .pay-method { margin:10px 0; padding:10px; border:1px solid #ccc; border-radius:8px; }
+  #kitchenSection { width:90%; max-width:600px; }
   .order {
-    border: 1px solid #ccc;
-    padding: 12px;
-    margin: 10px 0;
-    background: white;
-    border-radius: 8px;
+    border:1px solid #ccc; padding:12px; margin:10px 0;
+    background:white; border-radius:8px;
   }
-
-  .order h4 {
-    margin: 4px 0;
-  }
-
-  .history-box, .cancel-box {
-    max-height: 300px;
-    overflow-y: auto;
-    margin: 10px 0;
-  }
-
-  .history-item, .cancel-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    font-size: 14px;
-  }
-
-  .top-buttons {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .top-buttons button {
-    padding: 10px;
-    font-size: 14px;
-  }
+  .history-box, .cancel-box { max-height:300px; overflow-y:auto; margin:10px 0; }
+  .top-buttons { display:flex; gap:8px; margin-bottom:10px; }
 </style>
 </head>
 
 <body>
 
-<!-- 登录页面 -->
+<!-- 登录 -->
 <div class="login-container" id="loginPage">
   <h2>🔐 系统登录</h2>
   <input type="password" id="loginPassword" placeholder="请输入登录密码">
@@ -256,15 +109,16 @@
   <div class="error" id="loginError"></div>
 </div>
 
-<!-- 厨房页面 -->
+<!-- 厨房 -->
 <div id="kitchenSection">
   <h2>🍳 厨房订单</h2>
   <div id="orders"></div>
 </div>
 
-<!-- 第1页：点餐 -->
+<!-- 1 点餐 -->
 <div class="page" id="page1">
   <h2>🛒 柜台点餐</h2>
+  
   <label><input type="checkbox" data-price="7" data-name="1)Roasted Chicken Drumstick 烧鸡腿饭" onchange="updateTotal()"> 1)Roasted Chicken Drumstick 烧鸡腿饭 -$7.00</label>
   <label><input type="checkbox" data-price="6.2" data-name="2)Roasted Chicken Rice 烧鸡饭" onchange="updateTotal()"> 2)Roasted Chicken Rice 烧鸡饭- $6.20</label>
   <label><input type="checkbox" data-price="6.5" data-name="3)Roasted Duck Rice 烧鸭饭" onchange="updateTotal()"> 3)Roasted Duck Rice 烧鸭饭 -$6.50</label>
@@ -281,13 +135,15 @@
   <div class="top-buttons">
     <button onclick="goToPage(4)">History</button>
     <button onclick="goToPage(5)">Cancelled</button>
+    <!-- 退出登录按钮 -->
+    <button class="btn-logout" onclick="userLogout()">🚪 退出</button>
   </div>
 
   <button class="btn-next" onclick="goToPage(2)">Next → Summary</button>
   <button class="btn-clear" onclick="clearAllRecordsWithPassword()">🗑️ 清除所有历史记录</button>
 </div>
 
-<!-- 第2页：统计 -->
+<!-- 2 汇总 -->
 <div class="page" id="page2">
   <h2>🧾 Order Summary</h2>
   <div class="item-list" id="selectedItems"></div>
@@ -296,11 +152,10 @@
   <button class="btn-next" onclick="goToPage(3)">To Payment →</button>
 </div>
 
-<!-- 第3页：付款 -->
+<!-- 3 支付 -->
 <div class="page" id="page3">
   <h2>💳 Payment</h2>
   <h3 id="payTotal">Amount: $0.00</h3>
-
   <div class="pay-method">
     <label><input type="radio" name="payType" value="Cash" checked> 💵 Cash (现金)</label>
     <label><input type="radio" name="payType" value="Credit Card"> Credit Card</label>
@@ -309,84 +164,52 @@
     <label><input type="radio" name="payType" value="PayNow"> PayNow</label>
     <label><input type="radio" name="payType" value="PayLah"> PayLah</label>
   </div>
-
   <div class="money-box">
     <label>Received:</label>
     <input type="number" id="received" placeholder="Enter cash received" oninput="calculateChange()">
   </div>
-
-  <div class="result">
-    Change: <span id="change">$0.00</span>
-  </div>
-
+  <div class="result">Change: <span id="change">$0.00</span></div>
   <button onclick="goToPage(2)">← Back</button>
   <button class="btn-cancel" onclick="cancelCurrentOrder()">❌ Cancel Order</button>
-  
   <button class="btn-pay" onclick="finishPayment()">✅ Confirm (Send Kitchen)</button>
   <button class="btn-pay-nokitchen" onclick="finishPayment_NoKitchen()">✅ Confirm (No Kitchen)</button>
-
-  <div id="paySuccess" style="display:none;" class="success">
-    Payment Successful!<br>Order Completed
-  </div>
+  <div id="paySuccess" style="display:none;" class="success">Payment Successful!<br>Order Completed</div>
 </div>
 
-<!-- 第4页：历史订单 -->
+<!-- 4 历史 -->
 <div class="page" id="page4">
   <h2>📜 History Orders</h2>
-  <!-- 新增：导出Excel按钮 -->
   <button class="btn-export" onclick="exportHistoryToExcel()">📥 Export History to Excel</button>
   <div class="history-box" id="historyList"></div>
   <button onclick="goToPage(1)">← Back</button>
 </div>
 
-<!-- 第5页：取消订单 -->
+<!-- 5 取消 -->
 <div class="page" id="page5">
   <h2>❌ Cancelled Orders</h2>
-  <!-- 新增：导出Excel按钮 -->
   <button class="btn-export" onclick="exportCancelledToExcel()">📥 Export Cancelled to Excel</button>
   <div class="cancel-box" id="cancelledList"></div>
   <button onclick="goToPage(1)">← Back</button>
 </div>
 
 <script>
-// ====================== 新增配置 ======================
-const SYSTEM_PASSWORD = "1234"; // 登录 & 清除记录 统一密码
+const SYSTEM_PASSWORD = "1234";
+const loggedIn = localStorage.getItem("loggedIn") === "true";
+const params = new URLSearchParams(location.search);
+const isKitchen = params.get('kitchen');
 
-// 页面加载检查登录
-window.onload = function() {
-  if (localStorage.getItem("loggedIn") === "true") {
-    document.getElementById("loginPage").style.display = "none";
-    document.getElementById("page1").classList.add("active");
-  }
-};
-
-// 登录功能
-function userLogin() {
-  const input = document.getElementById('loginPassword').value;
-  if (input === SYSTEM_PASSWORD) {
-    document.getElementById('loginPage').style.display = "none";
+// 初始化显示
+if (isKitchen) {
+  document.getElementById('kitchenSection').style.display = 'block';
+} else {
+  if (loggedIn) {
     document.getElementById('page1').classList.add('active');
-    localStorage.setItem("loggedIn", "true");
   } else {
-    document.getElementById('loginError').innerText = "密码错误！";
+    document.getElementById('loginPage').style.display = 'block';
   }
 }
 
-// 清除所有历史记录（需密码）
-function clearAllRecordsWithPassword() {
-  const input = prompt("请输入密码清除所有记录：");
-  if (input !== SYSTEM_PASSWORD) {
-    alert("密码错误！");
-    return;
-  }
-  if (!confirm("⚠️ 确定要清空所有历史记录吗？不可恢复！")) return;
-
-  db.ref('historyOrders').remove();
-  db.ref('cancelledOrders').remove();
-  alert("✅ 所有历史记录已清空！");
-}
-// ======================================================
-
+// Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
@@ -399,43 +222,73 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-const params = new URLSearchParams(location.search);
-const isKitchen = params.get('kitchen');
-
 let totalAmount = 0;
 let selectedList = [];
 let currentOrderNo = 1;
 
-// 初始化订单号
-db.ref('orderCounter').once('value').then(snap => {
+db.ref("orderCounter").once("value").then(snap => {
   if (snap.val()) currentOrderNo = snap.val();
 });
 
-// 厨房模式
-if (isKitchen) {
-  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-  document.getElementById('kitchenSection').style.display = 'block';
-  loadKitchenOrders();
+if (isKitchen) loadKitchenOrders();
+
+// 登录
+function userLogin() {
+  const pwd = document.getElementById("loginPassword").value;
+  if (pwd === SYSTEM_PASSWORD) {
+    localStorage.setItem("loggedIn", "true");
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("page1").classList.add("active");
+    document.getElementById("loginError").innerText = "";
+  } else {
+    document.getElementById("loginError").innerText = "密码错误！";
+  }
 }
 
-// 切换页面
+// ========== 退出登录 ==========
+function userLogout() {
+  if(!confirm("确定要退出登录吗？")) return;
+  localStorage.removeItem("loggedIn");
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('loginPage').style.display = 'block';
+  alert("已退出登录");
+}
+
+// 翻页校验
 function goToPage(num) {
+  if (localStorage.getItem("loggedIn") !== "true") {
+    alert("请先登录！");
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('loginPage').style.display = 'block';
+    return;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page${num}`).classList.add('active');
 
   if (num === 2) { updateTotal(); showSelectedItems(); }
   if (num === 3) {
-    document.getElementById('payTotal').innerText = `Amount: $${totalAmount.toFixed(2)}`;
-    document.getElementById('received').value = '';
-    document.getElementById('change').innerText = '$0.00';
-    document.getElementById('paySuccess').style.display = 'none';
+    document.getElementById("payTotal").innerText = `Amount: $${totalAmount.toFixed(2)}`;
+    document.getElementById("received").value = "";
+    document.getElementById("change").innerText = "$0.00";
   }
   if (num === 4) loadHistoryOrders();
   if (num === 5) loadCancelledOrders();
 }
 
-// 更新总价
+// 清除记录
+function clearAllRecordsWithPassword() {
+  if (!localStorage.getItem("loggedIn")) return alert("请先登录");
+  const input = prompt("输入密码清空记录：");
+  if (input !== SYSTEM_PASSWORD) return alert("密码错误");
+  if (!confirm("确定清空？不可恢复！")) return;
+  db.ref("historyOrders").remove();
+  db.ref("cancelledOrders").remove();
+  alert("已清空");
+}
+
+// 总价
 function updateTotal() {
+  if (!localStorage.getItem("loggedIn")) return;
   totalAmount = 0;
   selectedList = [];
   document.querySelectorAll('input[type="checkbox"]:checked').forEach(i => {
@@ -444,62 +297,59 @@ function updateTotal() {
     totalAmount += p;
     selectedList.push({ name, price: p });
   });
-  document.getElementById('total').innerText = `Total: $${totalAmount.toFixed(2)}`;
+  document.getElementById("total").innerText = `Total: $${totalAmount.toFixed(2)}`;
 }
 
-// 显示已选商品
+// 已选商品
 function showSelectedItems() {
-  const el = document.getElementById('selectedItems');
-  el.innerHTML = '';
+  if (!localStorage.getItem("loggedIn")) return;
+  const el = document.getElementById("selectedItems");
+  el.innerHTML = "";
   if (selectedList.length === 0) {
-    el.innerHTML = '<p style="text-align:center;">No items selected</p>';
-    document.getElementById('finalTotal').innerText = 'Total: $0.00';
+    el.innerHTML = "<p>No items selected</p>";
+    document.getElementById("finalTotal").innerText = "Total: $0.00";
     return;
   }
   selectedList.forEach(it => {
-    const d = document.createElement('div');
-    d.className = 'item';
+    const d = document.createElement("div");
+    d.className = "item";
     d.innerText = `${it.name} - $${it.price.toFixed(2)}`;
     el.appendChild(d);
   });
-  document.getElementById('finalTotal').innerText = `Total: $${totalAmount.toFixed(2)}`;
+  document.getElementById("finalTotal").innerText = `Total: $${totalAmount.toFixed(2)}`;
 }
 
 // 找零
 function calculateChange() {
-  const r = parseFloat(document.getElementById('received').value) || 0;
+  if (!localStorage.getItem("loggedIn")) return;
+  const r = parseFloat(document.getElementById("received").value) || 0;
   const c = r - totalAmount;
-  document.getElementById('change').innerText = `$${c.toFixed(2)}`;
+  document.getElementById("change").innerText = `$${c.toFixed(2)}`;
 }
 
-// ------------------------------
-// 按钮1：确认付款 + 发送到厨房
-// ------------------------------
+// 支付（厨房）
 function finishPayment() {
-  const received = parseFloat(document.getElementById('received').value) || 0;
-  if (received < totalAmount) { alert('Insufficient amount'); return; }
-  if (selectedList.length === 0) { alert('Select items first'); return; }
-  if(!confirm(`Confirm Payment?\nTotal: $${totalAmount.toFixed(2)}`)) return;
-
+  if (!localStorage.getItem("loggedIn")) return alert("请先登录");
+  const received = parseFloat(document.getElementById("received").value) || 0;
+  if (received < totalAmount) return alert("金额不足");
+  if (selectedList.length === 0) return alert("请先选商品");
+  
   const payType = document.querySelector('input[name="payType"]:checked').value;
-  const orderNo = currentOrderNo;
-  currentOrderNo++;
-  db.ref('orderCounter').set(currentOrderNo);
+  const orderNo = currentOrderNo++;
+  db.ref("orderCounter").set(currentOrderNo);
 
-  // 发送厨房
-  db.ref('orders').push({
-    orderNo, items: selectedList.map(i=>i.name), total: totalAmount.toFixed(2),
+  db.ref("orders").push({
+    orderNo, items: selectedList.map(i => i.name), total: totalAmount.toFixed(2),
     payment: payType, time: new Date().toLocaleString()
   });
 
-  // 保存历史
-  db.ref('historyOrders').push({
+  db.ref("historyOrders").push({
     orderNo, items: selectedList, total: totalAmount.toFixed(2),
-    received: received.toFixed(2), change: (received-totalAmount).toFixed(2),
+    received: received.toFixed(2), change: (received - totalAmount).toFixed(2),
     payment: payType, time: new Date().toLocaleString(), status: "PAID (Kitchen)"
   });
 
-  document.getElementById('paySuccess').style.display = 'block';
+  document.getElementById("paySuccess").style.display = "block";
   setTimeout(() => {
     goToPage(1);
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -507,28 +357,24 @@ function finishPayment() {
   }, 1500);
 }
 
-// ------------------------------
-// 按钮2：确认付款 + 不发送厨房
-// ------------------------------
+// 支付（不发厨房）
 function finishPayment_NoKitchen() {
-  const received = parseFloat(document.getElementById('received').value) || 0;
-  if (received < totalAmount) { alert('Insufficient amount'); return; }
-  if (selectedList.length === 0) { alert('Select items first'); return; }
-  if(!confirm(`Confirm Payment (No Kitchen)?\nTotal: $${totalAmount.toFixed(2)}`)) return;
-
+  if (!localStorage.getItem("loggedIn")) return alert("请先登录");
+  const received = parseFloat(document.getElementById("received").value) || 0;
+  if (received < totalAmount) return alert("金额不足");
+  if (selectedList.length === 0) return alert("请先选商品");
+  
   const payType = document.querySelector('input[name="payType"]:checked').value;
-  const orderNo = currentOrderNo;
-  currentOrderNo++;
-  db.ref('orderCounter').set(currentOrderNo);
+  const orderNo = currentOrderNo++;
+  db.ref("orderCounter").set(currentOrderNo);
 
-  // 只保存历史，不发送厨房
-  db.ref('historyOrders').push({
+  db.ref("historyOrders").push({
     orderNo, items: selectedList, total: totalAmount.toFixed(2),
-    received: received.toFixed(2), change: (received-totalAmount).toFixed(2),
+    received: received.toFixed(2), change: (received - totalAmount).toFixed(2),
     payment: payType, time: new Date().toLocaleString(), status: "PAID (No Kitchen)"
   });
 
-  document.getElementById('paySuccess').style.display = 'block';
+  document.getElementById("paySuccess").style.display = "block";
   setTimeout(() => {
     goToPage(1);
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
@@ -536,146 +382,113 @@ function finishPayment_NoKitchen() {
   }, 1500);
 }
 
-// ❌ 取消当前订单
+// 取消订单
 function cancelCurrentOrder() {
-  if (selectedList.length === 0) { alert('No order to cancel'); return; }
-  if (!confirm('Cancel this order?')) return;
-
+  if (!localStorage.getItem("loggedIn")) return alert("请先登录");
+  if (selectedList.length === 0) return alert("无订单可取消");
+  
   const orderNo = currentOrderNo;
-  db.ref('cancelledOrders').push({
+  db.ref("cancelledOrders").push({
     orderNo, items: selectedList, total: totalAmount.toFixed(2),
     time: new Date().toLocaleString(), status: "CANCELLED"
   });
-
-  alert('Order cancelled');
+  alert("已取消");
   goToPage(1);
   document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
   updateTotal();
 }
 
-// 📜 加载历史订单
+// 加载历史
 function loadHistoryOrders() {
-  db.ref('historyOrders').on('value', snap => {
-    const out = document.getElementById('historyList');
-    out.innerHTML = '';
+  db.ref("historyOrders").on("value", snap => {
+    const out = document.getElementById("historyList");
+    out.innerHTML = "";
     const data = snap.val();
-    if (!data) { out.innerHTML = '<p>No history</p>'; return; }
+    if (!data) { out.innerHTML = "<p>No history</p>"; return; }
     for (let id in data) {
       const o = data[id];
       out.innerHTML += `
         <div class="history-item">
           <strong>Order #${o.orderNo} | ${o.status}</strong><br>
-          Total: $${o.total} | Pay: ${o.payment}<br>
-          ${o.time}
-        </div>
-      `;
+          Total: $${o.total} | Pay: ${o.payment}<br>${o.time}
+        </div>`;
     }
   });
 }
 
-// ❌ 加载取消订单
+// 加载取消
 function loadCancelledOrders() {
-  db.ref('cancelledOrders').on('value', snap => {
-    const out = document.getElementById('cancelledList');
-    out.innerHTML = '';
+  db.ref("cancelledOrders").on("value", snap => {
+    const out = document.getElementById("cancelledList");
+    out.innerHTML = "";
     const data = snap.val();
-    if (!data) { out.innerHTML = '<p>No cancelled orders</p>'; return; }
+    if (!data) { out.innerHTML = "<p>No cancelled</p>"; return; }
     for (let id in data) {
       const o = data[id];
       out.innerHTML += `
         <div class="cancel-item">
           <strong>Order #${o.orderNo} | ${o.status}</strong><br>
-          Total: $${o.total}<br>
-          ${o.time}
-        </div>
-      `;
+          Total: $${o.total}<br>${o.time}
+        </div>`;
     }
   });
 }
 
-// 厨房
+// 厨房订单
 function loadKitchenOrders() {
-  db.ref('orders').on('value', snap => {
-    const out = document.getElementById('orders');
-    out.innerHTML = '';
+  db.ref("orders").on("value", snap => {
+    const out = document.getElementById("orders");
+    out.innerHTML = "";
     const data = snap.val();
-    if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
+    if (!data) { out.innerHTML = "<p>No orders</p>"; return; }
     for (let id in data) {
       const o = data[id];
       out.innerHTML += `
         <div class="order">
           <h4>Order #${o.orderNo} (${o.payment})</h4>
-          $${o.total}<br>${o.items.join(', ')}<br>${o.time}
+          $${o.total}<br>${o.items.join(", ")}<br>${o.time}
           <button onclick="completeOrder('${id}')">Done</button>
-        </div>
-      `;
+        </div>`;
     }
   });
 }
 
 function completeOrder(id) {
-  db.ref('orders/'+id).remove();
+  db.ref("orders/" + id).remove();
 }
 
-// ====================== 新增：导出Excel功能 ======================
-// 导出历史订单
+// 导出Excel
 function exportHistoryToExcel() {
-  db.ref('historyOrders').once('value', snap => {
+  if (!localStorage.getItem("loggedIn")) return alert("请先登录");
+  db.ref("historyOrders").once("value", snap => {
     const data = snap.val();
-    if (!data) { alert("No history data to export!"); return; }
-
-    const excelData = [
-      ["Order No", "Status", "Total ($)", "Payment", "Received ($)", "Change ($)", "Time", "Items"]
-    ];
-
-    for (let id in data) {
-      const o = data[id];
-      const items = o.items ? o.items.map(i => i.name || i).join("; ") : "";
-      excelData.push([
-        o.orderNo,
-        o.status || "",
-        o.total || "",
-        o.payment || "",
-        o.received || "",
-        o.change || "",
-        o.time || "",
-        items
-      ]);
-    }
-
+    if (!data) return alert("无数据");
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, "History Orders");
-    XLSX.writeFile(wb, `History_Orders_${new Date().toLocaleDateString()}.xlsx`);
+    const arr = [["订单号","状态","金额","支付方式","实收","找零","时间","商品"]];
+    for (let i in data) {
+      const o = data[i];
+      arr.push([o.orderNo, o.status, o.total, o.payment, o.received, o.change, o.time, o.items.map(i=>i.name).join("; ")]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(arr);
+    XLSX.utils.book_append_sheet(wb, ws, "历史订单");
+    XLSX.writeFile(wb, "History.xlsx");
   });
 }
 
-// 导出取消订单
 function exportCancelledToExcel() {
-  db.ref('cancelledOrders').once('value', snap => {
+  if (!localStorage.getItem("loggedIn")) return alert("请先登录");
+  db.ref("cancelledOrders").once("value", snap => {
     const data = snap.val();
-    if (!data) { alert("No cancelled data to export!"); return; }
-
-    const excelData = [
-      ["Order No", "Status", "Total ($)", "Time", "Items"]
-    ];
-
-    for (let id in data) {
-      const o = data[id];
-      const items = o.items ? o.items.map(i => i.name || i).join("; ") : "";
-      excelData.push([
-        o.orderNo,
-        o.status || "",
-        o.total || "",
-        o.time || "",
-        items
-      ]);
-    }
-
+    if (!data) return alert("无数据");
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, "Cancelled Orders");
-    XLSX.writeFile(wb, `Cancelled_Orders_${new Date().toLocaleDateString()}.xlsx`);
+    const arr = [["订单号","状态","金额","时间","商品"]];
+    for (let i in data) {
+      const o = data[i];
+      arr.push([o.orderNo, o.status, o.total, o.time, o.items.map(i=>i.name).join("; ")]);
+    }
+    const ws = XLSX.utils.aoa_to_sheet(arr);
+    XLSX.utils.book_append_sheet(wb, ws, "取消订单");
+    XLSX.writeFile(wb, "Cancelled.xlsx");
   });
 }
 </script>
