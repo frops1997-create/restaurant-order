@@ -62,13 +62,13 @@ button {
 
 <script>
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "XXXX",
-  appId: "XXXX"
+  projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -90,8 +90,10 @@ function renderOrders(data) {
     const div = document.createElement('div');
     div.className = 'order';
 
+    // 🔥 这里只增加了 Order No 显示，其他完全不变
     div.innerHTML = `
-      <h3>Table ${order.table}</h3>
+      <h3>Order #${order.orderNo || 'N/A'}</h3>
+      <p>Table ${order.table}</p>
       <p>${order.items.join(', ')}</p>
       <p>${order.time}</p>
       ${status === 'New' ? `<button class="btn-prep" onclick="setPreparing('${id}')">Start</button>` : ''}
@@ -129,4 +131,3 @@ loadOrders();
 
 </body>
 </html>
-https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app
