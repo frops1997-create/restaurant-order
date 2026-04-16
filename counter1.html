@@ -56,6 +56,7 @@ body::before {
 .clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
 /* 新增：导出按钮样式 */
 .export-btn { background:#3498db; color:white; padding:8px 12px; border:none; }
+.logout-btn { background:#6c757d; color:white; padding:8px 12px; border:none; }
 
 .modal-overlay {
   position: fixed; top:0; left:0; width:100%; height:100%;
@@ -103,10 +104,10 @@ body::before {
   <div class="top-buttons">
     <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
     <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
-    <!-- 新增：导出Excel按钮 -->
     <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
     <button class="export-btn" onclick="exportHistoryToExcel()">📊 Download History Excel</button>
     <button class="clear-btn" onclick="openClearModal()">🗑️ Clear All History</button>
+    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
   </div>
 
   <div id="orderList"></div>
@@ -124,6 +125,15 @@ function login(){
   } else {
     error.innerText="Wrong Password!";
   }
+}
+
+// 退出登录功能
+function logout(){
+  if(!confirm("Confirm logout?")) return;
+  loginPage.style.display = "block";
+  mainPage.style.display = "none";
+  document.getElementById("password").value = "";
+  document.getElementById("error").innerText = "";
 }
 
 function openClearModal() {
@@ -150,7 +160,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
+  projectId: "restaurants-cs.firebaseapp.com",
   storageBucket: "restaurants-cs.firebasestorage.app",
   messagingSenderId: "209872919844",
   appId: "1:209872919844:web:c1730801cd51d615e867b1"
