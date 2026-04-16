@@ -97,7 +97,7 @@
 
 <div class="menu-box">
   <h2>Scan & Order</h2>
-  <p>Table: <span id="tableNo"></span></p>
+  <p>Order No: <span id="orderNo"></span></p>
 
   <h3>Menu</h3>
   <label><input type="checkbox" data-price="8" onchange="updateTotal()">1) Fried Rice - $8</label>
@@ -114,7 +114,7 @@
 
   <div class="order-confirm" id="orderConfirm">
     <h3>Order Submitted!</h3>
-    <p>Table: <span id="showTable"></span></p>
+    <p>Order No: <span id="showOrderNo"></span></p>
     <p>Total: $<span id="showTotal"></span></p>
     <small>Please wait for your food</small>
   </div>
@@ -137,7 +137,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
   authDomain: "restaurants-cs.firebaseapp.com",
   databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
+  projectId: "restaurants-cs.firebaseapp.com",
   storageBucket: "restaurants-cs.firebasestorage.app",
   messagingSenderId: "209872919844",
   appId: "1:209872919844:web:c1730801cd51d615e867b1"
@@ -150,9 +150,12 @@ let table = params.get('table') || Math.floor(Math.random()*20)+1;
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
 
+// 生成唯一订单号
+let orderNumber = Math.floor(1000 + Math.random() * 9000);
+
 if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
 if (!isAdmin) document.getElementById('qrSection').style.display = 'none';
-document.getElementById('tableNo').textContent = table;
+document.getElementById('orderNo').textContent = orderNumber;
 
 function updateTotal() {
   let total = 0;
@@ -174,7 +177,7 @@ function submitOrder() {
   btn.disabled = true;
   btn.innerText = "Order Sent";
 
- let total = 0;
+  let total = 0;
   let list = [];
   items.forEach(i => {
     total += parseFloat(i.dataset.price);
@@ -182,12 +185,13 @@ function submitOrder() {
   });
 
   db.ref('orders').push({
+    orderNo: orderNumber,
     table: table,
     items: list,
     time: new Date().toLocaleTimeString()
   });
 
-  document.getElementById('showTable').innerText = table;
+  document.getElementById('showOrderNo').innerText = orderNumber;
   document.getElementById('showTotal').innerText = total.toFixed(2);
   document.getElementById('orderConfirm').style.display = 'block';
 }
@@ -203,7 +207,7 @@ function loadOrders() {
       const o = data[id];
       const div = document.createElement('div');
       div.className = 'order';
-      div.innerHTML = `<b>Table ${o.table}</b><br>${o.items.join(', ')}<br>${o.time}<br>
+      div.innerHTML = `<b>Order No: ${o.orderNo}</b><br>${o.items.join(', ')}<br>${o.time}<br>
       <button onclick="completeOrder('${id}')">Done</button>`;
       out.appendChild(div);
     }
