@@ -26,6 +26,7 @@ body::before {
 .top-buttons { text-align:center; margin-bottom:15px; }
 .top-buttons button { margin:5px; padding:8px 12px; }
 .clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
+.logout-btn { background:#34495e; color:white; padding:8px 12px; border:none; }
 .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index:999; display:none; }
 .modal-box { background:white; padding:30px; border-radius:12px; max-width:400px; margin:150px auto; text-align:center; }
 .modal-box input { width:100%; padding:12px; margin:15px 0; border:1px solid #ccc; border-radius:8px; }
@@ -60,6 +61,7 @@ body::before {
         <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
         <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
         <button class="clear-btn" onclick="openClearModal()">🗑️ Clear All History</button>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     </div>
     <div id="orderList"></div>
 </div>
@@ -75,6 +77,16 @@ function login(){
         loadOrders();
     } else {
         error.innerText="Wrong Password!";
+    }
+}
+
+// ✅ 新增登出功能
+function logout(){
+    if(confirm("Confirm to logout?")){
+        mainPage.style.display = "none";
+        loginPage.style.display = "block";
+        document.getElementById("password").value = "";
+        document.getElementById("error").innerText = "";
     }
 }
 
