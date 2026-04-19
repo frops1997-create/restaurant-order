@@ -19,21 +19,17 @@
     margin: 0;
     padding: 20px;
     min-height: 100vh;
-    
-    /* 背景：完美居中 + 固定显示 */
     background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: cover;
-    background-position: center center; /* 绝对居中 */
+    background-position: center center;
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-color: #f8f9fa;
-    
     display: flex;
-    justify-content: center; /* 水平居中 */
-    align-items: center;     /* 垂直居中 */
+    justify-content: center;
+    align-items: center;
   }
 
-  /* 菜单盒子居中显示 */
   .menu-box {
     width: 380px;
     padding: 30px;
@@ -41,6 +37,22 @@
     border-radius: 16px;
     font-weight: bold;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  }
+
+  /* --- Added Back Button Style --- */
+  .back-btn {
+    display: inline-block;
+    text-decoration: none;
+    background: #6c757d;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    transition: background 0.2s;
+  }
+  .back-btn:hover {
+    background: #5a6268;
   }
 
   .order-confirm {
@@ -96,6 +108,9 @@
 <body>
 
 <div class="menu-box">
+  <!-- Added Back Home Link -->
+  <a href="index.html" class="back-btn">← Back to Home (返回主页)</a>
+
   <h2>Scan & Order</h2>
   <p>Order No: <span id="orderNo"></span></p>
 
@@ -150,7 +165,6 @@ let table = params.get('table') || Math.floor(Math.random()*20)+1;
 const isKitchen = params.get('kitchen');
 const isAdmin = params.get('admin');
 
-// 生成唯一订单号
 let orderNumber = Math.floor(1000 + Math.random() * 9000);
 
 if (!isKitchen) document.getElementById('kitchenSection').style.display = 'none';
@@ -163,7 +177,6 @@ function updateTotal() {
   document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// 只能提交一次，防止重复下单
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
   if (btn.disabled) return;
