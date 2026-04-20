@@ -57,6 +57,35 @@ body::before {
 .modal-btn { padding:10px 20px; margin:5px; border:none; border-radius:6px; }
 .btn-confirm { background:#e74c3c; color:white; }
 .btn-cancel { background:#95a5a6; color:white; }
+
+/* 🔥 新订单全屏提示样式（不影响原有功能） */
+#orderAlert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.alert-content {
+    background: #ff3d3d;
+    color: white;
+    padding: 40px 60px;
+    border-radius: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 0 30px red;
+    animation: flash 0.5s infinite alternate;
+}
+@keyframes flash {
+    from { opacity: 1; }
+    to { opacity: 0.7; }
+}
 </style>
 </head>
 
@@ -64,6 +93,11 @@ body::before {
 
 <!-- 🔊 提示音 -->
 <audio id="dingSound" preload="auto"></audio>
+
+<!-- 🔥 新订单弹窗提示（新增） -->
+<div id="orderAlert">
+    <div class="alert-content">🔔 NEW ORDER COMING!</div>
+</div>
 
 <div id="loginPage">
     <h2>🔐 Counter Login</h2>
@@ -104,12 +138,21 @@ let viewMode = "current";
 let lastOrderCount = 0;
 let audioUnlocked = false;
 
+// 🔥 显示新订单提示
+function showOrderAlert() {
+    const alertBox = document.getElementById("orderAlert");
+    alertBox.style.display = "flex";
+    setTimeout(() => {
+        alertBox.style.display = "none";
+    }, 2000);
+}
+
 function login(){
     if(document.getElementById("password").value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
 
-        // 🔊 解锁音频（关键）
+        // 🔊 解锁音频
         const audio = document.getElementById("dingSound");
         audio.src = "https://www.soundjay.com/buttons/sounds/button-3.mp3";
 
@@ -167,17 +210,14 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const priceList = {
-    "Fried Rice": 8,
-    "Beef Noodles": 10,
-    "BBQ Pork": 12,
-    "BBQ Chicken": 15,
-    "BBQ Salmon": 18,
-    "Nasi Lemak Curry": 13,
-    "Nasi Lemak Chicken": 12,
-    "Nasi Lemak Egg": 9,
-    "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
-    "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
-    "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
+  <label><input type="checkbox" data-price="17.10" onchange="updateTotal()"> 1) TBOX Curry Chicken with Rice 咖喱鸡饭 -$17.10</label>
+  <label><input type="checkbox" data-price="16.90" onchange="updateTotal()"> 2) TBOX Laksa Set 叻沙套餐 -$16.90</label>
+  <label><input type="checkbox" data-price="8.50" onchange="updateTotal()">  3) TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝 -$8.50</label>
+  <label><input type="checkbox" data-price="8.20" onchange="updateTotal()">  4) TBOX Traditional Butter Toast Set 傳統奶油吐司套裝 -$8.20</label>
+  <!-- Fixed missing quote in price below -->
+  <label><input type="checkbox" data-price="10.40" onchange="updateTotal()"> 5) TBOX Ham and Cheese Sandwiches 火腿和起司三文治 -$10.40</label>
+  <label><input type="checkbox" data-price="8.70" onchange="updateTotal()">  6) TBOX Peanut Thick Toast Set 花生厚吐司套裝 -$8.70</label>
+  <label><input type="checkbox" data-price="8.70" onchange="updateTotal()">  7) TBOX Butter Suger Thick Toast 奶油糖厚吐司 -$8.70</label>
 };
 
 function isNormalFoodOrder(items) {
@@ -209,15 +249,16 @@ function loadOrders(){
 
         let currentCount = data ? Object.keys(data).length : 0;
 
-        // 🔔 三连叮提示
+        // 🔥 新订单：提示音 + 弹窗闪烁
         if(viewMode==="current" && currentCount > lastOrderCount && audioUnlocked){
             const audio = document.getElementById("dingSound");
 
             audio.currentTime = 0;
             audio.play();
-
             setTimeout(()=>{ audio.play(); }, 300);
             setTimeout(()=>{ audio.play(); }, 600);
+
+            showOrderAlert(); // 🔥 弹出提示
         }
 
         lastOrderCount = currentCount;
