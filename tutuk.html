@@ -1,268 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter 2 - PRO System</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuTu Kueh Pro Counter</title>
+    <script src="https://gstatic.com"></script>
+    <script src="https://gstatic.com"></script>
+    <style>
+        :root { --primary: #0066cc; --success: #27ae60; --danger: #c0392b; --dark: #34495e; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { margin: 0; padding: 20px; min-height: 100vh; background-color: #f4f7f6; }
+        
+        /* Background Decoration */
+        body::before {
+            content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:url("https://unsplash.com") center/cover no-repeat;
+            opacity:0.1; z-index:-1;
+        }
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+        /* Login Section */
+        #loginPage { max-width:400px; margin:100px auto; background:white; padding:30px; border-radius:15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align:center; }
+        input { width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:8px; outline:none; font-size: 16px; }
+        
+        /* Buttons */
+        button { cursor: pointer; transition: 0.3s; border: none; border-radius: 6px; font-weight: bold; }
+        button:hover { opacity: 0.8; transform: translateY(-1px); }
+        .btn-main { width:100%; background:var(--primary); color:white; padding:12px; font-size: 16px; }
+        
+        /* Container & Header */
+        .container { max-width:800px; margin:auto; display:none; }
+        .top-buttons { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .top-buttons button { padding: 10px 15px; background: white; border: 1px solid #ddd; color: #555; }
+        .top-buttons button.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* Order Card Style */
+        .order-box { background:white; padding:20px; margin-bottom:15px; border-radius:12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .order-table { font-size:20px; font-weight:bold; color:var(--primary); }
+        .item-list { line-height: 1.8; margin: 10px 0; font-size: 17px; }
+        .total { color:var(--success); font-weight:bold; font-size:18px; margin:10px 0; }
+        .time { font-size: 12px; color: #888; }
+        
+        /* Action Buttons */
+        .action-btns { margin-top: 15px; display: flex; gap: 10px; }
+        .done-btn { background:var(--success); color:white; flex: 2; padding: 12px; }
+        .cancel-btn { background:var(--danger); color:white; flex: 1; padding: 12px; }
+        .clear-btn { background:var(--danger); color:white; }
+        .logout-btn { background:var(--dark); color:white; }
 
-<style>
-* { box-sizing: border-box; font-family: Arial; }
-body { margin: 0; padding: 20px; }
-
-body::before {
-    content:""; position:fixed; width:100%; height:100%;
-    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c") center/cover;
-    opacity:0.65; z-index:-1;
-}
-
-#loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
-.container { max-width:900px; margin:auto; display:none; }
-
-.order-box { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-.order-table { font-size:18px; font-weight:bold; color:#0066cc; }
-.total { color:#27ae60; font-weight:bold; }
-
-button { padding:6px 10px; margin:3px; border:none; border-radius:5px; }
-
-.done-btn { background:#27ae60; color:white; }
-.cancel-btn { background:#c0392b; color:white; }
-
-.top-buttons { text-align:center; margin-bottom:15px; }
-
-#newOrderAlert {
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:red;
-color:white;
-font-size:50px;
-font-weight:bold;
-z-index:9999;
-justify-content:center;
-align-items:center;
-text-align:center;
-}
-</style>
+        /* Modal */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.7); z-index:999; display:none; }
+        .modal-box { background:white; padding:30px; border-radius:12px; max-width:400px; margin:100px auto; text-align:center; }
+    </style>
 </head>
-
 <body>
 
-<audio id="dingSound" preload="auto"></audio>
-<div id="newOrderAlert">🚨 NEW ORDER 🚨</div>
+<!-- Audio Notification -->
+<audio id="notifSound" src="https://mixkit.co" preload="auto"></audio>
 
 <div id="loginPage">
-<h2>🔐 Login</h2>
-<input type="password" id="password" placeholder="Password">
-<button onclick="login()">Login</button>
-<p id="error" style="color:red;"></p>
+    <h2 style="margin-top:0;">🍴 TuTu Kueh CMS</h2>
+    <p style="color:#666;">Enter Counter Access Code</p>
+    <input type="password" id="password" placeholder="Password">
+    <button class="btn-main" onclick="login()">Enter System</button>
+    <p id="error" style="color:red; margin-top:10px;"></p>
+</div>
+
+<div class="modal-overlay" id="clearModal">
+    <div class="modal-box">
+        <h3>🔐 Admin Authorization</h3>
+        <p>Type password to wipe history records</p>
+        <input type="password" id="clearPwd" placeholder="Enter Password">
+        <div id="clearError" style="color:red; display:none; margin-bottom:10px;">Access Denied</div>
+        <button style="background:var(--danger); color:white; padding:10px 20px; margin: 5px;" onclick="verifyClearPwd()">Confirm Wipe</button>
+        <button style="background:#ccc; padding:10px 20px; margin: 5px;" onclick="closeClearModal()">Cancel</button>
+    </div>
 </div>
 
 <div class="container" id="mainPage">
-<h1>🍽️ Tu Tu Kueh</h1>
-
-<div class="top-buttons">
-<button onclick="viewMode='current';loadOrders()">🟢 Current</button>
-<button onclick="viewMode='history';loadOrders()">📜 History</button>
-<button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
-<button onclick="toggleKitchenMode()">🍳 Kitchen Mode</button>
-<button onclick="exportHistoryToExcel()">📊 Export Excel</button>
-<button onclick="logout()">🚪 Logout</button>
-</div>
-
-<div id="orderList"></div>
+    <h1 style="text-align: center; color: var(--dark); margin-bottom: 25px;">TuTu Kueh Terminal</h1>
+    <div class="top-buttons">
+        <button id="btn-current" onclick="switchMode('current')">🟢 Active</button>
+        <button id="btn-history" onclick="switchMode('history')">📜 Finished</button>
+        <button id="btn-cancelled" onclick="switchMode('cancelled')">❌ Cancelled</button>
+        <button class="clear-btn" onclick="openClearModal()">🗑️ Clear History</button>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+    <div id="orderList"></div>
 </div>
 
 <script>
 const PASSWORD = "1234";
 let viewMode = "current";
-let lastOrderCount = 0;
-let kitchenMode = false;
+let lastOrderCount = -1; // Track count for sound notifications
 
-const orderAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
-
-document.addEventListener('click', stopAlertSound);
-function stopAlertSound() {
-    orderAudio.pause();
-    orderAudio.currentTime = 0;
-    document.getElementById('newOrderAlert').style.display = 'none';
-}
-
-function exportHistoryToExcel() {
-    db.ref("historyOrders").once("value", snap => {
-        const data = snap.val();
-        if (!data) { alert("No history to export!"); return; }
-        let excelData = [];
-        for (let id in data) {
-            const o = data[id];
-            if (!isTuTuOrder(o)) return;
-            
-            let items = o.items ? o.items.map(i => `${i.name} ($${i.price})`).join(", ") : "";
-            let total = o.items ? o.items.reduce((sum,i)=>sum+(i.price||0),0) : 0;
-            excelData.push({
-                "Order No": o.orderNo || "",
-                "Table No": o.tableNo || "",
-                "Items": items,
-                "Total": total,
-                "Time": o.time || "",
-                "Status": "Completed"
-            });
-        }
-        if(excelData.length === 0){ alert("No Tu Tu history!"); return; }
-        const ws = XLSX.utils.json_to_sheet(excelData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Order History");
-        XLSX.writeFile(wb, "OrderHistory_TuTu.xlsx");
-    });
-}
-
-function isTuTuOrder(order) {
-    if (!order.items) return false;
-    return order.items.some(item => 
-        item.name && 
-        (item.name.includes("Tu Tu") || item.name.includes("Tutu"))
-    );
-}
-
-function login(){
-    if(password.value === PASSWORD){
-        loginPage.style.display="none";
-        mainPage.style.display="block";
-
-        try {
-            orderAudio.play();
-            orderAudio.pause();
-            orderAudio.currentTime = 0;
-        } catch(e){}
-
-        loadOrders();
-    } else {
-        error.innerText="Wrong Password!";
-    }
-}
-
-function logout(){ location.reload(); }
-
-function triggerNewOrderAlert(){
-    const box = document.getElementById("newOrderAlert");
-    box.style.display="flex";
-
-    orderAudio.currentTime = 0;
-    orderAudio.play().catch(e=>{});
-    setTimeout(()=>{ orderAudio.currentTime=0; orderAudio.play().catch(e=>{}); }, 350);
-    setTimeout(()=>{ orderAudio.currentTime=0; orderAudio.play().catch(e=>{}); }, 700);
-
-    if(navigator.vibrate) navigator.vibrate([300,200,300]);
-    setTimeout(()=>box.style.display="none",3000);
-}
-
-function toggleKitchenMode(){
-    kitchenMode=!kitchenMode;
-    document.body.style.fontSize = kitchenMode ? "22px" : "16px";
-    if(kitchenMode) autoScroll();
-}
-function autoScroll(){
-    if(!kitchenMode) return;
-    window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
-    setTimeout(autoScroll,3000);
-}
-
+// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-    authDomain: "restaurants-cs.firebaseapp.com",
-    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+    authDomain: "://firebaseapp.com",
+    databaseURL: "https://firebasedatabase.app",
     projectId: "restaurants-cs",
     storageBucket: "restaurants-cs.firebasestorage.app",
     messagingSenderId: "209872919844",
-    appId: "1:209872919844:c1730801cd51d615e867b1"
+    appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+function login(){
+    if(document.getElementById("password").value === PASSWORD){
+        // Unlock Audio Context for Browser
+        const sound = document.getElementById("notifSound");
+        sound.play().then(() => { sound.pause(); sound.currentTime = 0; }).catch(()=>{});
+
+        document.getElementById("loginPage").style.display="none";
+        document.getElementById("mainPage").style.display="block";
+        switchMode('current');
+    } else {
+        document.getElementById("error").innerText="Invalid Access Code";
+    }
+}
+
+function logout(){
+    if(confirm("Exit system?")){ location.reload(); }
+}
+
+function switchMode(mode) {
+    viewMode = mode;
+    document.querySelectorAll('.top-buttons button').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`btn-${mode}`).classList.add('active');
+    loadOrders();
+}
+
+function isTuTuKuehOrder(items) {
+    if (!items || !Array.isArray(items)) return false;
+    const keywords = ["TuTu Kueh", "嘟嘟糕"];
+    return items.some(item => {
+        const name = typeof item === "object" ? (item.name || "") : item;
+        return keywords.some(k => name.includes(k));
+    });
+}
+
+function playNotification() {
+    const sound = document.getElementById("notifSound");
+    sound.play().catch(e => console.log("Sound blocked"));
+}
+
 function loadOrders(){
-    let path="orders";
-    if(viewMode==="history") path="historyOrders";
-    if(viewMode==="cancelled") path="cancelledOrders";
-
-    db.ref(path).on("value",snap=>{
-        const data=snap.val();
-        orderList.innerHTML="";
-        let count=0;
-        let validOrders = [];
-
-        if(data){
-            for(let id in data){
-                const o=data[id];
-                if(isTuTuOrder(o)){
-                    count++;
-                    validOrders.push({id,o});
-                }
+    let path = viewMode === "current" ? "orders" : (viewMode === "history" ? "historyOrders" : "cancelledOrders");
+    
+    db.ref(path).off(); 
+    db.ref(path).on("value", snap => {
+        const data = snap.val();
+        
+        // --- Sound Alert Logic ---
+        if (viewMode === "current") {
+            let currentValidOrders = 0;
+            if (data) {
+                currentValidOrders = Object.values(data).filter(o => isTuTuKuehOrder(o.items)).length;
             }
+            if (lastOrderCount !== -1 && currentValidOrders > lastOrderCount) {
+                playNotification();
+            }
+            lastOrderCount = currentValidOrders;
         }
 
-        if(viewMode==="current" && count > lastOrderCount){
-            triggerNewOrderAlert();
-        }
-        lastOrderCount = count;
-
-        if(validOrders.length === 0){ 
-            orderList.innerHTML="No Tu Tu Orders"; 
+        const list = document.getElementById("orderList");
+        list.innerHTML = "";
+        
+        if(!data) {
+            list.innerHTML = "<div style='text-align:center; padding:50px; color:#888;'>No orders found.</div>";
             return;
         }
 
-        validOrders.forEach(({id,o})=>{
-            let html="";
-            let total=0;
+        const entries = Object.entries(data).reverse();
+        let count = 0;
 
-            if(o.items){
-                o.items.forEach(i=>{
-                    let p=i.price||0;
-                    total+=p;
-                    html+=`${i.name} - $${p}<br>`;
-                });
-            }
+        entries.forEach(([id, o]) => {
+            if (!isTuTuKuehOrder(o.items)) return;
+            count++;
 
-            const div=document.createElement("div");
-            div.className="order-box";
-            div.innerHTML=`
-            <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||"?"}</div>
-            <div>📌 Status: ${o.status||"New"}</div>
-            <div>${html}</div>
-            <div class="total">Total: $${total}</div>
-            <div>${o.time}</div>
+            let itemsHtml = "";
+            let calculatedTotal = 0;
+            
+            o.items.forEach(item => {
+                const name = item.name || item;
+                const price = parseFloat(item.price || 0);
+                calculatedTotal += price;
+                itemsHtml += `<div>• ${name} <span style="float:right; color:#666;">$${price.toFixed(2)}</span></div>`;
+            });
 
-            ${viewMode==="current"?`
-            <button onclick="updateStatus('${id}','Preparing')">👨‍🍳 Preparing</button>
-            <button onclick="updateStatus('${id}','Ready')">📦 Ready</button>
-            <button class="done-btn" onclick="complete('${id}')">✅ Done</button>
-            <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
-            `:""}
+            const displayTotal = o.total ? parseFloat(o.total) : calculatedTotal;
+            const table = o.tableNo || o.TableNo || "N/A";
+
+            const div = document.createElement("div");
+            div.className = "order-box";
+            div.innerHTML = `
+                <div class="order-header">
+                    <span class="order-table">TABLE ${table}</span>
+                    <span style="font-weight:bold; color:#999; font-size:14px;">#${o.orderNo || id.slice(-4)}</span>
+                </div>
+                <div class="item-list">${itemsHtml}</div>
+                <div class="total">Total Bill: $${displayTotal.toFixed(2)}</div>
+                <div class="time">🕒 Received: ${o.time || 'Unknown'}</div>
+                ${viewMode === "current" ? `
+                    <div class="action-btns">
+                        <button class="done-btn" onclick="moveOrder('${id}', 'historyOrders')">✅ MARK AS DONE</button>
+                        <button class="cancel-btn" onclick="moveOrder('${id}', 'cancelledOrders')">❌ CANCEL</button>
+                    </div>
+                ` : ""}
             `;
-            orderList.appendChild(div);
+            list.appendChild(div);
         });
+
+        if (count === 0) list.innerHTML = "<div style='text-align:center; padding:50px; color:#888;'>No TuTu Kueh orders here.</div>";
     });
 }
 
-function updateStatus(id,status){
-    db.ref("orders/"+id+"/status").set(status);
-}
-function complete(id){
-    db.ref("orders/"+id).once("value",s=>{
-        db.ref("historyOrders/"+id).set(s.val());
-        db.ref("orders/"+id).remove();
+function moveOrder(id, targetPath) {
+    const actionName = targetPath === 'historyOrders' ? "complete" : "cancel";
+    if(!confirm(`Confirm ${actionName} order?`)) return;
+
+    db.ref("orders/" + id).once("value", snap => {
+        const val = snap.val();
+        if(val) {
+            db.ref(targetPath + "/" + id).set(val, (err) => {
+                if(!err) db.ref("orders/" + id).remove();
+            });
+        }
     });
 }
-function cancelOrder(id){
-    db.ref("orders/"+id).once("value",s=>{
-        db.ref("cancelledOrders/"+id).set(s.val());
-        db.ref("orders/"+id).remove();
-    });
+
+function openClearModal() { document.getElementById("clearModal").style.display = "block"; }
+function closeClearModal() { document.getElementById("clearModal").style.display = "none"; }
+
+function verifyClearPwd() {
+    if (document.getElementById("clearPwd").value === PASSWORD) {
+        if(confirm("Delete all history and cancelled records? This cannot be undone.")) {
+            db.ref("historyOrders").remove();
+            db.ref("cancelledOrders").remove();
+            closeClearModal();
+            alert("Records Cleared.");
+        }
+    } else {
+        document.getElementById("clearError").style.display = "block";
+    }
 }
 </script>
 </body>
