@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tutu Kueh Kitchen</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+    *{box-sizing:border-box;font-family:Arial}
+    body{margin:0;padding:20px}
+    body::before{
+        content:"";position:fixed;top:0;left:0;width:100%;height:100%;
+        background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c") center/cover;
+        opacity:0.65;z-index:-1
+    }
+    #loginPage{max-width:400px;margin:50px auto;background:white;padding:25px;border-radius:12px;text-align:center}
+    .container{max-width:900px;margin:auto;display:none}
+    .order-box{background:white;padding:15px;margin-bottom:15px;border-radius:10px}
+    .order-table{font-size:18px;font-weight:bold;color:#0066cc}
+    .total{color:#27ae60;font-weight:bold}
+    button{padding:6px 10px;margin:3px;border:none;border-radius:5px}
+    .done{background:#27ae60;color:white}
+    .cancel{background:#c0392b;color:white}
+    .top-buttons{text-align:center;margin-bottom:15px}
+    #newOrderAlert{
+        display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+        background:red;color:white;font-size:50px;font-weight:bold;
+        z-index:9999;justify-content:center;align-items:center
+    }
+</style>
+</head>
+<body>
+<audio id="dingSound" preload="auto"></audio>
+<div id="newOrderAlert">🚨 NEW TUTU KUEH ORDER 🚨</div>
+<div id="loginPage">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Password"><br><br>
+    <button onclick="login()">Login</button>
+    <p id="error" style="color:red"></p>
+</div>
+<div class="container" id="mainPage">
+    <h1>Tutu Kueh Kitchen</h1>
+    <div class="top-buttons">
+        <button onclick="viewMode='current';loadOrders()">Current</button>
+        <button onclick="viewMode='history';loadOrders()">History</button>
+        <button onclick="viewMode='cancelled';loadOrders()">Cancelled</button>
+        <button onclick="exportHistoryToExcel()">Export Excel</button>
+        <button onclick="logout()">Logout</button>
+    </div>
+    <div id="orderList"></div>
+</div>
+<script>
+    const PASSWORD = "1234";
+    let viewMode = "current";
+    let lastOrderCount = 0;
+    const orderAudio = document.getElementById("dingSound");
+    orderAudio.src = "https://frops1997-create.github.io/restaurant-order/msz1.mp3";
+
+    document.addEventListener('click',()=>{
+        orderAudio.pause(); orderAudio.currentTime=0;
+        document.getElementById('newOrderAlert').style.display='none';
+    });
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+        authDomain: "restaurants-cs.firebaseapp.com",
+        databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "restaurants-cs",
+        storageBucket: "restaurants-cs.firebasestorage.app",
+        messagingSenderId: "209872919844",
+        appId: "1:209872919844:web:c1730801cd51d615e867b1"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function isTutuOrder(order){
+        if(!order.items) return false;
+        return order.items.some(i=>i.name && i.name.includes("Tutu"));
+    }
+
+    function login(){
+        if(document.getElementById("password").value===PASSWORD){
+            document.getElementById("loginPage").style.display="none";
+            document.getElementById("mainPage").style.display="block";
+            loadOrders();
+        }else{
+            document.getElementById("error").textContent="Wrong Password!";
+        }
+    }
+
+    function logout(){location.reload()}
+
+    function triggerAlert(){
+        document.getElementById('newOrderAlert').style.display='flex';
+        orderAudio.currentTime=0; orderAudio.play();
+        setTimeout(()=>orderAudio.play(),300);
+        setTimeout(()=>orderAudio.play(),600);
+        setTimeout(()=>document.getElementById('newOrderAlert').style.display='none',3000);
+    }
+
+    function loadOrders(){
+        let path = viewMode==="history"?"historyOrders":viewMode==="cancelled"?"cancelledOrders":"orders";
+        db.ref(path).on("value",snap=>{
+            const data=snap.val();
+            const list=document.getElementById("orderList");
+            list.innerHTML="";
+            let count=0;
+            let valid=[];
+            if(data){
+                for(let id in data){
+                    const o=data[id];
+                    if(isTutuOrder(o)){
+                        count++;
+                        valid.push({id,o});
+                    }
+                }
+            }
+            if(viewMode==="current"&&count>lastOrderCount) triggerAlert();
+            lastOrderCount=count;
+            if(valid.length===0){list.innerHTML="<h3>No Tutu Kueh Orders</h3>";return;}
+            valid.forEach(({id,o})=>{
+                let div=document.createElement("div");
+                div.className="order-box";
+                let items="";
+                let total=0;
+                o.items.forEach(i=>{items+=i.name+" x"+i.qty+"<br>"; total+=i.price*i.qty;});
+                div.innerHTML=`
+                    <div class="order-table">${o.orderNo} | Table: ${o.tableNo}</div>
+                    <div>${items}</div>
+                    <div class="total">Total: $${total.toFixed(2)}</div>
+                    <div>${o.time}</div>
+                    <div>Status: ${o.status}</div>
+                    ${viewMode==="current"?`
+                        <button class="done" onclick="complete('${id}')">Done</button>
+                        <button class="cancel" onclick="cancel('${id}')">Cancel</button>
+                    `:""}
+                `;
+                list.appendChild(div);
+            });
+        });
+    }
+
+    function complete(id){
+        db.ref("orders/"+id).once("value",s=>{
+            db.ref("historyOrders/"+id).set(s.val());
+            db.ref("orders/"+id).remove();
+        });
+    }
+
+    function cancel(id){
+        db.ref("orders/"+id).once("value",s=>{
+            db.ref("cancelledOrders/"+id).set(s.val());
+            db.ref("orders/"+id).remove();
+        });
+    }
+
+    function exportHistoryToExcel(){
+        db.ref("historyOrders").once("value",snap=>{
+            const data=snap.val();
+            if(!data){alert("No history");return;}
+            let excel=[];
+            for(let id in data){
+                const o=data[id];
+                if(!isTutuOrder(o)) continue;
+                let items=o.items.map(i=>i.name+" x"+i.qty).join(", ");
+                let total=o.items.reduce((s,i)=>s+i.price*i.qty,0);
+                excel.push({OrderNo:o.orderNo,Table:o.tableNo,Items:items,Total:total,Time:o.time});
+            }
+            const ws=XLSX.utils.json_to_sheet(excel);
+            const wb=XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb,ws,"Tutu");
+            XLSX.writeFile(wb,"Tutu_Orders.xlsx");
+        });
+    }
+</script>
+</body>
+</html>
