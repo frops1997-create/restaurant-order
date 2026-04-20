@@ -83,7 +83,6 @@ text-align:center;
 const PASSWORD = "1234";
 let viewMode = "current";
 let lastOrderCount = 0;
-let audioUnlocked = false;
 let kitchenMode = false;
 const orderAudio = document.getElementById("dingSound");
 
@@ -123,10 +122,9 @@ function login(){
     if(password.value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
+        
+        document.body.click();
         orderAudio.src = "https://frops1997-create.github.io/restaurant-order/msz1.mp3";
-        orderAudio.play().then(()=>{
-            orderAudio.pause(); orderAudio.currentTime=0; audioUnlocked=true;
-        }).catch(()=>{ audioUnlocked=true; });
         loadOrders();
     } else {
         error.innerText="Wrong Password!";
@@ -138,9 +136,12 @@ function logout(){ location.reload(); }
 function triggerNewOrderAlert(){
     const box = document.getElementById("newOrderAlert");
     box.style.display="flex";
-    orderAudio.currentTime=0; orderAudio.play();
+    
+    orderAudio.currentTime = 0;
+    orderAudio.play();
     setTimeout(()=>orderAudio.play(),300);
     setTimeout(()=>orderAudio.play(),600);
+    
     if(navigator.vibrate) navigator.vibrate([300,200,300]);
     setTimeout(()=>box.style.display="none",3000);
 }
@@ -157,8 +158,13 @@ function autoScroll(){
 }
 
 const firebaseConfig = {
-apiKey:"AIzaSy...",
-databaseURL:"https://restaurants-cs-default-rtd.asia-southeast1.firebasedatabase.app"
+    apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+    authDomain: "restaurants-cs.firebaseapp.com",
+    databaseURL: "https://restaurants-cs-default-rtd.asia-southeast1.firebasedatabase.app",
+    projectId: "restaurants-cs",
+    storageBucket: "restaurants-cs.firebasestorage.app",
+    messagingSenderId: "209872919844",
+    appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -171,24 +177,37 @@ function loadOrders(){
     db.ref(path).on("value",snap=>{
         const data=snap.val();
         orderList.innerHTML="";
-        let count=data?Object.keys(data).length:0;
+        
+        let currentOrderList = [];
+        if(data){
+            for(let id in data){
+                currentOrderList.push({ id, data: data[id] });
+            }
+        }
 
-        if(viewMode==="current" && count>lastOrderCount){
+        let count = currentOrderList.length;
+        if(viewMode==="current" && count > lastOrderCount){
             triggerNewOrderAlert();
         }
-        lastOrderCount=count;
+        lastOrderCount = count;
 
-        if(!data){ orderList.innerHTML="No Orders"; return; }
+        if(count === 0){
+            orderList.innerHTML = "<div>No Orders</div>";
+            return;
+        }
 
-        for(let id in data){
-            const o=data[id];
-            let html=""; let total=0;
+        currentOrderList.forEach(({ id, data: o }) => {
+            let html="";
+            let total=0;
+            
             if(o.items){
                 o.items.forEach(i=>{
-                    let p=i.price||0; total+=p;
+                    let p=i.price||0;
+                    total+=p;
                     html+=`${i.name} - $${p}<br>`;
                 });
             }
+
             const div=document.createElement("div");
             div.className="order-box";
             div.innerHTML=`
@@ -205,7 +224,7 @@ function loadOrders(){
             `:""}
             `;
             orderList.appendChild(div);
-        }
+        });
     });
 }
 
