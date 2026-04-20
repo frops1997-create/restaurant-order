@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter 2 - PRO System</title>
+<title>Counter PRO System</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -13,20 +13,34 @@
 * { box-sizing: border-box; font-family: Arial; }
 body { margin: 0; padding: 20px; }
 
-body::before {
-    content:""; position:fixed; width:100%; height:100%;
-    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c") center/cover;
-    opacity:0.65; z-index:-1;
+#loginPage {
+ max-width:400px;
+ margin:150px auto;
+ background:white;
+ padding:25px;
+ border-radius:12px;
+ text-align:center;
 }
 
-#loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
 .container { max-width:900px; margin:auto; display:none; }
 
-.order-box { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
+.order-box {
+ background:white;
+ padding:15px;
+ margin-bottom:15px;
+ border-radius:10px;
+}
+
 .order-table { font-size:18px; font-weight:bold; color:#0066cc; }
 .total { color:#27ae60; font-weight:bold; }
 
-button { padding:6px 10px; margin:3px; border:none; border-radius:5px; }
+button {
+ padding:8px 12px;
+ margin:5px;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+}
 
 .done-btn { background:#27ae60; color:white; }
 .cancel-btn { background:#c0392b; color:white; }
@@ -34,28 +48,37 @@ button { padding:6px 10px; margin:3px; border:none; border-radius:5px; }
 .top-buttons { text-align:center; margin-bottom:15px; }
 
 #newOrderAlert {
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:red;
-color:white;
-font-size:50px;
-font-weight:bold;
-z-index:9999;
-justify-content:center;
-align-items:center;
-text-align:center;
+ display:none;
+ position:fixed;
+ top:0;
+ left:0;
+ width:100%;
+ height:100%;
+ background:red;
+ color:white;
+ font-size:50px;
+ font-weight:bold;
+ z-index:9999;
+ justify-content:center;
+ align-items:center;
+}
+
+.enable-sound {
+ background:black;
+ color:white;
+ font-size:18px;
 }
 </style>
 </head>
 
 <body>
 
-<audio id="dingSound" preload="auto"></audio>
-<div id="newOrderAlert">🚨 NEW ORDER 🚨</div>
+<!-- 🔊 声音启用按钮 -->
+<div style="text-align:center;">
+<button class="enable-sound" onclick="enableSound()">🔊 ENABLE SOUND</button>
+</div>
+
+<div id="newOrderAlert" onclick="stopAlert()">🚨 NEW ORDER 🚨<br>CLICK TO STOP</div>
 
 <div id="loginPage">
 <h2>🔐 Login</h2>
@@ -71,8 +94,8 @@ text-align:center;
 <button onclick="viewMode='current';loadOrders()">🟢 Current</button>
 <button onclick="viewMode='history';loadOrders()">📜 History</button>
 <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
-<button onclick="toggleKitchenMode()">🍳 Kitchen Mode</button>
-<button onclick="exportHistoryToExcel()">📊 Export Excel</button>
+<button onclick="toggleKitchenMode()">🍳 Kitchen</button>
+<button onclick="exportHistoryToExcel()">📊 Excel</button>
 <button onclick="logout()">🚪 Logout</button>
 </div>
 
@@ -83,55 +106,31 @@ text-align:center;
 const PASSWORD = "1234";
 let viewMode = "current";
 let lastOrderCount = 0;
+let isFirstLoad = true;
 let kitchenMode = false;
+let soundEnabled = false;
+let alertInterval = null;
 
-// 🔥 强制稳定音频
-const orderAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
+// 🔊 音频（稳定源）
+const orderAudio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
 
-document.addEventListener('click', stopAlertSound);
-function stopAlertSound() {
-    orderAudio.pause();
-    orderAudio.currentTime = 0;
-    document.getElementById('newOrderAlert').style.display = 'none';
-}
-
-function exportHistoryToExcel() {
-    db.ref("historyOrders").once("value", snap => {
-        const data = snap.val();
-        if (!data) { alert("No history to export!"); return; }
-        let excel = [];
-        for (let id in data) {
-            const o = data[id];
-            let items = o.items ? o.items.map(i => `${i.name} ($${i.price})`).join(", ") : "";
-            let total = o.items ? o.items.reduce((s,i)=>s+(i.price||0),0) : 0;
-            excel.push({
-                "Order No": o.orderNo || "",
-                "Table No": o.tableNo || "",
-                "Items": items,
-                "Total $": total,
-                "Time": o.time || "",
-                "Status": "Completed"
-            });
-        }
-        const ws = XLSX.utils.json_to_sheet(excel);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "History");
-        XLSX.writeFile(wb, "OrderHistory.xlsx");
+// ✅ 手动启用声音（关键）
+function enableSound(){
+    orderAudio.play().then(()=>{
+        orderAudio.pause();
+        orderAudio.currentTime = 0;
+        soundEnabled = true;
+        alert("Sound Enabled ✅");
+    }).catch(()=>{
+        alert("Click again to enable sound!");
     });
 }
 
+// 🔐 登录
 function login(){
     if(password.value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
-
-        // 🔥 浏览器音频解锁（必成功）
-        try {
-            orderAudio.play();
-            orderAudio.pause();
-            orderAudio.currentTime = 0;
-        } catch(e){}
-
         loadOrders();
     } else {
         error.innerText="Wrong Password!";
@@ -140,43 +139,98 @@ function login(){
 
 function logout(){ location.reload(); }
 
+// 🚨 报警
 function triggerNewOrderAlert(){
+    if(!soundEnabled) return;
+
     const box = document.getElementById("newOrderAlert");
     box.style.display="flex";
 
-    // 🔥 播放提示音（100%响）
-    orderAudio.currentTime = 0;
-    orderAudio.play().catch(e=>{});
-    setTimeout(()=>{ orderAudio.currentTime=0; orderAudio.play().catch(e=>{}); }, 350);
-    setTimeout(()=>{ orderAudio.currentTime=0; orderAudio.play().catch(e=>{}); }, 700);
-
-    if(navigator.vibrate) navigator.vibrate([300,200,300]);
-    setTimeout(()=>box.style.display="none",3000);
+    playLoopSound();
 }
 
+// 🔁 循环播放（商用级）
+function playLoopSound(){
+    stopSound();
+
+    alertInterval = setInterval(()=>{
+        orderAudio.currentTime = 0;
+        orderAudio.play().catch(()=>{});
+    }, 800);
+}
+
+// ⛔ 停止
+function stopSound(){
+    if(alertInterval){
+        clearInterval(alertInterval);
+        alertInterval = null;
+    }
+    orderAudio.pause();
+    orderAudio.currentTime = 0;
+}
+
+function stopAlert(){
+    stopSound();
+    document.getElementById("newOrderAlert").style.display="none";
+}
+
+// 🍳 厨房模式
 function toggleKitchenMode(){
-    kitchenMode=!kitchenMode;
+    kitchenMode = !kitchenMode;
     document.body.style.fontSize = kitchenMode?"22px":"16px";
     if(kitchenMode) autoScroll();
 }
+
 function autoScroll(){
     if(!kitchenMode) return;
     window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
     setTimeout(autoScroll,3000);
 }
 
+// 📊 Excel
+function exportHistoryToExcel(){
+    db.ref("historyOrders").once("value", snap => {
+        const data = snap.val();
+        if (!data) return alert("No data");
+
+        let arr=[];
+        for(let id in data){
+            let o=data[id];
+            let total=0;
+            let items="";
+
+            if(o.items){
+                o.items.forEach(i=>{
+                    total+=i.price||0;
+                    items+=i.name+" ";
+                });
+            }
+
+            arr.push({
+                Order:o.orderNo,
+                Table:o.tableNo,
+                Items:items,
+                Total:total,
+                Time:o.time
+            });
+        }
+
+        let ws=XLSX.utils.json_to_sheet(arr);
+        let wb=XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,"History");
+        XLSX.writeFile(wb,"orders.xlsx");
+    });
+}
+
+// 🔥 Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-    authDomain: "restaurants-cs.firebaseapp.com",
-    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "restaurants-cs",
-    storageBucket: "restaurants-cs.firebasestorage.app",
-    messagingSenderId: "209872919844",
-    appId: "1:209872919844:web:c1730801cd51d615e867b1"
+ apiKey: "AIzaSyD...",
+ databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// 📦 订单加载
 function loadOrders(){
     let path="orders";
     if(viewMode==="history") path="historyOrders";
@@ -185,72 +239,76 @@ function loadOrders(){
     db.ref(path).on("value",snap=>{
         const data=snap.val();
         orderList.innerHTML="";
-        
-        let currentOrderList = [];
+
+        let list=[];
         if(data){
             for(let id in data){
-                currentOrderList.push({ id, data: data[id] });
+                list.push({id,data:data[id]});
             }
         }
 
-        let count = currentOrderList.length;
-        if(viewMode==="current" && count > lastOrderCount){
-            triggerNewOrderAlert();
-        }
-        lastOrderCount = count;
+        let count=list.length;
 
-        if(count === 0){
-            orderList.innerHTML = "<div>No Orders</div>";
+        if(viewMode==="current"){
+            if(!isFirstLoad && count>lastOrderCount){
+                triggerNewOrderAlert();
+            }
+            lastOrderCount=count;
+            isFirstLoad=false;
+        }
+
+        if(count===0){
+            orderList.innerHTML="No Orders";
             return;
         }
 
-        currentOrderList.forEach(({ id, data: o }) => {
-            let html="";
+        list.forEach(({id,data:o})=>{
             let total=0;
-            
+            let html="";
+
             if(o.items){
                 o.items.forEach(i=>{
-                    let p=i.price||0;
-                    total+=p;
-                    html+=`${i.name} - $${p}<br>`;
+                    total+=i.price||0;
+                    html+=`${i.name} - $${i.price}<br>`;
                 });
             }
 
             const div=document.createElement("div");
             div.className="order-box";
+
             div.innerHTML=`
-            <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||"?"}</div>
-            <div>📌 Status: ${o.status||"New"}</div>
+            <div class="order-table">#${o.orderNo} | Table ${o.tableNo}</div>
             <div>${html}</div>
             <div class="total">Total: $${total}</div>
             <div>${o.time}</div>
+
             ${viewMode==="current"?`
-            <button onclick="updateStatus('${id}','Preparing')">👨‍🍳 Preparing</button>
-            <button onclick="updateStatus('${id}','Ready')">📦 Ready</button>
-            <button class="done-btn" onclick="complete('${id}')">✅ Done</button>
+            <button onclick="complete('${id}')">✅ Done</button>
             <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
             `:""}
             `;
+
             orderList.appendChild(div);
         });
     });
 }
 
-function updateStatus(id,status){
-    db.ref("orders/"+id+"/status").set(status);
-}
+// ✅ 完成
 function complete(id){
     db.ref("orders/"+id).once("value",s=>{
         db.ref("historyOrders/"+id).set(s.val());
         db.ref("orders/"+id).remove();
     });
 }
-function cancel(id){
+
+// ❌ 取消
+function cancelOrder(id){
     db.ref("orders/"+id).once("value",s=>{
         db.ref("cancelledOrders/"+id).set(s.val());
         db.ref("orders/"+id).remove();
     });
 }
 </script>
+
 </body>
 </html>
