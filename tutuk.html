@@ -3,51 +3,67 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter PRO System</title>
+<title>Kitchen TBOX System</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
-* { box-sizing: border-box; font-family: Arial; }
-body { margin: 0; padding: 20px; }
-
-#loginPage {
- max-width:400px;
- margin:150px auto;
- background:white;
- padding:25px;
- border-radius:12px;
- text-align:center;
+body {
+ margin:0;
+ background:#111;
+ color:white;
+ font-family:Arial;
 }
 
-.container { max-width:900px; margin:auto; display:none; }
-
-.order-box {
- background:white;
+.topbar {
  padding:15px;
- margin-bottom:15px;
- border-radius:10px;
+ text-align:center;
+ background:black;
 }
 
-.order-table { font-size:18px; font-weight:bold; color:#0066cc; }
-.total { color:#27ae60; font-weight:bold; }
+.order-container {
+ display:flex;
+ flex-wrap:wrap;
+ gap:15px;
+ padding:15px;
+}
+
+.order-card {
+ background:#222;
+ padding:15px;
+ border-radius:10px;
+ width:260px;
+}
+
+.order-title {
+ font-size:20px;
+ font-weight:bold;
+ color:#00c3ff;
+}
+
+.item {
+ font-size:18px;
+ margin:5px 0;
+}
+
+.total {
+ color:#2ecc71;
+ font-weight:bold;
+}
 
 button {
- padding:8px 12px;
- margin:5px;
+ margin-top:8px;
+ padding:6px 10px;
  border:none;
- border-radius:6px;
+ border-radius:5px;
  cursor:pointer;
 }
 
-.done-btn { background:#27ae60; color:white; }
-.cancel-btn { background:#c0392b; color:white; }
+.done { background:#27ae60; color:white; }
+.cancel { background:#c0392b; color:white; }
 
-.top-buttons { text-align:center; margin-bottom:15px; }
-
-#newOrderAlert {
+#alertScreen {
  display:none;
  position:fixed;
  top:0;
@@ -56,173 +72,45 @@ button {
  height:100%;
  background:red;
  color:white;
- font-size:50px;
+ font-size:60px;
  font-weight:bold;
  z-index:9999;
  justify-content:center;
  align-items:center;
+ text-align:center;
+ animation:flash 0.6s infinite;
 }
 
-.enable-sound {
- background:black;
- color:white;
- font-size:18px;
+@keyframes flash {
+ 0% { opacity:1 }
+ 50% { opacity:0.3 }
+ 100% { opacity:1 }
+}
+
+.enable {
+ position:fixed;
+ top:10px;
+ right:10px;
+ z-index:999;
 }
 </style>
 </head>
 
 <body>
 
-<!-- 🔊 声音启用按钮 -->
-<div style="text-align:center;">
-<button class="enable-sound" onclick="enableSound()">🔊 ENABLE SOUND</button>
+<button class="enable" onclick="enableSound()">🔊 Enable Sound</button>
+
+<div id="alertScreen" onclick="stopAlert()">
+🚨 NEW ORDER 🚨<br>CLICK TO STOP
 </div>
 
-<div id="newOrderAlert" onclick="stopAlert()">🚨 NEW ORDER 🚨<br>CLICK TO STOP</div>
-
-<div id="loginPage">
-<h2>🔐 Login</h2>
-<input type="password" id="password" placeholder="Password">
-<button onclick="login()">Login</button>
-<p id="error" style="color:red;"></p>
+<div class="topbar">
+<h2>🍳 Kitchen Display (TBOX)</h2>
 </div>
 
-<div class="container" id="mainPage">
-<h1>🍽️ Counter PRO System</h1>
-
-<div class="top-buttons">
-<button onclick="viewMode='current';loadOrders()">🟢 Current</button>
-<button onclick="viewMode='history';loadOrders()">📜 History</button>
-<button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
-<button onclick="toggleKitchenMode()">🍳 Kitchen</button>
-<button onclick="exportHistoryToExcel()">📊 Excel</button>
-<button onclick="logout()">🚪 Logout</button>
-</div>
-
-<div id="orderList"></div>
-</div>
+<div class="order-container" id="orders"></div>
 
 <script>
-const PASSWORD = "1234";
-let viewMode = "current";
-let lastOrderCount = 0;
-let isFirstLoad = true;
-let kitchenMode = false;
-let soundEnabled = false;
-let alertInterval = null;
-
-// 🔊 音频（稳定源）
-const orderAudio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
-
-// ✅ 手动启用声音（关键）
-function enableSound(){
-    orderAudio.play().then(()=>{
-        orderAudio.pause();
-        orderAudio.currentTime = 0;
-        soundEnabled = true;
-        alert("Sound Enabled ✅");
-    }).catch(()=>{
-        alert("Click again to enable sound!");
-    });
-}
-
-// 🔐 登录
-function login(){
-    if(password.value === PASSWORD){
-        loginPage.style.display="none";
-        mainPage.style.display="block";
-        loadOrders();
-    } else {
-        error.innerText="Wrong Password!";
-    }
-}
-
-function logout(){ location.reload(); }
-
-// 🚨 报警
-function triggerNewOrderAlert(){
-    if(!soundEnabled) return;
-
-    const box = document.getElementById("newOrderAlert");
-    box.style.display="flex";
-
-    playLoopSound();
-}
-
-// 🔁 循环播放（商用级）
-function playLoopSound(){
-    stopSound();
-
-    alertInterval = setInterval(()=>{
-        orderAudio.currentTime = 0;
-        orderAudio.play().catch(()=>{});
-    }, 800);
-}
-
-// ⛔ 停止
-function stopSound(){
-    if(alertInterval){
-        clearInterval(alertInterval);
-        alertInterval = null;
-    }
-    orderAudio.pause();
-    orderAudio.currentTime = 0;
-}
-
-function stopAlert(){
-    stopSound();
-    document.getElementById("newOrderAlert").style.display="none";
-}
-
-// 🍳 厨房模式
-function toggleKitchenMode(){
-    kitchenMode = !kitchenMode;
-    document.body.style.fontSize = kitchenMode?"22px":"16px";
-    if(kitchenMode) autoScroll();
-}
-
-function autoScroll(){
-    if(!kitchenMode) return;
-    window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
-    setTimeout(autoScroll,3000);
-}
-
-// 📊 Excel
-function exportHistoryToExcel(){
-    db.ref("historyOrders").once("value", snap => {
-        const data = snap.val();
-        if (!data) return alert("No data");
-
-        let arr=[];
-        for(let id in data){
-            let o=data[id];
-            let total=0;
-            let items="";
-
-            if(o.items){
-                o.items.forEach(i=>{
-                    total+=i.price||0;
-                    items+=i.name+" ";
-                });
-            }
-
-            arr.push({
-                Order:o.orderNo,
-                Table:o.tableNo,
-                Items:items,
-                Total:total,
-                Time:o.time
-            });
-        }
-
-        let ws=XLSX.utils.json_to_sheet(arr);
-        let wb=XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb,ws,"History");
-        XLSX.writeFile(wb,"orders.xlsx");
-    });
-}
-
-// 🔥 Firebase
 const firebaseConfig = {
  apiKey: "AIzaSyD...",
  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -230,84 +118,116 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 📦 订单加载
-function loadOrders(){
-    let path="orders";
-    if(viewMode==="history") path="historyOrders";
-    if(viewMode==="cancelled") path="cancelledOrders";
+let lastCount = 0;
+let firstLoad = true;
+let soundEnabled = false;
+let alarmLoop = null;
 
-    db.ref(path).on("value",snap=>{
-        const data=snap.val();
-        orderList.innerHTML="";
+const audio = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
 
-        let list=[];
-        if(data){
-            for(let id in data){
-                list.push({id,data:data[id]});
-            }
-        }
-
-        let count=list.length;
-
-        if(viewMode==="current"){
-            if(!isFirstLoad && count>lastOrderCount){
-                triggerNewOrderAlert();
-            }
-            lastOrderCount=count;
-            isFirstLoad=false;
-        }
-
-        if(count===0){
-            orderList.innerHTML="No Orders";
-            return;
-        }
-
-        list.forEach(({id,data:o})=>{
-            let total=0;
-            let html="";
-
-            if(o.items){
-                o.items.forEach(i=>{
-                    total+=i.price||0;
-                    html+=`${i.name} - $${i.price}<br>`;
-                });
-            }
-
-            const div=document.createElement("div");
-            div.className="order-box";
-
-            div.innerHTML=`
-            <div class="order-table">#${o.orderNo} | Table ${o.tableNo}</div>
-            <div>${html}</div>
-            <div class="total">Total: $${total}</div>
-            <div>${o.time}</div>
-
-            ${viewMode==="current"?`
-            <button onclick="complete('${id}')">✅ Done</button>
-            <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
-            `:""}
-            `;
-
-            orderList.appendChild(div);
-        });
-    });
+// 🔊 解锁声音
+function enableSound(){
+ audio.play().then(()=>{
+  audio.pause();
+  audio.currentTime=0;
+  soundEnabled=true;
+  alert("Sound Enabled ✅");
+ });
 }
+
+// 🚨 报警
+function triggerAlert(){
+ if(!soundEnabled) return;
+
+ document.getElementById("alertScreen").style.display="flex";
+
+ alarmLoop = setInterval(()=>{
+  audio.currentTime=0;
+  audio.play().catch(()=>{});
+ },700);
+}
+
+// ⛔ 停止
+function stopAlert(){
+ document.getElementById("alertScreen").style.display="none";
+
+ if(alarmLoop){
+  clearInterval(alarmLoop);
+  alarmLoop=null;
+ }
+ audio.pause();
+ audio.currentTime=0;
+}
+
+// 📦 监听订单
+db.ref("orders").on("value", snap=>{
+ const data = snap.val();
+ const container = document.getElementById("orders");
+ container.innerHTML="";
+
+ let list=[];
+ if(data){
+  for(let id in data){
+   list.push({id,data:data[id]});
+  }
+ }
+
+ let count = list.length;
+
+ if(!firstLoad && count > lastCount){
+  triggerAlert();
+ }
+
+ lastCount = count;
+ firstLoad = false;
+
+ list.forEach(({id,data:o})=>{
+  let total=0;
+  let itemsHTML="";
+
+  if(o.items){
+   o.items.forEach(i=>{
+    total+=i.price||0;
+    itemsHTML += `<div class="item">${i.name}</div>`;
+   });
+  }
+
+  const div=document.createElement("div");
+  div.className="order-card";
+
+  div.innerHTML=`
+   <div class="order-title">#${o.orderNo} | Table ${o.tableNo}</div>
+   ${itemsHTML}
+   <div class="total">Total: $${total}</div>
+   <button class="done" onclick="complete('${id}')">DONE</button>
+   <button class="cancel" onclick="cancelOrder('${id}')">CANCEL</button>
+  `;
+
+  container.appendChild(div);
+ });
+
+});
 
 // ✅ 完成
 function complete(id){
-    db.ref("orders/"+id).once("value",s=>{
-        db.ref("historyOrders/"+id).set(s.val());
-        db.ref("orders/"+id).remove();
-    });
+ db.ref("orders/"+id).once("value",s=>{
+  db.ref("historyOrders/"+id).set(s.val());
+  db.ref("orders/"+id).remove();
+ });
 }
 
 // ❌ 取消
 function cancelOrder(id){
-    db.ref("orders/"+id).once("value",s=>{
-        db.ref("cancelledOrders/"+id).set(s.val());
-        db.ref("orders/"+id).remove();
-    });
+ db.ref("orders/"+id).once("value",s=>{
+  db.ref("cancelledOrders/"+id).set(s.val());
+  db.ref("orders/"+id).remove();
+ });
 }
+
+// 🔄 自动滚动
+setInterval(()=>{
+ window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+},3000);
 </script>
 
 </body>
