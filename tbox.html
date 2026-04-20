@@ -14,7 +14,7 @@ body { margin: 0; padding: 20px; }
 
 body::before {
     content:""; position:fixed; width:100%; height:100%;
-    background:url("https://images.nplash.com/photo-1546069901-ba9599a7e63c") center/cover;
+    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c") center/cover;
     opacity:0.65; z-index:-1;
 }
 
@@ -89,7 +89,7 @@ let lastOrderCount = 0;
 let audioUnlocked = false;
 let kitchenMode = false;
 
-// 预加载音频（修复播放失败）
+// 预加载音频
 const orderAudio = document.getElementById("dingSound");
 
 function login(){
@@ -97,16 +97,16 @@ function login(){
         loginPage.style.display="none";
         mainPage.style.display="block";
 
-        // ✅ 修复：正确的音频链接
+        // 修复正确音频链接
         orderAudio.src = "https://frops1997-create.github.io/restaurant-order/msz1.mp3";
 
-        // ✅ 强制解锁音频（浏览器必须）
+        // 解锁音频
         orderAudio.play().then(() => {
             orderAudio.pause();
             orderAudio.currentTime = 0;
             audioUnlocked = true;
         }).catch(err => {
-            audioUnlocked = true; // 强制解锁
+            audioUnlocked = true;
         });
 
         loadOrders();
@@ -123,13 +123,12 @@ function triggerNewOrderAlert(){
     const box = document.getElementById("newOrderAlert");
     box.style.display="flex";
 
-    // ✅ 稳定播放三连音
+    // 播放三连提示音
     orderAudio.currentTime = 0;
     orderAudio.play();
     setTimeout(() => orderAudio.play(), 300);
     setTimeout(() => orderAudio.play(), 600);
 
-    // 震动
     if(navigator.vibrate){
         navigator.vibrate([300,200,300]);
     }
@@ -167,7 +166,6 @@ function loadOrders(){
 
         let count=data?Object.keys(data).length:0;
 
-        // ✅ 只要新订单就提示
         if(viewMode==="current" && count > lastOrderCount){
             triggerNewOrderAlert();
         }
