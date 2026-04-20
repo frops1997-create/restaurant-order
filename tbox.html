@@ -7,6 +7,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
 * { box-sizing: border-box; font-family: Arial; }
@@ -75,6 +76,7 @@ text-align:center;
 <button onclick="viewMode='history';loadOrders()">📜 History</button>
 <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
 <button onclick="toggleKitchenMode()">🍳 Kitchen Mode</button>
+<button onclick="exportHistoryToExcel()">📊 Export Excel</button> <!-- 新增导出按钮 -->
 <button onclick="logout()">🚪 Logout</button>
 </div>
 
@@ -92,7 +94,7 @@ let kitchenMode = false;
 // 预加载音频
 const orderAudio = document.getElementById("dingSound");
 
-// ✅ 点击屏幕任意位置停止提示音 + 关闭警报（新增）
+// ✅ 点击屏幕任意位置停止提示音 + 关闭警报
 document.addEventListener('click', stopAlertSound);
 function stopAlertSound() {
     orderAudio.pause();
@@ -100,15 +102,50 @@ function stopAlertSound() {
     document.getElementById('newOrderAlert').style.display = 'none';
 }
 
+// 📊 导出历史订单为 Excel（新增）
+function exportHistoryToExcel() {
+    db.ref("historyOrders").once("value", snap => {
+        const data = snap.val();
+        if (!data) {
+            alert("No history to export!");
+            return;
+        }
+
+        let excelData = [];
+        for (let id in data) {
+            const o = data[id];
+            let items = "";
+            let total = 0;
+
+            if (o.items) {
+                items = o.items.map(i => `${i.name} ($${i.price})`).join(", ");
+                total = o.items.reduce((sum, i) => sum + (i.price || 0), 0);
+            }
+
+            excelData.push({
+                "Order No": o.orderNo || "",
+                "Table No": o.tableNo || "",
+                "Items": items,
+                "Total": total,
+                "Time": o.time || "",
+                "Status": "Completed"
+            });
+        }
+
+        const ws = XLSX.utils.json_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Order History");
+        XLSX.writeFile(wb, "OrderHistory.xlsx");
+    });
+}
+
 function login(){
     if(password.value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
 
-        // 修复正确音频链接
         orderAudio.src = "https://frops1997-create.github.io/restaurant-order/msz1.mp3";
 
-        // 解锁音频
         orderAudio.play().then(() => {
             orderAudio.pause();
             orderAudio.currentTime = 0;
@@ -131,7 +168,6 @@ function triggerNewOrderAlert(){
     const box = document.getElementById("newOrderAlert");
     box.style.display="flex";
 
-    // 播放三连提示音
     orderAudio.currentTime = 0;
     orderAudio.play();
     setTimeout(() => orderAudio.play(), 300);
