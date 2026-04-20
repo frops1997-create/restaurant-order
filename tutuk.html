@@ -3,31 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter 1 - TuTu Kueh Only</title>
+<title>Counter 2 - PRO System</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
 * { box-sizing: border-box; font-family: Arial; }
 body { margin: 0; padding: 20px; }
-
-/* 🔴 红色警报 */
-#alarmOverlay{
-    position:fixed;
-    top:0;left:0;
-    width:100%;height:100%;
-    background:red;
-    opacity:0.85;
-    z-index:9999;
-    display:none;
-    animation: flash 0.6s infinite;
-}
-@keyframes flash {
-    0%{opacity:0.2;}
-    50%{opacity:0.9;}
-    100%{opacity:0.2;}
-}
 
 body::before {
     content:""; position:fixed; width:100%; height:100%;
@@ -36,192 +20,237 @@ body::before {
 }
 
 #loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
-#loginPage input { width:100%; padding:10px; margin:10px 0; }
-#loginPage button { padding:10px 20px; }
-
 .container { max-width:900px; margin:auto; display:none; }
+
 .order-box { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
 .order-table { font-size:18px; font-weight:bold; color:#0066cc; }
-.total { color:#27ae60; font-weight:bold; font-size:16px; margin:8px 0; }
+.total { color:#27ae60; font-weight:bold; }
 
-.done-btn { background:#27ae60; color:white; padding:6px 10px; border:none; }
-.cancel-btn { background:#c0392b; color:white; padding:6px 10px; border:none; margin-left:5px; }
+button { padding:6px 10px; margin:3px; border:none; border-radius:5px; }
+
+.done-btn { background:#27ae60; color:white; }
+.cancel-btn { background:#c0392b; color:white; }
 
 .top-buttons { text-align:center; margin-bottom:15px; }
-.top-buttons button { margin:5px; padding:8px 12px; }
 
-.clear-btn { background:#e74c3c; color:white; }
-.logout-btn { background:#34495e; color:white; }
-.export-btn { background:#2980b9; color:white; }
-
+#newOrderAlert {
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:red;
+color:white;
+font-size:50px;
+font-weight:bold;
+z-index:9999;
+justify-content:center;
+align-items:center;
+text-align:center;
+}
 </style>
 </head>
 
 <body>
 
-<!-- 🔴 警报层 -->
-<div id="alarmOverlay" onclick="stopAlarm()"></div>
-
-<!-- 🔊 音效 -->
-<audio id="alarmSound" loop>
-  <source src="https://frops1997-create.github.io/restaurant-order/msz1.mp3">
-</audio>
+<audio id="dingSound" preload="auto"></audio>
+<div id="newOrderAlert">🚨 NEW ORDER 🚨</div>
 
 <div id="loginPage">
-    <h2>🔐 Counter Login</h2>
-    <input type="password" id="password">
-    <button onclick="login()">Login</button>
-    <p id="error" style="color:red;"></p>
+<h2>🔐 Login</h2>
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="error" style="color:red;"></p>
 </div>
 
 <div class="container" id="mainPage">
-    <h1>Tu Tu Kueh</h1>
+<h1>🍽️ Counter PRO System</h1>
 
-    <div class="top-buttons">
-        <button onclick="viewMode='current';loadOrders()">🟢 Current</button>
-        <button onclick="viewMode='history';loadOrders()">📜 History</button>
-        <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
-        <button class="export-btn" onclick="exportExcel()">📊 Export Excel</button>
-        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-    </div>
+<div class="top-buttons">
+<button onclick="viewMode='current';loadOrders()">🟢 Current</button>
+<button onclick="viewMode='history';loadOrders()">📜 History</button>
+<button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
+<button onclick="toggleKitchenMode()">🍳 Kitchen Mode</button>
+<button onclick="exportHistoryToExcel()">📊 Export Excel</button>
+<button onclick="logout()">🚪 Logout</button>
+</div>
 
-    <div id="orderList"></div>
+<div id="orderList"></div>
 </div>
 
 <script>
 const PASSWORD = "1234";
 let viewMode = "current";
-let lastOrderCount = 0; // 🔥 用来检测新订单
+let lastOrderCount = 0;
+let kitchenMode = false;
+
+// 🔥 强制稳定音频
+const orderAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
+
+document.addEventListener('click', stopAlertSound);
+function stopAlertSound() {
+    orderAudio.pause();
+    orderAudio.currentTime = 0;
+    document.getElementById('newOrderAlert').style.display = 'none';
+}
+
+function exportHistoryToExcel() {
+    db.ref("historyOrders").once("value", snap => {
+        const data = snap.val();
+        if (!data) { alert("No history to export!"); return; }
+        let excel = [];
+        for (let id in data) {
+            const o = data[id];
+            let items = o.items ? o.items.map(i => `${i.name} ($${i.price})`).join(", ") : "";
+            let total = o.items ? o.items.reduce((s,i)=>s+(i.price||0),0) : 0;
+            excel.push({
+                "Order No": o.orderNo || "",
+                "Table No": o.tableNo || "",
+                "Items": items,
+                "Total $": total,
+                "Time": o.time || "",
+                "Status": "Completed"
+            });
+        }
+        const ws = XLSX.utils.json_to_sheet(excel);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "History");
+        XLSX.writeFile(wb, "OrderHistory.xlsx");
+    });
+}
 
 function login(){
     if(password.value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
+
+        // 🔥 浏览器音频解锁（必成功）
+        try {
+            orderAudio.play();
+            orderAudio.pause();
+            orderAudio.currentTime = 0;
+        } catch(e){}
+
         loadOrders();
-    }else{
+    } else {
         error.innerText="Wrong Password!";
     }
 }
 
-function logout(){
-    mainPage.style.display="none";
-    loginPage.style.display="block";
+function logout(){ location.reload(); }
+
+function triggerNewOrderAlert(){
+    const box = document.getElementById("newOrderAlert");
+    box.style.display="flex";
+
+    // 🔥 播放提示音（100%响）
+    orderAudio.currentTime = 0;
+    orderAudio.play().catch(e=>{});
+    setTimeout(()=>{ orderAudio.currentTime=0; orderAudio.play().catch(e=>{}); }, 350);
+    setTimeout(()=>{ orderAudio.currentTime=0; orderAudio.play().catch(e=>{}); }, 700);
+
+    if(navigator.vibrate) navigator.vibrate([300,200,300]);
+    setTimeout(()=>box.style.display="none",3000);
 }
 
-/* 🔊 播放警报 */
-function triggerAlarm(){
-    document.getElementById("alarmOverlay").style.display="block";
-    document.getElementById("alarmSound").play();
+function toggleKitchenMode(){
+    kitchenMode=!kitchenMode;
+    document.body.style.fontSize = kitchenMode?"22px":"16px";
+    if(kitchenMode) autoScroll();
+}
+function autoScroll(){
+    if(!kitchenMode) return;
+    window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+    setTimeout(autoScroll,3000);
 }
 
-/* 🛑 停止警报 */
-function stopAlarm(){
-    document.getElementById("alarmOverlay").style.display="none";
-    const audio = document.getElementById("alarmSound");
-    audio.pause();
-    audio.currentTime = 0;
-}
-
-/* Firebase */
 const firebaseConfig = {
-    apiKey: "AIzaSy...",
-    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app"
+    apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+    authDomain: "restaurants-cs.firebaseapp.com",
+    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "restaurants-cs",
+    storageBucket: "restaurants-cs.firebasestorage.app",
+    messagingSenderId: "209872919844",
+    appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-
-/* 过滤 TuTu */
-function isTuTuKuehOrder(items){
-    if (!items) return false;
-    return items.some(i=>{
-        const name = i.name || i;
-        return name.includes("TuTu Kueh");
-    });
-}
 
 function loadOrders(){
     let path="orders";
     if(viewMode==="history") path="historyOrders";
     if(viewMode==="cancelled") path="cancelledOrders";
 
-    db.ref(path).on("value", snap=>{
-        const data = snap.val();
-        const list = document.getElementById("orderList");
-        list.innerHTML="";
-
-        let count = 0;
-
+    db.ref(path).on("value",snap=>{
+        const data=snap.val();
+        orderList.innerHTML="";
+        
+        let currentOrderList = [];
         if(data){
             for(let id in data){
-                const o = data[id];
-                if(!isTuTuKuehOrder(o.items)) continue;
-
-                count++;
-
-                let total = o.total || 0;
-                let html="";
-
-                o.items.forEach(i=>{
-                    html += `${i.name} - $${i.price}<br>`;
-                });
-
-                const div=document.createElement("div");
-                div.className="order-box";
-                div.innerHTML=`
-                    <div class="order-table">Order #${o.orderNo}</div>
-                    <div>${html}</div>
-                    <div class="total">$${total}</div>
-                    ${viewMode==="current" ? `
-                    <button onclick="complete('${id}')">✅ Done</button>
-                    <button onclick="cancelOrder('${id}')">❌ Cancel</button>` : ""}
-                `;
-                list.appendChild(div);
+                currentOrderList.push({ id, data: data[id] });
             }
         }
 
-        /* 🔥 新订单检测 */
+        let count = currentOrderList.length;
         if(viewMode==="current" && count > lastOrderCount){
-            triggerAlarm();
+            triggerNewOrderAlert();
         }
         lastOrderCount = count;
+
+        if(count === 0){
+            orderList.innerHTML = "<div>No Orders</div>";
+            return;
+        }
+
+        currentOrderList.forEach(({ id, data: o }) => {
+            let html="";
+            let total=0;
+            
+            if(o.items){
+                o.items.forEach(i=>{
+                    let p=i.price||0;
+                    total+=p;
+                    html+=`${i.name} - $${p}<br>`;
+                });
+            }
+
+            const div=document.createElement("div");
+            div.className="order-box";
+            div.innerHTML=`
+            <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||"?"}</div>
+            <div>📌 Status: ${o.status||"New"}</div>
+            <div>${html}</div>
+            <div class="total">Total: $${total}</div>
+            <div>${o.time}</div>
+            ${viewMode==="current"?`
+            <button onclick="updateStatus('${id}','Preparing')">👨‍🍳 Preparing</button>
+            <button onclick="updateStatus('${id}','Ready')">📦 Ready</button>
+            <button class="done-btn" onclick="complete('${id}')">✅ Done</button>
+            <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
+            `:""}
+            `;
+            orderList.appendChild(div);
+        });
     });
 }
 
+function updateStatus(id,status){
+    db.ref("orders/"+id+"/status").set(status);
+}
 function complete(id){
     db.ref("orders/"+id).once("value",s=>{
         db.ref("historyOrders/"+id).set(s.val());
         db.ref("orders/"+id).remove();
     });
 }
-
-function cancelOrder(id){
+function cancel(id){
     db.ref("orders/"+id).once("value",s=>{
         db.ref("cancelledOrders/"+id).set(s.val());
         db.ref("orders/"+id).remove();
     });
 }
-
-/* 📊 导出 Excel */
-function exportExcel(){
-    db.ref("historyOrders").once("value",snap=>{
-        const data = snap.val();
-        if(!data){ alert("No data"); return;}
-
-        let csv="OrderNo,Total,Time\n";
-
-        for(let id in data){
-            const o = data[id];
-            csv += `${o.orderNo},${o.total},${o.time}\n`;
-        }
-
-        const blob = new Blob([csv], {type:"text/csv"});
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "orders.csv";
-        a.click();
-    });
-}
 </script>
-
 </body>
 </html>
