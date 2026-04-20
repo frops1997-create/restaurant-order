@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Order</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.6.1/firebase-app.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.6.1/firebase-database.min.js"></script>
+    <style>
+        *{box-sizing:border-box;font-family:Arial;margin:0;padding:0}
+        body{background:#f5f5f5;padding:20px}
+        .container{max-width:600px;margin:0 auto;background:white;padding:20px;border-radius:10px;box-shadow:0 0 10px #00000033}
+        h1{text-align:center;color:#d32f2f;margin-bottom:20px}
+        .category{margin-bottom:15px}
+        .category h3{color:#333;margin-bottom:8px}
+        .item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee}
+        .item-name{flex:1}
+        .item-price{width:60px;text-align:right}
+        .qty{width:60px;padding:5px;text-align:center}
+        .btn{width:100%;padding:12px;background:#d32f2f;color:white;border:none;border-radius:5px;font-size:16px;margin-top:20px}
+        .total{text-align:right;font-size:18px;font-weight:bold;margin-top:15px}
+        .success{color:green;text-align:center;margin-top:15px;font-weight:bold}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Place Your Order</h1>
+        <div id="menu"></div>
+        <div class="total">Total: $<span id="total">0.00</span></div>
+        <button class="btn" onclick="submitOrder()">Submit Order</button>
+        <div id="msg"></div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+            authDomain: "restaurants-cs.firebaseapp.com",
+            databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "restaurants-cs",
+            storageBucket: "restaurants-cs.firebasestorage.app",
+            messagingSenderId: "209872919844",
+            appId: "1:209872919844:web:c1730801cd51d615e867b1"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const menu = [
+            {name: "Tutu Kueh", price: 5.00, category: "Tutu Kueh"},
+            {name: "Toast Box", price: 4.50, category: "Toast Box"},
+            {name: "Coffee", price: 2.50, category: "Drinks"},
+            {name: "Tea", price: 2.00, category: "Drinks"}
+        ];
+
+        let orders = {};
+        window.onload = renderMenu;
+
+        function renderMenu() {
+            const container = document.getElementById("menu");
+            let categories = {};
+            menu.forEach(item => {
+                if (!categories[item.category]) categories[item.category] = [];
+                categories[item.category].push(item);
+            });
+            for (let cat in categories) {
+                let div = document.createElement("div");
+                div.className = "category";
+                div.innerHTML = `<h3>${cat}</h3>`;
+                categories[cat].forEach(item => {
+                    let itemDiv = document.createElement("div");
+                    itemDiv.className = "item";
+                    itemDiv.innerHTML = `
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-price">$${item.price.toFixed(2)}</div>
+                        <input type="number" class="qty" min="0" value="0" onchange="updateOrder('${item.name}',${item.price},this.value)">
+                    `;
+                    div.appendChild(itemDiv);
+                });
+                container.appendChild(div);
+            }
+        }
+
+        function updateOrder(name, price, qty) {
+            qty = parseInt(qty) || 0;
+            if (qty <= 0) delete orders[name];
+            else orders[name] = { price, qty };
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let total = 0;
+            for (let i in orders) total += orders[i].price * orders[i].qty;
+            document.getElementById("total").textContent = total.toFixed(2);
+        }
+
+        function submitOrder() {
+            if (Object.keys(orders).length === 0) {
+                document.getElementById("msg").innerHTML = "Please select at least one item!";
+                return;
+            }
+            let orderData = {
+                items: Object.entries(orders).map(([name, { price, qty }]) => ({ name, price, qty })),
+                total: parseFloat(document.getElementById("total").textContent),
+                time: new Date().toLocaleString(),
+                status: "New",
+                tableNo: "Takeaway",
+                orderNo: "ORD" + Date.now()
+            };
+            db.ref("orders").push(orderData).then(() => {
+                document.getElementById("msg").innerHTML = "Order sent successfully!";
+                setTimeout(() => location.reload(), 2000);
+            });
+        }
+    </script>
+</body>
+</html>
