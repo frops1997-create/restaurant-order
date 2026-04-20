@@ -92,6 +92,14 @@ let kitchenMode = false;
 // 预加载音频
 const orderAudio = document.getElementById("dingSound");
 
+// ✅ 点击屏幕任意位置停止提示音 + 关闭警报（新增）
+document.addEventListener('click', stopAlertSound);
+function stopAlertSound() {
+    orderAudio.pause();
+    orderAudio.currentTime = 0;
+    document.getElementById('newOrderAlert').style.display = 'none';
+}
+
 function login(){
     if(password.value === PASSWORD){
         loginPage.style.display="none";
