@@ -91,30 +91,51 @@ function stopOrderMusic() {
 document.addEventListener('click', stopOrderMusic);
 
 function login(){
-    if(document.getElementById("password").value === PASSWORD){
+    // 修复1：正确获取DOM元素
+    const passwordInput = document.getElementById("password");
+    const loginPage = document.getElementById("loginPage");
+    const mainPage = document.getElementById("mainPage");
+    const error = document.getElementById("error");
+    
+    if(passwordInput.value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
         loadOrders();
+        error.innerText=""; // 清空错误提示
     } else {
         error.innerText="Wrong Password!";
     }
 }
 
 function logout(){
+    const mainPage = document.getElementById("mainPage");
+    const loginPage = document.getElementById("loginPage");
     if(confirm("Logout?")){
         mainPage.style.display="none";
         loginPage.style.display="block";
     }
 }
 
-function openClearModal(){ clearModal.style.display="block"; }
-function closeClearModal(){ clearModal.style.display="none"; }
+function openClearModal(){ 
+    const clearModal = document.getElementById("clearModal");
+    clearModal.style.display="block"; 
+}
+function closeClearModal(){ 
+    const clearModal = document.getElementById("clearModal");
+    clearModal.style.display="none"; 
+}
 
 function verifyClearPwd(){
-    if(document.getElementById("clearPwd").value === PASSWORD){
+    const clearPwdInput = document.getElementById("clearPwd");
+    const clearError = document.getElementById("clearError");
+    const clearModal = document.getElementById("clearModal");
+    
+    if(clearPwdInput.value === PASSWORD){
         db.ref("historyOrders").remove();
         db.ref("cancelledOrders").remove();
         closeClearModal();
+        clearError.style.display="none";
+        clearPwdInput.value = "";
     } else {
         clearError.style.display="block";
     }
@@ -138,7 +159,7 @@ const priceList = {
     "HK Roasted Chicken Rice 烧鸡饭": 6.20,
     "HK Roasted Duck Rice 烧鸭饭": 6.50,
     "HK Roasted Pork Rice 烧肉饭": 6.80,
-    "HK Char Siew Rice 叉烧饭": .6.50,
+    "HK Char Siew Rice 叉烧饭": 6.50, // 修复2：删除了多余的小数点
     "HK Char Siew Wanton Noodle 叉烧云台面": 6.70,
     "HK Roasted Chicken & Roasted Pork Rice 烧鸡烧肉饭": 7.20,
     "HK Wanton Soup 云台汤": 6.00,
