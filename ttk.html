@@ -69,12 +69,12 @@ body::before {
 <script>
 const PASSWORD = "1234";
 let viewMode = "current";
-let lastOrderIds = []; // 记录已听过声音的订单
+let lastOrderIds = []; // 记录已播放音乐的订单
 
-// 新订单提示音
-function playOrderSound() {
-    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
-    audio.play().catch(e => {});
+// ✅ 新订单播放你指定的音乐
+function playOrderMusic() {
+    const audio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
+    audio.play().catch(err => console.log("播放提示音需要用户交互"));
 }
 
 function login(){
@@ -145,7 +145,7 @@ const priceList = {
 
 // ✅ 过滤规则：只显示【不包含】嘟嘟糕的订单
 function isNormalFoodOrder(items) {
-    if (!items || !Array.isArray(items)) return true;
+    if (!items || !Array.is(items)) return true;
     const tuTuKeywords = ["TuTu Kueh (5pcs)Coconut", "TuTu Kueh (5pcs)Peanut", "TuTu Kueh (5pcs)Plain"];
     return !items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
@@ -217,9 +217,9 @@ function loadOrders(){
             list.appendChild(div);
         }
 
-        // 有新订单 → 播放提示音
+        // 有新订单 → 播放你指定的音乐
         if (viewMode === "current" && hasNewOrder) {
-            playOrderSound();
+            playOrderMusic();
         }
 
         lastOrderIds = currentOrderIds;
