@@ -11,7 +11,7 @@
 body { margin: 0; padding: 20px; }
 body::before {
     content:""; position:fixed; width:100%; height:100%;
-    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c") center/cover;
+    background:url("https://imagesunsplash.com/photos/1546069901-ba9599a7e63c");
     opacity:0.65; z-index:-1;
 }
 #loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
@@ -55,7 +55,7 @@ body::before {
 </div>
 
 <div class="container" id="mainPage">
-    <h1>Counter 2 - Normal Food Only</h1>
+    <h1>TuTu Kueh</h1>
     <div class="top-buttons">
         <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
         <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
@@ -70,12 +70,25 @@ body::before {
 const PASSWORD = "1234";
 let viewMode = "current";
 let lastOrderIds = [];
+let currentAudio = null; // 全局保存正在播放的音乐
 
 // 新订单播放指定音乐
 function playOrderMusic() {
-    const audio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
-    audio.play().catch(e => {});
+    stopOrderMusic(); // 先停止之前的
+    currentAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
+    currentAudio.play().catch(e => {});
 }
+
+// 停止音乐
+function stopOrderMusic() {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+}
+
+// 点击屏幕任意位置停止音乐
+document.addEventListener('click', stopOrderMusic);
 
 function login(){
     if(document.getElementById("password").value === PASSWORD){
@@ -130,22 +143,22 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 const priceList = {
-    "Fried Rice": 8,
-    "Beef Noodles": 10,
-    "BBQ Pork": 12,
-    "BBQ Chicken": 15,
-    "BBQ Salmon": 18,
+    "TBOX Curry Chicken with Rice 咖喱鸡饭": 17.10,
+    "TBOX Laksa Set 叻沙套餐": 16.90,
+    "TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝": 8.50,
+    "TBOX Traditional Butter Toast Set 傳統奶油吐司套裝": 8.20,
+    "TBOX Ham and Cheese Sandwiches 火腿和起司三文治": 10.40,
     "Nasi Lemak Curry": 13,
-    "Nasi Lemak Chicken": 12,
-    "Nasi Lemak Egg": 9,
+    "TBOX Peanut Thick Toast Set 花生厚吐司套裝": 8.70,
+    "TBOX Butter Suger Thick Toast 奶油糖厚吐司": 8.70,
     "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
     "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// 过滤规则：只显示【不包含】嘟嘟糕的订单
+// 过滤规则：只显示嘟嘟糕的订单
 function isNormalFoodOrder(items) {
-    if (!items || !Array.isArray(items)) return true;
+    if (!items || !Array.isArray(items)) return false;
     const tuTuKeywords = ["TuTu Kueh (5pcs)Coconut", "TuTu Kueh (5pcs)Peanut", "TuTu Kueh (5pcs)Plain"];
     return !items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
@@ -182,7 +195,7 @@ function loadOrders(){
             currentOrderIds.push(id);
             const o = data[id];
             
-            // 过滤：包含嘟嘟糕的订单直接跳过
+            // 过滤：只显示嘟嘟糕的订单
             if (!isNormalFoodOrder(o.items)) continue;
 
             // 检测新订单
@@ -239,7 +252,7 @@ function complete(id){
     }
 }
 
-function cancelOrder(id){
+function cancel(id){
     if(confirm("Cancel?")){
         db.ref("orders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
