@@ -149,7 +149,7 @@ const priceList = {
 // ====================== 过滤：只显示 TBOX ======================
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
-    const tuTuKeywords = ["TBOX"];
+    const tuTuKeywords = ["TBOX,Hot,Ice"];
     return items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
