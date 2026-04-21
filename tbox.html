@@ -246,7 +246,7 @@ function complete(id){
     if(confirm("Complete Order?")){
         db.ref("submitOrders/"+id).once("value",s=>{
             db.ref("historyOrders/"+id).set(s.val());
-            db.ref("submitOrders/"+id).remove();
+            db.ref("Orders/"+id).remove();
         });
     }
 }
@@ -255,7 +255,7 @@ function cancelOrder(id){
     if(confirm("Cancel Order?")){
         db.ref("submitOrders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
-            db.ref("submitOrders/"+id).remove();
+            db.ref("Orders/"+id).remove();
         });
     }
 }
