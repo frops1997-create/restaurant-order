@@ -244,7 +244,7 @@ function loadOrders(){
 
 function complete(id){
     if(confirm("Complete Order?")){
-        db.ref("submitOrders/"+id).once("value",s=>{
+        db.ref("Orders/"+id).once("value",s=>{
             db.ref("historyOrders/"+id).set(s.val());
             db.ref("Orders/"+id).remove();
         });
@@ -253,7 +253,7 @@ function complete(id){
 
 function cancelOrder(id){
     if(confirm("Cancel Order?")){
-        db.ref("submitOrders/"+id).once("value",s=>{
+        db.ref("Orders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
             db.ref("Orders/"+id).remove();
         });
