@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter 2 - Normal Food Only</title>
+<title>TuTu Kueh Counter</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
@@ -11,7 +11,8 @@
 body { margin: 0; padding: 20px; }
 body::before {
     content:""; position:fixed; width:100%; height:100%;
-    background:url("https://imagesunsplash.com/photos/1546069901-ba9599a7e63c");
+    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c");
+    background-size: cover;
     opacity:0.65; z-index:-1;
 }
 #loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
@@ -32,36 +33,36 @@ body::before {
 .modal-box input { width:100%; padding:12px; margin:15px 0; border:1px solid #ccc; border-radius:8px; }
 .modal-btn { padding:10px 20px; margin:5px; border:none; border-radius:6px; }
 .btn-confirm { background:#e74c3c; color:white; }
-.btn-cancel { background:#95a5a6; color:white; }
+.btn-cancel { background:#95a5a6; white; }
 </style>
 </head>
 <body>
+
 <div id="loginPage">
-    <h2>🔐 Counter Login</h2>
-    <input type="password" id="password" placeholder="Enter Password">
+    <h2>🔐 Login</h2>
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
     <p id="error" style="color:red;"></p>
 </div>
 
 <div class="modal-overlay" id="clearModal">
     <div class="modal-box">
-        <h3>🔒 Clear History Confirm</h3>
-        <p>Enter Admin Password to Clear All History</p>
-        <input type="password" id="clearPwd" placeholder="Enter Password">
-        <div style="color:red; margin-bottom:10px; display:none;" id="clearError">Wrong Password!</div>
-        <button class="modal-btn btn-confirm" onclick="verifyClearPwd()">Confirm Clear</button>
+        <h3>Clear History</h3>
+        <input type="password" id="clearPwd" placeholder="Password">
+        <div id="clearError" style="color:red; display:none;">Wrong Password!</div>
+        <button class="modal-btn btn-confirm" onclick="verifyClearPwd()">Confirm</button>
         <button class="modal-btn btn-cancel" onclick="closeClearModal()">Cancel</button>
     </div>
 </div>
 
 <div class="container" id="mainPage">
-    <h1>TuTu Kueh</h1>
+    <h1>TuTu Kueh Only</h1>
     <div class="top-buttons">
-        <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
-        <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
-        <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
-        <button class="clear-btn" onclick="openClearModal()">🗑️ Clear All History</button>
-        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        <button onclick="viewMode='current';loadOrders()">Current Orders</button>
+        <button onclick="viewMode='history';loadOrders()">History</button>
+        <button onclick="viewMode='cancelled';loadOrders()">Cancelled</button>
+        <button class="clear-btn" onclick="openClearModal()">Clear History</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
     <div id="orderList"></div>
 </div>
@@ -70,24 +71,18 @@ body::before {
 const PASSWORD = "1234";
 let viewMode = "current";
 let lastOrderIds = [];
-let currentAudio = null; // 全局保存正在播放的音乐
+let currentAudio = null;
 
-// 新订单播放指定音乐
 function playOrderMusic() {
-    stopOrderMusic(); // 先停止之前的
+    stopOrderMusic();
     currentAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
-    currentAudio.play().catch(e => {});
+    currentAudio.play().catch(e=>{});
 }
 
-// 停止音乐
 function stopOrderMusic() {
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-    }
+    if(currentAudio) { currentAudio.pause(); currentAudio = null; }
 }
 
-// 点击屏幕任意位置停止音乐
 document.addEventListener('click', stopOrderMusic);
 
 function login(){
@@ -100,33 +95,23 @@ function login(){
     }
 }
 
-// 登出功能
 function logout(){
-    if(confirm("Confirm to logout?")){
-        mainPage.style.display = "none";
-        loginPage.style.display = "block";
-        document.getElementById("password").value = "";
-        document.getElementById("error").innerText = "";
+    if(confirm("Logout?")){
+        mainPage.style.display="none";
+        loginPage.style.display="block";
     }
 }
 
-function openClearModal() {
-    document.getElementById("clearModal").style.display = "block";
-    document.getElementById("clearPwd").value = "";
-    document.getElementById("clearError").style.display = "none";
-}
+function openClearModal(){ clearModal.style.display="block"; }
+function closeClearModal(){ clearModal.style.display="none"; }
 
-function closeClearModal() {
-    document.getElementById("clearModal").style.display = "none";
-}
-
-function verifyClearPwd() {
-    const inputPwd = document.getElementById("clearPwd").value;
-    if (inputPwd === PASSWORD) {
+function verifyClearPwd(){
+    if(document.getElementById("clearPwd").value === PASSWORD){
+        db.ref("historyOrders").remove();
+        db.ref("cancelledOrders").remove();
         closeClearModal();
-        clearAllHistory();
     } else {
-        document.getElementById("clearError").style.display = "block";
+        clearError.style.display="block";
     }
 }
 
@@ -145,48 +130,29 @@ const db = firebase.database();
 const priceList = {
     "TBOX Curry Chicken with Rice 咖喱鸡饭": 17.10,
     "TBOX Laksa Set 叻沙套餐": 16.90,
-    "TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝": 8.50,
-    "TBOX Traditional Butter Toast Set 傳統奶油吐司套裝": 8.20,
-    "TBOX Ham and Cheese Sandwiches 火腿和起司三文治": 10.40,
-    "Nasi Lemak Curry": 13,
-    "TBOX Peanut Thick Toast Set 花生厚吐司套裝": 8.70,
-    "TBOX Butter Suger Thick Toast 奶油糖厚吐司": 8.70,
     "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
     "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// 过滤规则：只显示嘟嘟糕的订单
+// ====================== 已修好：只显示嘟嘟糕 ======================
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
-    const tuTuKeywords = ["TuTu Kueh (5pcs)Coconut", "TuTu Kueh (5pcs)Peanut", "TuTu Kueh (5pcs)Plain"];
-    return !items.some(item => {
+    const tuTuKeywords = ["TuTu Kueh"];
+    return items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
     });
 }
-
-function clearAllHistory() {
-    if (!confirm("⚠️ Confirm clear ALL history & cancelled?")) return;
-    db.ref("historyOrders").remove();
-    db.ref("cancelledOrders").remove();
-    alert("✅ Cleared!");
-    loadOrders();
-}
+// =================================================================
 
 function loadOrders(){
-    let path = "orders";
-    if(viewMode==="history") path="historyOrders";
-    if(viewMode==="cancelled") path="cancelledOrders";
-
+    let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
         const data = snap.val();
         const list = document.getElementById("orderList");
-        list.innerHTML = "";
-        if(!data) {
-            list.innerHTML = "<div>No Orders</div>";
-            return;
-        }
+        list.innerHTML = data ? "" : "<div>No Orders</div>";
+        if(!data) return;
 
         const currentOrderIds = [];
         let hasNewOrder = false;
@@ -194,52 +160,31 @@ function loadOrders(){
         for(let id in data){
             currentOrderIds.push(id);
             const o = data[id];
-            
-            // 过滤：只显示嘟嘟糕的订单
-            if (!isNormalFoodOrder(o.items)) continue;
+            if(!isNormalFoodOrder(o.items)) continue;
+            if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
-            // 检测新订单
-            if (viewMode === "current" && !lastOrderIds.includes(id)) {
-                hasNewOrder = true;
-            }
+            let total=0, html="";
+            o.items?.forEach(item=>{
+                let p = item.price || priceList[item] || 0;
+                total += p;
+                html += `${item.name||item} - $${p.toFixed(2)}<br>`;
+            });
 
-            let total = 0;
-            let html = "";
-            if(o.items){
-                o.items.forEach(item=>{
-                    let p = typeof item==="object" ? (item.price||0) : (priceList[item]||0);
-                    total += p;
-                    html += `${item.name||item} - $${p.toFixed(2)}<br>`;
-                });
-            }
-            if(o.total) total = parseFloat(o.total);
-
-            const div = document.createElement("div");
-            div.className = "order-box";
-            const tableDisplay = o.tableNo || o.TableNo || o.table || o.Table || "?";
-            div.innerHTML = `
-                <div class="order-table">Order #${o.orderNo} | Table ${tableDisplay}</div>
+            list.innerHTML += `
+            <div class="order-box">
+                <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||'?'}</div>
                 <div>${html}</div>
-                <div class="total">✅ TOTAL BILL: $${total.toFixed(2)}</div>
+                <div class="total">Total: $${total.toFixed(2)}</div>
                 <div>${o.time}</div>
                 ${viewMode==="current" ? `
-                    <button class="done-btn" onclick="complete('${id}')">✅ Complete</button>
-                    <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
+                <button class="done-btn" onclick="complete('${id}')">Complete</button>
+                <button class="cancel-btn" onclick="cancelOrder('${id}')">Cancel</button>
                 ` : ""}
-            `;
-            list.appendChild(div);
+            </div>`;
         }
 
-        // 播放新订单提示音
-        if (viewMode === "current" && hasNewOrder) {
-            playOrderMusic();
-        }
-
+        if(viewMode==="current" && hasNewOrder) playOrderMusic();
         lastOrderIds = currentOrderIds;
-
-        if (list.innerHTML === "") {
-            list.innerHTML = "<div>No Normal Food Orders</div>";
-        }
     });
 }
 
@@ -252,7 +197,8 @@ function complete(id){
     }
 }
 
-function cancel(id){
+// 已修好函数名
+function cancelOrder(id){
     if(confirm("Cancel?")){
         db.ref("orders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
