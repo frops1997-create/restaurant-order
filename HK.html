@@ -132,7 +132,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 仅保留 HK 价格表
+// ====================== HK 价格表 ======================
 const priceList = {
     "HK Roasted Chicken Drumstick 烧鸡腿饭": 7.00,
     "HK Roasted Chicken Rice 烧鸡饭": 6.20,
@@ -146,16 +146,17 @@ const priceList = {
     "HK Roasted Duck 烧鸭肉": 5.70
 };
 
-// 严格过滤：只保留包含 HK 的订单
-function isHKOrder(items) {
+// ====================== 过滤：只显示 HK 订单 ======================
+function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
+    const HKKeywords = ["HK"];
     return items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
-        return itemName.includes("HK");
+        return HKKeywords.some(keyword => itemName.includes(keyword));
     });
 }
 
-// 导出 Excel（仅导出 HK）
+// 导出 Excel（只导出 HK）
 function exportExcel() {
     db.ref("historyOrders").once("value", snap => {
         const data = snap.val();
@@ -164,7 +165,7 @@ function exportExcel() {
         let csv = "Order No,Table No,Amount,Time,Items\n";
         for (let id in data) {
             const o = data[id];
-            if (!isHKOrder(o.items)) continue;
+            if (!isNormalFoodOrder(o.items)) continue;
 
             let itemsStr = "";
             o.items.forEach(it => {
@@ -194,7 +195,7 @@ function exportExcel() {
     });
 }
 
-// 加载订单（仅 HK）
+// 加载订单（只加载 HK）
 function loadOrders(){
     let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
@@ -217,8 +218,7 @@ function loadOrders(){
         for(let id in data){
             currentOrderIds.push(id);
             const o = data[id];
-            // 只显示 HK 订单
-            if(!isHKOrder(o.items)) continue;
+            if(!isNormalFoodOrder(o.items)) continue;
 
             if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
