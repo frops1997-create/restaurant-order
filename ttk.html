@@ -270,18 +270,18 @@ function loadOrders(){
 
 function complete(id){
     if(confirm("Complete Order?")){
-        db.ref("orders/"+id).once("value",s=>{
+        db.ref("submitOrders/"+id).once("value",s=>{
             db.ref("historyOrders/"+id).set(s.val());
-            db.ref("orders/"+id).remove();
+            db.ref("submitOrders/"+id).remove();
         });
     }
 }
 
 function cancelOrder(id){
     if(confirm("Cancel Order?")){
-        db.ref("orders/"+id).once("value",s=>{
+        db.ref("submitOrders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
-            db.ref("orders/"+id).remove();
+            db.ref("submitOrders/"+id).remove();
         });
     }
 }
