@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TuTu Kueh Counter</title>
+<title>HK Food Counter</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
@@ -58,7 +58,7 @@ body::before {
 </div>
 
 <div class="container" id="mainPage">
-    <h1>HK Roast</h1>
+    <h1>HK Food Only</h1>
     
     <div class="top-buttons">
         <button onclick="viewMode='current';loadOrders()">Current Orders</button>
@@ -91,51 +91,30 @@ function stopOrderMusic() {
 document.addEventListener('click', stopOrderMusic);
 
 function login(){
-    // 修复1：正确获取DOM元素
-    const passwordInput = document.getElementById("password");
-    const loginPage = document.getElementById("loginPage");
-    const mainPage = document.getElementById("mainPage");
-    const error = document.getElementById("error");
-    
-    if(passwordInput.value === PASSWORD){
+    if(document.getElementById("password").value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
         loadOrders();
-        error.innerText=""; // 清空错误提示
     } else {
         error.innerText="Wrong Password!";
     }
 }
 
 function logout(){
-    const mainPage = document.getElementById("mainPage");
-    const loginPage = document.getElementById("loginPage");
     if(confirm("Logout?")){
         mainPage.style.display="none";
         loginPage.style.display="block";
     }
 }
 
-function openClearModal(){ 
-    const clearModal = document.getElementById("clearModal");
-    clearModal.style.display="block"; 
-}
-function closeClearModal(){ 
-    const clearModal = document.getElementById("clearModal");
-    clearModal.style.display="none"; 
-}
+function openClearModal(){ clearModal.style.display="block"; }
+function closeClearModal(){ clearModal.style.display="none"; }
 
 function verifyClearPwd(){
-    const clearPwdInput = document.getElementById("clearPwd");
-    const clearError = document.getElementById("clearError");
-    const clearModal = document.getElementById("clearModal");
-    
-    if(clearPwdInput.value === PASSWORD){
+    if(document.getElementById("clearPwd").value === PASSWORD){
         db.ref("historyOrders").remove();
         db.ref("cancelledOrders").remove();
         closeClearModal();
-        clearError.style.display="none";
-        clearPwdInput.value = "";
     } else {
         clearError.style.display="block";
     }
@@ -153,13 +132,13 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ====================== 修复价格表（去掉序号，匹配订单）======================
+// 仅保留 HK 价格表
 const priceList = {
     "HK Roasted Chicken Drumstick 烧鸡腿饭": 7.00,
     "HK Roasted Chicken Rice 烧鸡饭": 6.20,
     "HK Roasted Duck Rice 烧鸭饭": 6.50,
     "HK Roasted Pork Rice 烧肉饭": 6.80,
-    "HK Char Siew Rice 叉烧饭": 6.50, // 修复2：删除了多余的小数点
+    "HK Char Siew Rice 叉烧饭": 6.50,
     "HK Char Siew Wanton Noodle 叉烧云台面": 6.70,
     "HK Roasted Chicken & Roasted Pork Rice 烧鸡烧肉饭": 7.20,
     "HK Wanton Soup 云台汤": 6.00,
@@ -167,17 +146,16 @@ const priceList = {
     "HK Roasted Duck 烧鸭肉": 5.70
 };
 
-// 过滤：只显示HK
-function isNormalFoodOrder(items) {
+// 严格过滤：只保留包含 HK 的订单
+function isHKOrder(items) {
     if (!items || !Array.isArray(items)) return false;
-    const tuTuKeywords = ["HK"];
     return items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
-        return tuTuKeywords.some(keyword => itemName.includes(keyword));
+        return itemName.includes("HK");
     });
 }
 
-// 导出 Excel
+// 导出 Excel（仅导出 HK）
 function exportExcel() {
     db.ref("historyOrders").once("value", snap => {
         const data = snap.val();
@@ -186,7 +164,7 @@ function exportExcel() {
         let csv = "Order No,Table No,Amount,Time,Items\n";
         for (let id in data) {
             const o = data[id];
-            if (!isNormalFoodOrder(o.items)) continue;
+            if (!isHKOrder(o.items)) continue;
 
             let itemsStr = "";
             o.items.forEach(it => {
@@ -195,7 +173,7 @@ function exportExcel() {
                 if (it.price) price = it.price;
                 else {
                     for (let key in priceList) {
-                        if (name.includes(key.replace(/^\d+\)\s*/, ''))) {
+                        if (name.includes(key)) {
                             price = priceList[key];
                             break;
                         }
@@ -211,12 +189,12 @@ function exportExcel() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "TuTuKueh_History.csv";
+        a.download = "HK_Food_History.csv";
         a.click();
     });
 }
 
-// 加载订单（已修复总额计算）
+// 加载订单（仅 HK）
 function loadOrders(){
     let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
@@ -239,20 +217,18 @@ function loadOrders(){
         for(let id in data){
             currentOrderIds.push(id);
             const o = data[id];
-            if(!isNormalFoodOrder(o.items)) continue;
+            // 只显示 HK 订单
+            if(!isHKOrder(o.items)) continue;
 
             if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
-            // ====================== 修复金额计算 ======================
             let total = 0;
             let html = "";
             o.items.forEach(item=>{
                 let itemName = item.name || item;
                 let p = 0;
 
-                // 优先使用订单自带价格
                 if (item.price) p = parseFloat(item.price);
-                // 匹配价格表
                 else {
                     for (let key in priceList) {
                         if (itemName.includes(key)) {
@@ -267,7 +243,6 @@ function loadOrders(){
             });
 
             grandTotal += total;
-            // ==========================================================
 
             list.innerHTML += `
             <div class="order-box">
