@@ -244,18 +244,24 @@ function loadOrders(){
 
 function complete(id){
     if(confirm("Complete Order?")){
-        db.ref("SubmitOrders/"+id).once("value",s=>{
-            db.ref("historyOrders/"+id).set(s.val());
-            db.ref("SubmitOrders/"+id).remove();
+        db.ref("orders/"+id).once("value",s=>{
+            const data = s.val();
+            if(!data) return;
+
+            db.ref("historyOrders/"+id).set(data);
+            db.ref("orders/"+id).remove();
         });
     }
 }
 
 function cancelOrder(id){
     if(confirm("Cancel Order?")){
-        db.ref("SubmitOrders/"+id).once("value",s=>{
-            db.ref("cancelledOrders/"+id).set(s.val());
-            db.ref("SubmitOrders/"+id).remove();
+        db.ref("orders/"+id).once("value",s=>{
+            const data = s.val();
+            if(!data) return;
+
+            db.ref("cancelledOrders/"+id).set(data);
+            db.ref("orders/"+id).remove();
         });
     }
 }
