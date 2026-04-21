@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter 1 - TuTu Kueh Only</title>
+<title>Counter 2 - Normal Food Only</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
@@ -36,9 +36,6 @@ body::before {
 </style>
 </head>
 <body>
-<!-- 提示音频元素 -->
-<audio id="notifySound" src="https://frops1997-create.github.io/restaurant-order/msz1.mp3" preload="auto"></audio>
-
 <div id="loginPage">
     <h2>🔐 Counter Login</h2>
     <input type="password" id="password" placeholder="Enter Password">
@@ -58,12 +55,11 @@ body::before {
 </div>
 
 <div class="container" id="mainPage">
-    <h1>Tu Tu Kueh</h1>
+    <h1>Counter 2 - Normal Food Only</h1>
     <div class="top-buttons">
         <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
         <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
         <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
-        <button class="clear-btn" onclick="downloadHistoryExcel()">📊 Download Excel</button>
         <button class="clear-btn" onclick="openClearModal()">🗑️ Clear All History</button>
         <button class="logout-btn" onclick="logout()">🚪 Logout</button>
     </div>
@@ -73,7 +69,13 @@ body::before {
 <script>
 const PASSWORD = "1234";
 let viewMode = "current";
-let lastOrderCount = 0;
+let lastOrderIds = []; // 记录已听过声音的订单
+
+// 新订单提示音
+function playOrderSound() {
+    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+    audio.play().catch(e => {});
+}
 
 function login(){
     if(document.getElementById("password").value === PASSWORD){
@@ -85,6 +87,7 @@ function login(){
     }
 }
 
+// ✅ 登出功能
 function logout(){
     if(confirm("Confirm to logout?")){
         mainPage.style.display = "none";
@@ -114,89 +117,6 @@ function verifyClearPwd() {
     }
 }
 
-// 播放提示音
-function playNotifySound() {
-    const sound = document.getElementById('notifySound');
-    if (sound) {
-        sound.currentTime = 0;
-        sound.play().catch(err => console.log('提示音播放失败', err));
-    }
-}
-
-// Excel 格式下载（CSV）
-async function downloadHistoryExcel() {
-    if (!confirm("📊 Confirm to download order history as Excel?")) return;
-
-    try {
-        const [currentSnap, historySnap, cancelledSnap] = await Promise.all([
-            db.ref("orders").once("value"),
-            db.ref("historyOrders").once("value"),
-            db.ref("cancelledOrders").once("value")
-        ]);
-
-        const rows = [];
-        // Excel 表头
-        rows.push([
-            "Order No", "Table No", "Order Time", "Status", "Items", "Total Amount"
-        ]);
-
-        // 处理所有订单
-        const process = (data, status) => {
-            if (!data) return;
-            Object.keys(data).forEach(id => {
-                const o = data[id];
-                if (!isTuTuKuehOrder(o.items)) return;
-
-                let itemsStr = "";
-                let total = 0;
-                if (o.items) {
-                    o.items.forEach(item => {
-                        const name = item.name || item;
-                        const price = item.price || priceList[name] || 0;
-                        total += price;
-                        itemsStr += `${name} ($${price.toFixed(2)}), `;
-                    });
-                    itemsStr = itemsStr.slice(0, -2);
-                }
-                if (o.total) total = parseFloat(o.total);
-
-                const table = o.tableNo || o.TableNo || o.table || o.Table || "?";
-                rows.push([
-                    o.orderNo || "",
-                    table,
-                    o.time || "",
-                    status,
-                    itemsStr,
-                    `$${total.toFixed(2)}`
-                ]);
-            });
-        };
-
-        process(currentSnap.val(), "Current");
-        process(historySnap.val(), "Completed");
-        process(cancelledSnap.val(), "Cancelled");
-
-        if (rows.length <= 1) {
-            alert("📭 No orders to export!");
-            return;
-        }
-
-        // 转 CSV 格式
-        let csv = rows.map(e => e.map(i => `"${(i || "").replace(/"/g, '""')}"`).join(",")).join("\n");
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `TuTuKueh_Orders_${new Date().toISOString().slice(0,10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        alert(`✅ Excel downloaded successfully!\nTotal orders: ${rows.length - 1}`);
-    } catch (e) {
-        alert("❌ Download failed: " + e.message);
-    }
-}
-
 const firebaseConfig = {
     apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
     authDomain: "restaurants-cs.firebaseapp.com",
@@ -204,7 +124,7 @@ const firebaseConfig = {
     projectId: "restaurants-cs",
     storageBucket: "restaurants-cs.firebasestorage.app",
     messagingSenderId: "209872919844",
-    appId: "1:209872919844:web:c1730808cd51d615e867b1"
+    appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
@@ -223,10 +143,11 @@ const priceList = {
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-function isTuTuKuehOrder(items) {
-    if (!items || !Array.isArray(items)) return false;
+// ✅ 过滤规则：只显示【不包含】嘟嘟糕的订单
+function isNormalFoodOrder(items) {
+    if (!items || !Array.isArray(items)) return true;
     const tuTuKeywords = ["TuTu Kueh (5pcs)Coconut", "TuTu Kueh (5pcs)Peanut", "TuTu Kueh (5pcs)Plain"];
-    return items.some(item => {
+    return !items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
     });
@@ -251,16 +172,24 @@ function loadOrders(){
         list.innerHTML = "";
         if(!data) {
             list.innerHTML = "<div>No Orders</div>";
-            lastOrderCount = 0;
             return;
         }
 
-        let currentValidOrderCount = 0;
+        const currentOrderIds = [];
+        let hasNewOrder = false;
+
         for(let id in data){
+            currentOrderIds.push(id);
             const o = data[id];
-            if (!isTuTuKuehOrder(o.items)) continue;
             
-            currentValidOrderCount++;
+            // 过滤：包含嘟嘟糕的订单直接跳过
+            if (!isNormalFoodOrder(o.items)) continue;
+
+            // 检测新订单
+            if (viewMode === "current" && !lastOrderIds.includes(id)) {
+                hasNewOrder = true;
+            }
+
             let total = 0;
             let html = "";
             if(o.items){
@@ -288,13 +217,15 @@ function loadOrders(){
             list.appendChild(div);
         }
 
-        if (viewMode === "current" && currentValidOrderCount > lastOrderCount && lastOrderCount > 0) {
-            playNotifySound();
+        // 有新订单 → 播放提示音
+        if (viewMode === "current" && hasNewOrder) {
+            playOrderSound();
         }
-        lastOrderCount = currentValidOrderCount;
+
+        lastOrderIds = currentOrderIds;
 
         if (list.innerHTML === "") {
-            list.innerHTML = "<div>No TuTu Kueh Orders</div>";
+            list.innerHTML = "<div>No Normal Food Orders</div>";
         }
     });
 }
