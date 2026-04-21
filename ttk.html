@@ -69,9 +69,7 @@ body::before {
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
 
-    <!-- 订单总额显示 -->
     <div class="summary" id="totalSummary">Total Amount: $0.00</div>
-
     <div id="orderList"></div>
 </div>
 
@@ -81,22 +79,17 @@ let viewMode = "current";
 let lastOrderIds = [];
 let currentAudio = null;
 
-// 播放新订单提示音
 function playOrderMusic() {
     stopOrderMusic();
     currentAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
     currentAudio.play().catch(e=>{});
 }
 
-// 停止音乐
 function stopOrderMusic() {
     if(currentAudio) { currentAudio.pause(); currentAudio = null; }
 }
-
-// 点击屏幕停止音乐
 document.addEventListener('click', stopOrderMusic);
 
-// 登录
 function login(){
     if(document.getElementById("password").value === PASSWORD){
         loginPage.style.display="none";
@@ -107,7 +100,6 @@ function login(){
     }
 }
 
-// 登出
 function logout(){
     if(confirm("Logout?")){
         mainPage.style.display="none";
@@ -115,11 +107,9 @@ function logout(){
     }
 }
 
-// 弹窗控制
 function openClearModal(){ clearModal.style.display="block"; }
 function closeClearModal(){ clearModal.style.display="none"; }
 
-// 验证密码清空历史
 function verifyClearPwd(){
     if(document.getElementById("clearPwd").value === PASSWORD){
         db.ref("historyOrders").remove();
@@ -130,7 +120,6 @@ function verifyClearPwd(){
     }
 }
 
-// Firebase 配置
 const firebaseConfig = {
     apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
     authDomain: "restaurants-cs.firebaseapp.com",
@@ -143,7 +132,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 价格表
+// ====================== 修复价格表（去掉序号，匹配订单）======================
 const priceList = {
     "TBOX Curry Chicken with Rice 咖喱鸡饭": 17.10,
     "TBOX Laksa Set 叻沙套餐": 16.90,
@@ -156,18 +145,9 @@ const priceList = {
     "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
     "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
-    "TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝": 8.50,
-    "TBOX Traditional Butter Toast Set 傳統奶油吐司套裝": 8.20,
-    "TBOX Ham and Cheese Sandwiches 火腿和起司三文治": 10.40,
-    "Nasi Lemak Curry": 13,
-    "TBOX Peanut Thick Toast Set 花生厚吐司套裝": 8.70,
-    "TBOX Butter Suger Thick Toast 奶油糖厚吐司": 8.70,
-    "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
-    "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
-    "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// ====================== 过滤：只显示嘟嘟糕 ======================
+// 过滤：只显示嘟嘟糕
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
     const tuTuKeywords = ["TuTu Kueh"];
@@ -176,17 +156,14 @@ function isNormalFoodOrder(items) {
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
     });
 }
-// ===============================================================
 
-// ====================== 导出 Excel (CSV) ======================
+// 导出 Excel
 function exportExcel() {
     db.ref("historyOrders").once("value", snap => {
         const data = snap.val();
         if (!data) { alert("No history to export!"); return; }
 
         let csv = "Order No,Table No,Amount,Time,Items\n";
-        let allItems = [];
-
         for (let id in data) {
             const o = data[id];
             if (!isNormalFoodOrder(o.items)) continue;
@@ -194,25 +171,32 @@ function exportExcel() {
             let itemsStr = "";
             o.items.forEach(it => {
                 const name = it.name || it;
-                const price = it.price || priceList[it] || 0;
+                let price = 0;
+                if (it.price) price = it.price;
+                else {
+                    for (let key in priceList) {
+                        if (name.includes(key.replace(/^\d+\)\s*/, ''))) {
+                            price = priceList[key];
+                            break;
+                        }
+                    }
+                }
                 itemsStr += `${name} ($${price.toFixed(2)}) | `;
             });
             itemsStr = itemsStr.slice(0, -3);
-
-            csv += `"${o.orderNo}","${o.tableNo || '-'}","${o.total.toFixed(2)}","${o.time}","${itemsStr}"\n`;
+            csv += `"${o.orderNo}","${o.tableNo || '-'}","${o.total || 0}","${o.time}","${itemsStr}"\n`;
         }
 
         const blob = new Blob([csv], { type: "text/csv" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "TuTuKueh_History_"+new Date().toLocaleDateString()+".csv";
+        a.download = "TuTuKueh_History.csv";
         a.click();
     });
 }
-// ===============================================================
 
-// 加载订单
+// 加载订单（已修复总额计算）
 function loadOrders(){
     let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
@@ -237,20 +221,34 @@ function loadOrders(){
             const o = data[id];
             if(!isNormalFoodOrder(o.items)) continue;
 
-            // 检测新订单
             if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
-            // 计算单额 & 总额
+            // ====================== 修复金额计算 ======================
             let total = 0;
             let html = "";
             o.items.forEach(item=>{
-                let p = item.price || priceList[item] || 0;
-                total += p;
-                html += `${item.name||item} - $${p.toFixed(2)}<br>`;
-            });
-            grandTotal += total;
+                let itemName = item.name || item;
+                let p = 0;
 
-            // 渲染订单
+                // 优先使用订单自带价格
+                if (item.price) p = parseFloat(item.price);
+                // 匹配价格表
+                else {
+                    for (let key in priceList) {
+                        if (itemName.includes(key)) {
+                            p = priceList[key];
+                            break;
+                        }
+                    }
+                }
+
+                total += p;
+                html += `${itemName} - $${p.toFixed(2)}<br>`;
+            });
+
+            grandTotal += total;
+            // ==========================================================
+
             list.innerHTML += `
             <div class="order-box">
                 <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||'?'}</div>
@@ -264,14 +262,12 @@ function loadOrders(){
             </div>`;
         }
 
-        // 显示总额
         summary.innerText = `Total Amount: $${grandTotal.toFixed(2)}`;
         if(viewMode==="current" && hasNewOrder) playOrderMusic();
         lastOrderIds = currentOrderIds;
     });
 }
 
-// 完成订单
 function complete(id){
     if(confirm("Complete Order?")){
         db.ref("orders/"+id).once("value",s=>{
@@ -281,7 +277,6 @@ function complete(id){
     }
 }
 
-// 取消订单
 function cancelOrder(id){
     if(confirm("Cancel Order?")){
         db.ref("orders/"+id).once("value",s=>{
