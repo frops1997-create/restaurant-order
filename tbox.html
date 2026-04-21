@@ -3,275 +3,247 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Toast BoxX</title>
-
+<title>Counter 2 - Normal Food Only</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <style>
 * { box-sizing: border-box; font-family: Arial; }
 body { margin: 0; padding: 20px; }
-
 body::before {
     content:""; position:fixed; width:100%; height:100%;
     background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c") center/cover;
     opacity:0.65; z-index:-1;
 }
-
 #loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
+#loginPage input { width:100%; padding:10px; margin:10px 0; }
+#loginPage button { padding:10px 20px; }
 .container { max-width:900px; margin:auto; display:none; }
-
 .order-box { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
 .order-table { font-size:18px; font-weight:bold; color:#0066cc; }
-.total { color:#27ae60; font-weight:bold; }
-
-button { padding:6px 10px; margin:3px; border:none; border-radius:5px; }
-
-.done-btn { background:#27ae60; color:white; }
-.cancel-btn { background:#c0392b; color:white; }
-
+.total { color:#27ae60; font-weight:bold; font-size:16px; margin:8px 0; }
+.done-btn { background:#27ae60; color:white; padding:6px 10px; border:none; }
+.cancel-btn { background:#c0392b; color:white; padding:6px 10px; border:none; margin-left:5px; }
 .top-buttons { text-align:center; margin-bottom:15px; }
-
-#newOrderAlert {
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:red;
-color:white;
-font-size:50px;
-font-weight:bold;
-z-index:9999;
-justify-content:center;
-align-items:center;
-text-align:center;
-}
+.top-buttons button { margin:5px; padding:8px 12px; }
+.clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
+.logout-btn { background:#34495e; color:white; padding:8px 12px; border:none; }
+.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index:999; display:none; }
+.modal-box { background:white; padding:30px; border-radius:12px; max-width:400px; margin:150px auto; text-align:center; }
+.modal-box input { width:100%; padding:12px; margin:15px 0; border:1px solid #ccc; border-radius:8px; }
+.modal-btn { padding:10px 20px; margin:5px; border:none; border-radius:6px; }
+.btn-confirm { background:#e74c3c; color:white; }
+.btn-cancel { background:#95a5a6; color:white; }
 </style>
 </head>
-
 <body>
-
-<!-- 🔊 音效 -->
-<audio id="dingSound" preload="auto"></audio>
-
-<!-- 🚨 新订单弹窗 -->
-<div id="newOrderAlert">🚨 NEW ORDER 🚨</div>
-
 <div id="loginPage">
-<h2>🔐 Login</h2>
-<input type="password" id="password" placeholder="Password">
-<button onclick="login()">Login</button>
-<p id="error" style="color:red;"></p>
+    <h2>🔐 Counter Login</h2>
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+    <p id="error" style="color:red;"></p>
+</div>
+
+<div class="modal-overlay" id="clearModal">
+    <div class="modal-box">
+        <h3>🔒 Clear History Confirm</h3>
+        <p>Enter Admin Password to Clear All History</p>
+        <input type="password" id="clearPwd" placeholder="Enter Password">
+        <div style="color:red; margin-bottom:10px; display:none;" id="clearError">Wrong Password!</div>
+        <button class="modal-btn btn-confirm" onclick="verifyClearPwd()">Confirm Clear</button>
+        <button class="modal-btn btn-cancel" onclick="closeClearModal()">Cancel</button>
+    </div>
 </div>
 
 <div class="container" id="mainPage">
-
-<h1>🍽️ Toast BoxX </h1>
-
-<div class="top-buttons">
-<button onclick="viewMode='current';loadOrders()">🟢 Current</button>
-<button onclick="viewMode='history';loadOrders()">📜 History</button>
-<button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled</button>
-<button onclick="toggleKitchenMode()">🍳 Kitchen Mode</button>
-<button onclick="exportHistoryToExcel()">📊 Export Excel</button> <!-- 新增导出按钮 -->
-<button onclick="logout()">🚪 Logout</button>
-</div>
-
-<div id="orderList"></div>
-
+    <h1>Counter 2 - Normal Food Only</h1>
+    <div class="top-buttons">
+        <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
+        <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
+        <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
+        <button class="clear-btn" onclick="openClearModal()">🗑️ Clear All History</button>
+        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+    </div>
+    <div id="orderList"></div>
 </div>
 
 <script>
 const PASSWORD = "1234";
 let viewMode = "current";
-let lastOrderCount = 0;
-let audioUnlocked = false;
-let kitchenMode = false;
+let lastOrderIds = [];
 
-// 预加载音频
-const orderAudio = document.getElementById("dingSound");
-
-// ✅ 点击屏幕任意位置停止提示音 + 关闭警报
-document.addEventListener('click', stopAlertSound);
-function stopAlertSound() {
-    orderAudio.pause();
-    orderAudio.currentTime = 0;
-    document.getElementById('newOrderAlert').style.display = 'none';
-}
-
-// 📊 导出历史订单为 Excel（新增）
-function exportHistoryToExcel() {
-    db.ref("historyOrders").once("value", snap => {
-        const data = snap.val();
-        if (!data) {
-            alert("No history to export!");
-            return;
-        }
-
-        let excelData = [];
-        for (let id in data) {
-            const o = data[id];
-            let items = "";
-            let total = 0;
-
-            if (o.items) {
-                items = o.items.map(i => `${i.name} ($${i.price})`).join(", ");
-                total = o.items.reduce((sum, i) => sum + (i.price || 0), 0);
-            }
-
-            excelData.push({
-                "Order No": o.orderNo || "",
-                "Table No": o.tableNo || "",
-                "Items": items,
-                "Total": total,
-                "Time": o.time || "",
-                "Status": "Completed"
-            });
-        }
-
-        const ws = XLSX.utils.json_to_sheet(excelData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Order History");
-        XLSX.writeFile(wb, "OrderHistory.xlsx");
-    });
+// 新订单播放指定音乐
+function playOrderMusic() {
+    const audio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
+    audio.play().catch(e => {});
 }
 
 function login(){
-    if(password.value === PASSWORD){
+    if(document.getElementById("password").value === PASSWORD){
         loginPage.style.display="none";
         mainPage.style.display="block";
-
-        orderAudio.src = "https://frops1997-create.github.io/restaurant-order/msz1.mp3";
-
-        orderAudio.play().then(() => {
-            orderAudio.pause();
-            orderAudio.currentTime = 0;
-            audioUnlocked = true;
-        }).catch(err => {
-            audioUnlocked = true;
-        });
-
         loadOrders();
     } else {
         error.innerText="Wrong Password!";
     }
 }
 
+// 登出功能
 function logout(){
-    location.reload();
-}
-
-function triggerNewOrderAlert(){
-    const box = document.getElementById("newOrderAlert");
-    box.style.display="flex";
-
-    orderAudio.currentTime = 0;
-    orderAudio.play();
-    setTimeout(() => orderAudio.play(), 300);
-    setTimeout(() => orderAudio.play(), 600);
-
-    if(navigator.vibrate){
-        navigator.vibrate([300,200,300]);
+    if(confirm("Confirm to logout?")){
+        mainPage.style.display = "none";
+        loginPage.style.display = "block";
+        document.getElementById("password").value = "";
+        document.getElementById("error").innerText = "";
     }
-
-    setTimeout(() => box.style.display="none", 3000);
 }
 
-function toggleKitchenMode(){
-    kitchenMode=!kitchenMode;
-    document.body.style.fontSize = kitchenMode ? "22px" : "16px";
-    if(kitchenMode) autoScroll();
+function openClearModal() {
+    document.getElementById("clearModal").style.display = "block";
+    document.getElementById("clearPwd").value = "";
+    document.getElementById("clearError").style.display = "none";
 }
 
-function autoScroll(){
-    if(!kitchenMode) return;
-    window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
-    setTimeout(autoScroll,3000);
+function closeClearModal() {
+    document.getElementById("clearModal").style.display = "none";
+}
+
+function verifyClearPwd() {
+    const inputPwd = document.getElementById("clearPwd").value;
+    if (inputPwd === PASSWORD) {
+        closeClearModal();
+        clearAllHistory();
+    } else {
+        document.getElementById("clearError").style.display = "block";
+    }
 }
 
 const firebaseConfig = {
-apiKey:"AIzaSy...",
-databaseURL:"https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app"
+    apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+    authDomain: "restaurants-cs.firebaseapp.com",
+    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "restaurants-cs",
+    storageBucket: "restaurants-cs.firebasestorage.app",
+    messagingSenderId: "209872919844",
+    appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+const priceList = {
+    <label><input type="checkbox" data-price="17.10" onchange="updateTotal()"> 1) TBOX Curry Chicken with Rice 咖喱鸡饭 -$17.10</label>
+  <label><input type="checkbox" data-price="16.90" onchange="updateTotal()"> 2) TBOX Laksa Set 叻沙套餐 -$16.90</label>
+  <label><input type="checkbox" data-price="8.50" onchange="updateTotal()">  3) TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝 -$8.50</label>
+  <label><input type="checkbox" data-price="8.20" onchange="updateTotal()">  4) TBOX Traditional Butter Toast Set 傳統奶油吐司套裝 -$8.20</label>
+  <!-- Fixed missing quote in price below -->
+  <label><input type="checkbox" data-price="10.40" onchange="updateTotal()"> 5) TBOX Ham and Cheese Sandwiches 火腿和起司三文治 -$10.40</label>
+  <label><input type="checkbox" data-price="8.70" onchange="updateTotal()">  6) TBOX Peanut Thick Toast Set 花生厚吐司套裝 -$8.70</label>
+  <label><input type="checkbox" data-price="8.70" onchange="updateTotal()">  7) TBOX Butter Suger Thick Toast 奶油糖厚吐司 -$8.70</label>
+};
+
+// 过滤规则：只显示TBOX的订单
+function isNormalFoodOrder(items) {
+    if (!items || !Array.isArray(items)) return true;
+    const tuTuKeywords = ["TuTu Kueh (5pcs)Coconut", "TuTu Kueh (5pcs)Peanut", "TuTu Kueh (5pcs)Plain"];
+    return !items.some(item => {
+        const itemName = typeof item === "object" ? (item.name || "") : item;
+        return tuTuKeywords.some(keyword => itemName.includes(keyword));
+    });
+}
+
+function clearAllHistory() {
+    if (!confirm("⚠️ Confirm clear ALL history & cancelled?")) return;
+    db.ref("historyOrders").remove();
+    db.ref("cancelledOrders").remove();
+    alert("✅ Cleared!");
+    loadOrders();
+}
+
 function loadOrders(){
-    let path="orders";
+    let path = "orders";
     if(viewMode==="history") path="historyOrders";
     if(viewMode==="cancelled") path="cancelledOrders";
 
-    db.ref(path).on("value",snap=>{
-        const data=snap.val();
-        orderList.innerHTML="";
-
-        let count=data?Object.keys(data).length:0;
-
-        if(viewMode==="current" && count > lastOrderCount){
-            triggerNewOrderAlert();
+    db.ref(path).on("value", snap=>{
+        const data = snap.val();
+        const list = document.getElementById("orderList");
+        list.innerHTML = "";
+        if(!data) {
+            list.innerHTML = "<div>No Orders</div>";
+            return;
         }
-        lastOrderCount = count;
 
-        if(!data){ orderList.innerHTML="No Orders"; return;}
+        const currentOrderIds = [];
+        let hasNewOrder = false;
 
         for(let id in data){
-            const o=data[id];
+            currentOrderIds.push(id);
+            const o = data[id];
+            
+            // 过滤：包含嘟嘟糕的订单直接跳过
+            if (!isNormalFoodOrder(o.items)) continue;
 
-            let html="";
-            let total=0;
-
-            if(o.items){
-                o.items.forEach(i=>{
-                    let p=i.price||0;
-                    total+=p;
-                    html+=`${i.name} - $${p}<br>`;
-                });
+            // 检测新订单
+            if (viewMode === "current" && !lastOrderIds.includes(id)) {
+                hasNewOrder = true;
             }
 
-            const div=document.createElement("div");
-            div.className="order-box";
+            let total = 0;
+            let html = "";
+            if(o.items){
+                o.items.forEach(item=>{
+                    let p = typeof item==="object" ? (item.price||0) : (priceList[item]||0);
+                    total += p;
+                    html += `${item.name||item} - $${p.toFixed(2)}<br>`;
+                });
+            }
+            if(o.total) total = parseFloat(o.total);
 
-            div.innerHTML=`
-            <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||"?"}</div>
-            <div>📌 Status: ${o.status||"New"}</div>
-            <div>${html}</div>
-            <div class="total">Total: $${total}</div>
-            <div>${o.time}</div>
-
-            ${viewMode==="current"?`
-            <button onclick="updateStatus('${id}','Preparing')">👨‍🍳 Preparing</button>
-            <button onclick="updateStatus('${id}','Ready')">📦 Ready</button>
-            <button class="done-btn" onclick="complete('${id}')">✅ Done</button>
-            <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
-            `:""}
+            const div = document.createElement("div");
+            div.className = "order-box";
+            const tableDisplay = o.tableNo || o.TableNo || o.table || o.Table || "?";
+            div.innerHTML = `
+                <div class="order-table">Order #${o.orderNo} | Table ${tableDisplay}</div>
+                <div>${html}</div>
+                <div class="total">✅ TOTAL BILL: $${total.toFixed(2)}</div>
+                <div>${o.time}</div>
+                ${viewMode==="current" ? `
+                    <button class="done-btn" onclick="complete('${id}')">✅ Complete</button>
+                    <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
+                ` : ""}
             `;
+            list.appendChild(div);
+        }
 
-            orderList.appendChild(div);
+        // 播放新订单提示音
+        if (viewMode === "current" && hasNewOrder) {
+            playOrderMusic();
+        }
+
+        lastOrderIds = currentOrderIds;
+
+        if (list.innerHTML === "") {
+            list.innerHTML = "<div>No Normal Food Orders</div>";
         }
     });
-}
-
-function updateStatus(id,status){
-    db.ref("orders/"+id+"/status").set(status);
 }
 
 function complete(id){
-    db.ref("orders/"+id).once("value",s=>{
-        db.ref("historyOrders/"+id).set(s.val());
-        db.ref("orders/"+id).remove();
-    });
+    if(confirm("Complete?")){
+        db.ref("orders/"+id).once("value",s=>{
+            db.ref("historyOrders/"+id).set(s.val());
+            db.ref("orders/"+id).remove();
+        });
+    }
 }
 
 function cancelOrder(id){
-    db.ref("orders/"+id).once("value",s=>{
-        db.ref("cancelledOrders/"+id).set(s.val());
-        db.ref("orders/"+id).remove();
-    });
+    if(confirm("Cancel?")){
+        db.ref("orders/"+id).once("value",s=>{
+            db.ref("cancelledOrders/"+id).set(s.val());
+            db.ref("orders/"+id).remove();
+        });
+    }
 }
 </script>
-
 </body>
 </html>
