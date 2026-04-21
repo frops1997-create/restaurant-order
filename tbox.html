@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Counter 2 - Normal Food Only</title>
+<title>TBOX Counter</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
 * { box-sizing: border-box; font-family: Arial; }
 body { margin: 0; padding: 20px; }
 body::before {
-    content:""; position:fixed; width:100%; height:100%;
-    background:url("https://images.unsplash.com/photos/1546069901-ba9599a7e63c");
+    content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c");
+    background-size: cover; background-position: center;
     opacity:0.65; z-index:-1;
 }
 #loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
@@ -25,8 +26,10 @@ body::before {
 .cancel-btn { background:#c0392b; color:white; padding:6px 10px; border:none; margin-left:5px; }
 .top-buttons { text-align:center; margin-bottom:15px; }
 .top-buttons button { margin:5px; padding:8px 12px; }
+.summary { background:#fff; padding:10px 15px; border-radius:8px; margin-bottom:15px; font-size:18px; font-weight:bold; color:#d32f2f; }
 .clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
 .logout-btn { background:#34495e; color:white; padding:8px 12px; border:none; }
+.export-btn { background:#0277bd; color:white; padding:8px 12px; border:none; border-radius:4px; }
 .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index:999; display:none; }
 .modal-box { background:white; padding:30px; border-radius:12px; max-width:400px; margin:150px auto; text-align:center; }
 .modal-box input { width:100%; padding:12px; margin:15px 0; border:1px solid #ccc; border-radius:8px; }
@@ -36,33 +39,37 @@ body::before {
 </style>
 </head>
 <body>
+
 <div id="loginPage">
-    <h2>🔐 Counter Login</h2>
-    <input type="password" id="password" placeholder="Enter Password">
+    <h2>🔐 Login</h2>
+    <input type="password" id="password" placeholder="Password">
     <button onclick="login()">Login</button>
     <p id="error" style="color:red;"></p>
 </div>
 
 <div class="modal-overlay" id="clearModal">
     <div class="modal-box">
-        <h3>🔒 Clear History Confirm</h3>
-        <p>Enter Admin Password to Clear All History</p>
-        <input type="password" id="clearPwd" placeholder="Enter Password">
-        <div style="color:red; margin-bottom:10px; display:none;" id="clearError">Wrong Password!</div>
-        <button class="modal-btn btn-confirm" onclick="verifyClearPwd()">Confirm Clear</button>
+        <h3>Clear History</h3>
+        <input type="password" id="clearPwd" placeholder="Password">
+        <div id="clearError" style="color:red; display:none;">Wrong Password!</div>
+        <button class="modal-btn btn-confirm" onclick="verifyClearPwd()">Confirm</button>
         <button class="modal-btn btn-cancel" onclick="closeClearModal()">Cancel</button>
     </div>
 </div>
 
 <div class="container" id="mainPage">
-    <h1>TuTu Kueh</h1>
+    <h1>TBOX Food Only</h1>
+    
     <div class="top-buttons">
-        <button onclick="viewMode='current';loadOrders()">🟢 Current Orders</button>
-        <button onclick="viewMode='history';loadOrders()">📜 History Orders</button>
-        <button onclick="viewMode='cancelled';loadOrders()">❌ Cancelled Orders</button>
-        <button class="clear-btn" onclick="openClearModal()">🗑️ Clear All History</button>
-        <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+        <button onclick="viewMode='current';loadOrders()">Current Orders</button>
+        <button onclick="viewMode='history';loadOrders()">History</button>
+        <button onclick="viewMode='cancelled';loadOrders()">Cancelled</button>
+        <button class="export-btn" onclick="exportExcel()">Download Excel</button>
+        <button class="clear-btn" onclick="openClearModal()">Clear History</button>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
+
+    <div class="summary" id="totalSummary">Total Amount: $0.00</div>
     <div id="orderList"></div>
 </div>
 
@@ -70,24 +77,17 @@ body::before {
 const PASSWORD = "1234";
 let viewMode = "current";
 let lastOrderIds = [];
-let currentAudio = null; // 全局保存正在播放的音乐
+let currentAudio = null;
 
-// 新订单播放指定音乐
 function playOrderMusic() {
-    stopOrderMusic(); // 先停止之前的
+    stopOrderMusic();
     currentAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
-    currentAudio.play().catch(e => {});
+    currentAudio.play().catch(e=>{});
 }
 
-// 停止音乐
 function stopOrderMusic() {
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-    }
+    if(currentAudio) { currentAudio.pause(); currentAudio = null; }
 }
-
-// 点击屏幕任意位置停止音乐
 document.addEventListener('click', stopOrderMusic);
 
 function login(){
@@ -100,33 +100,23 @@ function login(){
     }
 }
 
-// 登出功能
 function logout(){
-    if(confirm("Confirm to logout?")){
-        mainPage.style.display = "none";
-        loginPage.style.display = "block";
-        document.getElementById("password").value = "";
-        document.getElementById("error").innerText = "";
+    if(confirm("Logout?")){
+        mainPage.style.display="none";
+        loginPage.style.display="block";
     }
 }
 
-function openClearModal() {
-    document.getElementById("clearModal").style.display = "block";
-    document.getElementById("clearPwd").value = "";
-    document.getElementById("clearError").style.display = "none";
-}
+function openClearModal(){ clearModal.style.display="block"; }
+function closeClearModal(){ clearModal.style.display="none"; }
 
-function closeClearModal() {
-    document.getElementById("clearModal").style.display = "none";
-}
-
-function verifyClearPwd() {
-    const inputPwd = document.getElementById("clearPwd").value;
-    if (inputPwd === PASSWORD) {
+function verifyClearPwd(){
+    if(document.getElementById("clearPwd").value === PASSWORD){
+        db.ref("historyOrders").remove();
+        db.ref("cancelledOrders").remove();
         closeClearModal();
-        clearAllHistory();
     } else {
-        document.getElementById("clearError").style.display = "block";
+        clearError.style.display="block";
     }
 }
 
@@ -156,8 +146,7 @@ const priceList = {
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// 过滤规则：只显示TBOX的订单
-// ====================== 过滤：只显示 TBOX 菜单 ======================
+// ====================== 过滤：只显示 TBOX ======================
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
     const tuTuKeywords = ["TBOX"];
@@ -167,25 +156,48 @@ function isNormalFoodOrder(items) {
     });
 }
 
-function clearAllHistory() {
-    if (!confirm("⚠️ Confirm clear ALL history & cancelled?")) return;
-    db.ref("historyOrders").remove();
-    db.ref("cancelledOrders").remove();
-    alert("✅ Cleared!");
-    loadOrders();
+// 导出 Excel
+function exportExcel() {
+    db.ref("historyOrders").once("value", snap => {
+        const data = snap.val();
+        if (!data) { alert("No history to export!"); return; }
+
+        let csv = "Order No,Table No,Amount,Time,Items\n";
+        for (let id in data) {
+            const o = data[id];
+            if (!isNormalFoodOrder(o.items)) continue;
+
+            let itemsStr = "";
+            o.items.forEach(it => {
+                const name = it.name || it;
+                let price = it.price || 0;
+                if (!price) for (let k in priceList) { if (name.includes(k)) { price = priceList[k]; break; } }
+                itemsStr += `${name} ($${price.toFixed(2)}) | `;
+            });
+            csv += `"${o.orderNo}","${o.tableNo||'-'}","${o.total||0}","${o.time}","${itemsStr.slice(0,-3)}"\n`;
+        }
+
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = "TBOX_History.csv";
+        a.click();
+    });
 }
 
+// 加载订单
 function loadOrders(){
-    let path = "orders";
-    if(viewMode==="history") path="historyOrders";
-    if(viewMode==="cancelled") path="cancelledOrders";
-
+    let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
         const data = snap.val();
         const list = document.getElementById("orderList");
+        const summary = document.getElementById("totalSummary");
+
         list.innerHTML = "";
+        let grandTotal = 0;
+
         if(!data) {
             list.innerHTML = "<div>No Orders</div>";
+            summary.innerText = "Total Amount: $0.00";
             return;
         }
 
@@ -195,57 +207,43 @@ function loadOrders(){
         for(let id in data){
             currentOrderIds.push(id);
             const o = data[id];
-            
-            // 过滤：只显示嘟嘟糕的订单
-            if (!isNormalFoodOrder(o.items)) continue;
+            if(!isNormalFoodOrder(o.items)) continue;
 
-            // 检测新订单
-            if (viewMode === "current" && !lastOrderIds.includes(id)) {
-                hasNewOrder = true;
-            }
+            if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
             let total = 0;
             let html = "";
-            if(o.items){
-                o.items.forEach(item=>{
-                    let p = typeof item==="object" ? (item.price||0) : (priceList[item]||0);
-                    total += p;
-                    html += `${item.name||item} - $${p.toFixed(2)}<br>`;
-                });
-            }
-            if(o.total) total = parseFloat(o.total);
+            o.items.forEach(item=>{
+                let name = item.name || item;
+                let p = item.price || 0;
+                if (!p) for (let k in priceList) { if (name.includes(k)) { p = priceList[k]; break; } }
+                total += p;
+                html += `${name} - $${p.toFixed(2)}<br>`;
+            });
 
-            const div = document.createElement("div");
-            div.className = "order-box";
-            const tableDisplay = o.tableNo || o.TableNo || o.table || o.Table || "?";
-            div.innerHTML = `
-                <div class="order-table">Order #${o.orderNo} | Table ${tableDisplay}</div>
+            grandTotal += total;
+
+            list.innerHTML += `
+            <div class="order-box">
+                <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||'?'}</div>
                 <div>${html}</div>
-                <div class="total">✅ TOTAL BILL: $${total.toFixed(2)}</div>
+                <div class="total">Total: $${total.toFixed(2)}</div>
                 <div>${o.time}</div>
                 ${viewMode==="current" ? `
-                    <button class="done-btn" onclick="complete('${id}')">✅ Complete</button>
-                    <button class="cancel-btn" onclick="cancelOrder('${id}')">❌ Cancel</button>
+                <button class="done-btn" onclick="complete('${id}')">Complete</button>
+                <button class="cancel-btn" onclick="cancelOrder('${id}')">Cancel</button>
                 ` : ""}
-            `;
-            list.appendChild(div);
+            </div>`;
         }
 
-        // 播放新订单提示音
-        if (viewMode === "current" && hasNewOrder) {
-            playOrderMusic();
-        }
-
+        summary.innerText = `Total Amount: $${grandTotal.toFixed(2)}`;
+        if(viewMode==="current" && hasNewOrder) playOrderMusic();
         lastOrderIds = currentOrderIds;
-
-        if (list.innerHTML === "") {
-            list.innerHTML = "<div>No Normal Food Orders</div>";
-        }
     });
 }
 
 function complete(id){
-    if(confirm("Complete?")){
+    if(confirm("Complete Order?")){
         db.ref("orders/"+id).once("value",s=>{
             db.ref("historyOrders/"+id).set(s.val());
             db.ref("orders/"+id).remove();
@@ -253,8 +251,8 @@ function complete(id){
     }
 }
 
-function cancel(id){
-    if(confirm("Cancel?")){
+function cancelOrder(id){
+    if(confirm("Cancel Order?")){
         db.ref("orders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
             db.ref("orders/"+id).remove();
