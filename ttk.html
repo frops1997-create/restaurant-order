@@ -26,14 +26,16 @@ body::before {
 .cancel-btn { background:#c0392b; color:white; padding:6px 10px; border:none; margin-left:5px; }
 .top-buttons { text-align:center; margin-bottom:15px; }
 .top-buttons button { margin:5px; padding:8px 12px; }
+.summary { background:#fff; padding:10px 15px; border-radius:8px; margin-bottom:15px; font-size:18px; font-weight:bold; color:#d32f2f; }
 .clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
 .logout-btn { background:#34495e; color:white; padding:8px 12px; border:none; }
+.export-btn { background:#0277bd; color:white; padding:8px 12px; border:none; border-radius:4px; }
 .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index:999; display:none; }
 .modal-box { background:white; padding:30px; border-radius:12px; max-width:400px; margin:150px auto; text-align:center; }
 .modal-box input { width:100%; padding:12px; margin:15px 0; border:1px solid #ccc; border-radius:8px; }
 .modal-btn { padding:10px 20px; margin:5px; border:none; border-radius:6px; }
 .btn-confirm { background:#e74c3c; color:white; }
-.btn-cancel { background:#95a5a6; white; }
+.btn-cancel { background:#95a5a6; color:white; }
 </style>
 </head>
 <body>
@@ -57,13 +59,19 @@ body::before {
 
 <div class="container" id="mainPage">
     <h1>TuTu Kueh Only</h1>
+    
     <div class="top-buttons">
         <button onclick="viewMode='current';loadOrders()">Current Orders</button>
         <button onclick="viewMode='history';loadOrders()">History</button>
         <button onclick="viewMode='cancelled';loadOrders()">Cancelled</button>
+        <button class="export-btn" onclick="exportExcel()">Download Excel</button>
         <button class="clear-btn" onclick="openClearModal()">Clear History</button>
         <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
+
+    <!-- 订单总额显示 -->
+    <div class="summary" id="totalSummary">Total Amount: $0.00</div>
+
     <div id="orderList"></div>
 </div>
 
@@ -73,18 +81,22 @@ let viewMode = "current";
 let lastOrderIds = [];
 let currentAudio = null;
 
+// 播放新订单提示音
 function playOrderMusic() {
     stopOrderMusic();
     currentAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
     currentAudio.play().catch(e=>{});
 }
 
+// 停止音乐
 function stopOrderMusic() {
     if(currentAudio) { currentAudio.pause(); currentAudio = null; }
 }
 
+// 点击屏幕停止音乐
 document.addEventListener('click', stopOrderMusic);
 
+// 登录
 function login(){
     if(document.getElementById("password").value === PASSWORD){
         loginPage.style.display="none";
@@ -95,6 +107,7 @@ function login(){
     }
 }
 
+// 登出
 function logout(){
     if(confirm("Logout?")){
         mainPage.style.display="none";
@@ -102,9 +115,11 @@ function logout(){
     }
 }
 
+// 弹窗控制
 function openClearModal(){ clearModal.style.display="block"; }
 function closeClearModal(){ clearModal.style.display="none"; }
 
+// 验证密码清空历史
 function verifyClearPwd(){
     if(document.getElementById("clearPwd").value === PASSWORD){
         db.ref("historyOrders").remove();
@@ -115,6 +130,7 @@ function verifyClearPwd(){
     }
 }
 
+// Firebase 配置
 const firebaseConfig = {
     apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
     authDomain: "restaurants-cs.firebaseapp.com",
@@ -127,15 +143,22 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// 价格表
 const priceList = {
     "TBOX Curry Chicken with Rice 咖喱鸡饭": 17.10,
     "TBOX Laksa Set 叻沙套餐": 16.90,
+    "TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝": 8.50,
+    "TBOX Traditional Butter Toast Set 傳統奶油吐司套裝": 8.20,
+    "TBOX Ham and Cheese Sandwiches 火腿和起司三文治": 10.40,
+    "Nasi Lemak Curry": 13,
+    "TBOX Peanut Thick Toast Set 花生厚吐司套裝": 8.70,
+    "TBOX Butter Suger Thick Toast 奶油糖厚吐司": 8.70,
     "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
     "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// ====================== 已修好：只显示嘟嘟糕 ======================
+// ====================== 过滤：只显示嘟嘟糕 ======================
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
     const tuTuKeywords = ["TuTu Kueh"];
@@ -144,15 +167,58 @@ function isNormalFoodOrder(items) {
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
     });
 }
-// =================================================================
+// ===============================================================
 
+// ====================== 导出 Excel (CSV) ======================
+function exportExcel() {
+    db.ref("historyOrders").once("value", snap => {
+        const data = snap.val();
+        if (!data) { alert("No history to export!"); return; }
+
+        let csv = "Order No,Table No,Amount,Time,Items\n";
+        let allItems = [];
+
+        for (let id in data) {
+            const o = data[id];
+            if (!isNormalFoodOrder(o.items)) continue;
+
+            let itemsStr = "";
+            o.items.forEach(it => {
+                const name = it.name || it;
+                const price = it.price || priceList[it] || 0;
+                itemsStr += `${name} ($${price.toFixed(2)}) | `;
+            });
+            itemsStr = itemsStr.slice(0, -3);
+
+            csv += `"${o.orderNo}","${o.tableNo || '-'}","${o.total.toFixed(2)}","${o.time}","${itemsStr}"\n`;
+        }
+
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "TuTuKueh_History_"+new Date().toLocaleDateString()+".csv";
+        a.click();
+    });
+}
+// ===============================================================
+
+// 加载订单
 function loadOrders(){
     let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
         const data = snap.val();
         const list = document.getElementById("orderList");
-        list.innerHTML = data ? "" : "<div>No Orders</div>";
-        if(!data) return;
+        const summary = document.getElementById("totalSummary");
+
+        list.innerHTML = "";
+        let grandTotal = 0;
+
+        if(!data) {
+            list.innerHTML = "<div>No Orders</div>";
+            summary.innerText = "Total Amount: $0.00";
+            return;
+        }
 
         const currentOrderIds = [];
         let hasNewOrder = false;
@@ -161,15 +227,21 @@ function loadOrders(){
             currentOrderIds.push(id);
             const o = data[id];
             if(!isNormalFoodOrder(o.items)) continue;
+
+            // 检测新订单
             if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
-            let total=0, html="";
-            o.items?.forEach(item=>{
+            // 计算单额 & 总额
+            let total = 0;
+            let html = "";
+            o.items.forEach(item=>{
                 let p = item.price || priceList[item] || 0;
                 total += p;
                 html += `${item.name||item} - $${p.toFixed(2)}<br>`;
             });
+            grandTotal += total;
 
+            // 渲染订单
             list.innerHTML += `
             <div class="order-box">
                 <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||'?'}</div>
@@ -183,13 +255,16 @@ function loadOrders(){
             </div>`;
         }
 
+        // 显示总额
+        summary.innerText = `Total Amount: $${grandTotal.toFixed(2)}`;
         if(viewMode==="current" && hasNewOrder) playOrderMusic();
         lastOrderIds = currentOrderIds;
     });
 }
 
+// 完成订单
 function complete(id){
-    if(confirm("Complete?")){
+    if(confirm("Complete Order?")){
         db.ref("orders/"+id).once("value",s=>{
             db.ref("historyOrders/"+id).set(s.val());
             db.ref("orders/"+id).remove();
@@ -197,9 +272,9 @@ function complete(id){
     }
 }
 
-// 已修好函数名
+// 取消订单
 function cancelOrder(id){
-    if(confirm("Cancel?")){
+    if(confirm("Cancel Order?")){
         db.ref("orders/"+id).once("value",s=>{
             db.ref("cancelledOrders/"+id).set(s.val());
             db.ref("orders/"+id).remove();
