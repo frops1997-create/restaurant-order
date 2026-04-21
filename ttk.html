@@ -69,12 +69,12 @@ body::before {
 <script>
 const PASSWORD = "1234";
 let viewMode = "current";
-let lastOrderIds = []; // 记录已播放音乐的订单
+let lastOrderIds = [];
 
-// ✅ 新订单播放你指定的音乐
+// 新订单播放指定音乐
 function playOrderMusic() {
     const audio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
-    audio.play().catch(err => console.log("播放提示音需要用户交互"));
+    audio.play().catch(e => {});
 }
 
 function login(){
@@ -87,7 +87,7 @@ function login(){
     }
 }
 
-// ✅ 登出功能
+// 登出功能
 function logout(){
     if(confirm("Confirm to logout?")){
         mainPage.style.display = "none";
@@ -143,9 +143,9 @@ const priceList = {
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// ✅ 过滤规则：只显示【不包含】嘟嘟糕的订单
+// 过滤规则：只显示【不包含】嘟嘟糕的订单
 function isNormalFoodOrder(items) {
-    if (!items || !Array.is(items)) return true;
+    if (!items || !Array.isArray(items)) return true;
     const tuTuKeywords = ["TuTu Kueh (5pcs)Coconut", "TuTu Kueh (5pcs)Peanut", "TuTu Kueh (5pcs)Plain"];
     return !items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
@@ -217,7 +217,7 @@ function loadOrders(){
             list.appendChild(div);
         }
 
-        // 有新订单 → 播放你指定的音乐
+        // 播放新订单提示音
         if (viewMode === "current" && hasNewOrder) {
             playOrderMusic();
         }
