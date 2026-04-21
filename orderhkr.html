@@ -226,7 +226,7 @@ function submitOrder() {
 }
 
 function loadOrders() {
-  db.ref('orders').on('value', snap => {
+  db.ref('submitOrders').on('value', snap => {
     const data = snap.val();
     const out = document.getElementById('orders');
     out.innerHTML = '';
@@ -244,7 +244,7 @@ function loadOrders() {
 }
 
 function completeOrder(id) {
-  db.ref('orders/'+id).remove();
+  db.ref('/'+id)submitOrders.remove();
 }
 
 function generateQR() {
