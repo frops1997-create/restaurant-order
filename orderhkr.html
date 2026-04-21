@@ -3,283 +3,267 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HK Food Counter</title>
+<title>QR Food Order - HK Food</title>
+
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+
 <style>
-* { box-sizing: border-box; font-family: Arial; }
-body { margin: 0; padding: 20px; }
-body::before {
-    content:""; position:fixed; width:100%; height:100%;
-    background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c");
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    background-image: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c');
     background-size: cover;
-    opacity:0.65; z-index:-1;
-}
-#loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
-#loginPage input { width:100%; padding:10px; margin:10px 0; }
-#loginPage button { padding:10px 20px; }
-.container { max-width:900px; margin:auto; display:none; }
-.order-box { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
-.order-table { font-size:18px; font-weight:bold; color:#0066cc; }
-.total { color:#27ae60; font-weight:bold; font-size:16px; margin:8px 0; }
-.done-btn { background:#27ae60; color:white; padding:6px 10px; border:none; }
-.cancel-btn { background:#c0392b; color:white; padding:6px 10px; border:none; margin-left:5px; }
-.top-buttons { text-align:center; margin-bottom:15px; }
-.top-buttons button { margin:5px; padding:8px 12px; }
-.summary { background:#fff; padding:10px 15px; border-radius:8px; margin-bottom:15px; font-size:18px; font-weight:bold; color:#d32f2f; }
-.clear-btn { background:#e74c3c; color:white; padding:8px 12px; border:none; }
-.logout-btn { background:#34495e; color:white; padding:8px 12px; border:none; }
-.export-btn { background:#0277bd; color:white; padding:8px 12px; border:none; border-radius:4px; }
-.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); z-index:999; display:none; }
-.modal-box { background:white; padding:30px; border-radius:12px; max-width:400px; margin:150px auto; text-align:center; }
-.modal-box input { width:100%; padding:12px; margin:15px 0; border:1px solid #ccc; border-radius:8px; }
-.modal-btn { padding:10px 20px; margin:5px; border:none; border-radius:6px; }
-.btn-confirm { background:#e74c3c; color:white; }
-.btn-cancel { background:#95a5a6; color:white; }
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .menu-box {
+    width: 380px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    font-weight: bold;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  }
+
+  /* --- Added Back Button Style --- */
+  .back-home {
+    display: inline-block;
+    text-decoration: none;
+    background: #6c757d;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 20px;
+    transition: background 0.3s;
+  }
+  .back-home:hover {
+    background: #495057;
+  }
+
+  .order-confirm {
+    background: rgba(0, 150, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 16px;
+    text-align: center;
+    display: none;
+  }
+
+  label {
+    display: block;
+    margin: 8px 0;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+
+  button:hover:not(:disabled) {
+    background: #0056b3;
+  }
+
+  #kitchenSection, #qrSection {
+    display: none;
+  }
+
+  .order {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    background: white;
+  }
 </style>
 </head>
+
 <body>
 
-<div id="loginPage">
-    <h2>🔐 Login</h2>
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
-    <p id="error" style="color:red;"></p>
+<div class="menu-box">
+  <!-- Back Button Link -->
+  <a href="https://frops1997-create.github.io/restaurant-order/Main.html" class="back-home">← Back to Home(返回主页)</a>
+
+  <h2>HK Roasted Food</h2>
+  <p>Table: <span id="tableNo"></span></p>
+
+ <h3>Menu</h3>
+  <label><input type="checkbox" data-price="7.00" onchange="updateTotal()"> 1) HK Roasted Chicken Drumstick 烧鸡腿饭 - $7.00</label>
+  <label><input type="checkbox" data-price="6.20" onchange="updateTotal()"> 2) HK Roasted Chicken Rice 烧鸡饭 - $6.20</label>
+  <label><input type="checkbox" data-price="6.50" onchange="updateTotal()"> 3) HK Roasted Duck Rice 烧鸭饭 - $6.50</label>
+  <label><input type="checkbox" data-price="6.80" onchange="updateTotal()"> 4) HK Roasted Pork Rice 烧肉饭 - $6.80</label>
+  <label><input type="checkbox" data-price="6.50" onchange="updateTotal()"> 5) HK Char Siew Rice 叉烧饭 - $6.50</label>
+  <label><input type="checkbox" data-price="6.70" onchange="updateTotal()"> 6) HK Char Siew Wanton Noodle 叉烧云台面 - $6.70</label>
+  <label><input type="checkbox" data-price="7.20" onchange="updateTotal()"> 7) HK Roasted Chicken & Roasted Pork Rice 烧鸡烧肉饭 - $7.20</label>
+  <label><input type="checkbox" data-price="6.00" onchange="updateTotal()"> 8) HK Wanton Soup 云台汤 - $6.00</label>
+  <label><input type="checkbox" data-price="5.50" onchange="updateTotal()"> 9) HK Roasted Pork 烧肉 - $5.50</label>
+  <label><input type="checkbox" data-price="5.70" onchange="updateTotal()"> 10) HK Roasted Duck 烧鸭肉 - $5.70</label>
+
+   <button id="submitBtn" onclick="submitOrder()">Submit Order</button>
+  <p id="total">Total: $0.00</p>
+
+  <div class="order-confirm" id="orderConfirm">
+    <h3>Order Submitted!</h3>
+    <p>Order No: <span id="showOrderNo"></span></p>
+    <p>Table: <span id="showTable"></span></p>
+    <p>Total: $<span id="showTotal"></span></p>
+    <small>Please wait for your food</small>
+  </div>
 </div>
 
-<div class="modal-overlay" id="clearModal">
-    <div class="modal-box">
-        <h3>Clear History</h3>
-        <input type="password" id="clearPwd" placeholder="Password">
-        <div id="clearError" style="color:red; display:none;">Wrong Password!</div>
-        <button class="modal-btn btn-confirm" onclick="verifyClearPwd()">Confirm</button>
-        <button class="modal-btn btn-cancel" onclick="closeClearModal()">Cancel</button>
-    </div>
+<div id="kitchenSection">
+  <h2>Kitchen Orders</h2>
+  <div id="orders"></div>
 </div>
 
-<div class="container" id="mainPage">
-    <h1>HK Food Only</h1>
-    
-    <div class="top-buttons">
-        <button onclick="viewMode='current';loadOrders()">Current Orders</button>
-        <button onclick="viewMode='history';loadOrders()">History</button>
-        <button onclick="viewMode='cancelled';loadOrders()">Cancelled</button>
-        <button class="export-btn" onclick="exportExcel()">Download Excel</button>
-        <button class="clear-btn" onclick="openClearModal()">Clear History</button>
-        <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-
-    <div class="summary" id="totalSummary">Total Amount: $0.00</div>
-    <div id="orderList"></div>
+<div id="qrSection">
+  <h2>Table QR</h2>
+  <input type="number" id="tableInput" placeholder="Table No">
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode"></div>
 </div>
 
 <script>
-const PASSWORD = "1234";
-let viewMode = "current";
-let lastOrderIds = [];
-let currentAudio = null;
-
-function playOrderMusic() {
-    stopOrderMusic();
-    currentAudio = new Audio('https://frops1997-create.github.io/restaurant-order/msz1.mp3');
-    currentAudio.play().catch(e=>{});
-}
-
-function stopOrderMusic() {
-    if(currentAudio) { currentAudio.pause(); currentAudio = null; }
-}
-document.addEventListener('click', stopOrderMusic);
-
-function login(){
-    if(document.getElementById("password").value === PASSWORD){
-        loginPage.style.display="none";
-        mainPage.style.display="block";
-        loadOrders();
-    } else {
-        error.innerText="Wrong Password!";
-    }
-}
-
-function logout(){
-    if(confirm("Logout?")){
-        mainPage.style.display="none";
-        loginPage.style.display="block";
-    }
-}
-
-function openClearModal(){ clearModal.style.display="block"; }
-function closeClearModal(){ clearModal.style.display="none"; }
-
-function verifyClearPwd(){
-    if(document.getElementById("clearPwd").value === PASSWORD){
-        db.ref("historyOrders").remove();
-        db.ref("cancelledOrders").remove();
-        closeClearModal();
-    } else {
-        clearError.style.display="block";
-    }
-}
-
 const firebaseConfig = {
-    apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-    authDomain: "restaurants-cs.firebaseapp.com",
-    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "restaurants-cs",
-    storageBucket: "restaurants-cs.firebasestorage.app",
-    messagingSenderId: "209872919844",
-    appId: "1:209872919844:web:c1730801cd51d615e867b1"
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ====================== HK 价格表 ======================
-const priceList = {
-    "HK Roasted Chicken Drumstick 烧鸡腿饭": 7.00,
-    "HK Roasted Chicken Rice 烧鸡饭": 6.20,
-    "HK Roasted Duck Rice 烧鸭饭": 6.50,
-    "HK Roasted Pork Rice 烧肉饭": 6.80,
-    "HK Char Siew Rice 叉烧饭": 6.50,
-    "HK Char Siew Wanton Noodle 叉烧云台面": 6.70,
-    "HK Roasted Chicken & Roasted Pork Rice 烧鸡烧肉饭": 7.20,
-    "HK Wanton Soup 云台汤": 6.00,
-    "HK Roasted Pork 烧肉": 5.50,
-    "HK Roasted Duck 烧鸭肉": 5.70
-};
+const params = new URLSearchParams(location.search);
+const isKitchen = params.get('kitchen');
+const isAdmin = params.get('admin');
+const tableFromUrl = params.get('table');
 
-// ====================== 过滤：只显示 HK 订单 ======================
-function isNormalFoodOrder(items) {
-    if (!items || !Array.isArray(items)) return false;
-    const HKKeywords = ["HK"];
-    return items.some(item => {
-        const itemName = typeof item === "object" ? (item.name || "") : item;
-        return HKKeywords.some(keyword => itemName.includes(keyword));
-    });
+const table = tableFromUrl || 1;
+
+// 显示对应模块
+if (isKitchen) {
+  document.getElementById('kitchenSection').style.display = 'block';
+  document.querySelector('.menu-box').style.display = 'none';
+}
+if (isAdmin) {
+  document.getElementById('qrSection').style.display = 'block';
+  document.querySelector('.menu-box').style.display = 'none';
 }
 
-// 导出 Excel（只导出 HK）
-function exportExcel() {
-    db.ref("historyOrders").once("value", snap => {
-        const data = snap.val();
-        if (!data) { alert("No history to export!"); return; }
+document.getElementById('tableNo').textContent = table;
 
-        let csv = "Order No,Table No,Amount,Time,Items\n";
-        for (let id in data) {
-            const o = data[id];
-            if (!isNormalFoodOrder(o.items)) continue;
+let currentOrderNo = 1;
 
-            let itemsStr = "";
-            o.items.forEach(it => {
-                const name = it.name || it;
-                let price = 0;
-                if (it.price) price = it.price;
-                else {
-                    for (let key in priceList) {
-                        if (name.includes(key)) {
-                            price = priceList[key];
-                            break;
-                        }
-                    }
-                }
-                itemsStr += `${name} ($${price.toFixed(2)}) | `;
-            });
-            itemsStr = itemsStr.slice(0, -3);
-            csv += `"${o.orderNo}","${o.tableNo || '-'}","${o.total || 0}","${o.time}","${itemsStr}"\n`;
-        }
+db.ref('orderCounter').once('value').then(snap => {
+  if(snap.val()){
+    currentOrderNo = snap.val();
+  }
+});
 
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "HK_Food_History.csv";
-        a.click();
-    });
+function updateTotal() {
+  let total = 0;
+  document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
+  document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
 }
 
-// 加载订单（只加载 HK）
-function loadOrders(){
-    let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
-    db.ref(path).on("value", snap=>{
-        const data = snap.val();
-        const list = document.getElementById("orderList");
-        const summary = document.getElementById("totalSummary");
+function submitOrder() {
+  const btn = document.getElementById('submitBtn');
+  if (btn.disabled) return;
 
-        list.innerHTML = "";
-        let grandTotal = 0;
+  const items = Array.from(document.querySelectorAll('input:checked'));
+  if (items.length === 0) {
+    alert('Please select food!');
+    return;
+  }
 
-        if(!data) {
-            list.innerHTML = "<div>No Orders</div>";
-            summary.innerText = "Total Amount: $0.00";
-            return;
-        }
+  btn.disabled = true;
+  btn.innerText = "Order Sent";
 
-        const currentOrderIds = [];
-        let hasNewOrder = false;
+  let total = 0;
+  let list = [];
+  items.forEach(i => {
+    total += parseFloat(i.dataset.price);
+    list.push(i.nextSibling.textContent.trim());
+  });
 
-        for(let id in data){
-            currentOrderIds.push(id);
-            const o = data[id];
-            if(!isNormalFoodOrder(o.items)) continue;
+  const orderNo = currentOrderNo;
+  currentOrderNo++;
+  db.ref('orderCounter').set(currentOrderNo);
 
-            if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
+  db.ref('orders').push({
+    orderNo: orderNo,
+    table: table,
+    items: list,
+    total: total.toFixed(2),
+    time: new Date().toLocaleTimeString()
+  });
 
-            let total = 0;
-            let html = "";
-            o.items.forEach(item=>{
-                let itemName = item.name || item;
-                let p = 0;
-
-                if (item.price) p = parseFloat(item.price);
-                else {
-                    for (let key in priceList) {
-                        if (itemName.includes(key)) {
-                            p = priceList[key];
-                            break;
-                        }
-                    }
-                }
-
-                total += p;
-                html += `${itemName} - $${p.toFixed(2)}<br>`;
-            });
-
-            grandTotal += total;
-
-            list.innerHTML += `
-            <div class="order-box">
-                <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||'?'}</div>
-                <div>${html}</div>
-                <div class="total">Total: $${total.toFixed(2)}</div>
-                <div>${o.time}</div>
-                ${viewMode==="current" ? `
-                <button class="done-btn" onclick="complete('${id}')">Complete</button>
-                <button class="cancel-btn" onclick="cancelOrder('${id}')">Cancel</button>
-                ` : ""}
-            </div>`;
-        }
-
-        summary.innerText = `Total Amount: $${grandTotal.toFixed(2)}`;
-        if(viewMode==="current" && hasNewOrder) playOrderMusic();
-        lastOrderIds = currentOrderIds;
-    });
+  document.getElementById('showOrderNo').innerText = orderNo;
+  document.getElementById('showTable').innerText = table;
+  document.getElementById('showTotal').innerText = total.toFixed(2);
+  document.getElementById('orderConfirm').style.display = 'block';
 }
 
-function complete(id){
-    if(confirm("Complete Order?")){
-        db.ref("submitOrders/"+id).once("value",s=>{
-            db.ref("historyOrders/"+id).set(s.val());
-            db.ref("submitOrders/"+id).remove();
-        });
+function loadOrders() {
+  db.ref('orders').on('value', snap => {
+    const data = snap.val();
+    const out = document.getElementById('orders');
+    out.innerHTML = '';
+    if (!data) { out.innerHTML = '<p>No orders</p>'; return; }
+
+    for (let id in data) {
+      const o = data[id];
+      const div = document.createElement('div');
+      div.className = 'order';
+      div.innerHTML = `<b>Order #${o.orderNo}</b><br><b>Table ${o.table}</b><br>Total: $${o.total}<br>${o.items.join(', ')}<br>${o.time}<br>
+      <button onclick="completeOrder('${id}')">Done</button>`;
+      out.appendChild(div);
     }
+  });
 }
 
-function cancelOrder(id){
-    if(confirm("Cancel Order?")){
-        db.ref("submitOrders/"+id).once("value",s=>{
-            db.ref("cancelledOrders/"+id).set(s.val());
-            db.ref("submitOrders/"+id).remove();
-        });
-    }
+function completeOrder(id) {
+  db.ref('orders/'+id).remove();
 }
+
+function generateQR() {
+  const t = document.getElementById('tableInput').value;
+  if (!t) { alert('Enter table!'); return; }
+  QRCode.toCanvas(document.getElementById('qrcode'), `${location.origin}${location.pathname}?table=${t}`, {width:180});
+}
+
+loadOrders();
 </script>
+
 </body>
 </html>
