@@ -157,10 +157,11 @@ const priceList = {
 };
 
 // 过滤规则：只显示TBOX的订单
+// ====================== 过滤：只显示 TBOX 菜单 ======================
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
     const tuTuKeywords = ["TBOX"];
-    return !items.some(item => {
+    return items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
     });
