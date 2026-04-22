@@ -269,7 +269,6 @@ function loadOrders(){
 }
 
 function complete(id){
-    if(confirm("Complete Order?")){
         db.ref("orders/"+id).once("value",s=>{
             const data = s.val();
             if(!data) return;
@@ -278,10 +277,8 @@ function complete(id){
             db.ref("orders/"+id).remove();
         });
     }
-}
 
 function cancelOrder(id){
-    if(confirm("Cancel Order?")){
         db.ref("orders/"+id).once("value",s=>{
             const data = s.val();
             if(!data) return;
@@ -290,7 +287,6 @@ function cancelOrder(id){
             db.ref("orders/"+id).remove();
         });
     }
-}
 </script>
 </body>
 </html>
