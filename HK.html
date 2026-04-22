@@ -272,7 +272,6 @@ function complete(id){
             db.ref("orders/"+id).remove();
         });
     }
-}
 
 function cancelOrder(id){
         db.ref("orders/"+id).once("value",s=>{
@@ -283,7 +282,6 @@ function cancelOrder(id){
             db.ref("orders/"+id).remove();
         });
     }
-}
 </script>
 </body>
 </html>
