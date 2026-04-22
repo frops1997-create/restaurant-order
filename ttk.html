@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TuTu Kueh Counter</title>
+<title>TBOX Counter</title>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 <style>
 * { box-sizing: border-box; font-family: Arial; }
 body { margin: 0; padding: 20px; }
 body::before {
-    content:""; position:fixed; width:100%; height:100%;
+    content:""; position:fixed; top:0; left:0; width:100%; height:100%;
     background:url("https://images.unsplash.com/photo-1546069901-ba9599a7e63c");
-    background-size: cover;
+    background-size: cover; background-position: center;
     opacity:0.65; z-index:-1;
 }
 #loginPage { max-width:400px; margin:150px auto; background:white; padding:25px; border-radius:12px; text-align:center; }
@@ -58,7 +58,7 @@ body::before {
 </div>
 
 <div class="container" id="mainPage">
-    <h1>TuTu Kueh Only</h1>
+    <h1>TBOX Food Only</h1>
     
     <div class="top-buttons">
         <button onclick="viewMode='current';loadOrders()">Current Orders</button>
@@ -132,25 +132,16 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ====================== 修复价格表（去掉序号，匹配订单）======================
 const priceList = {
-    "TBOX Curry Chicken with Rice 咖喱鸡饭": 17.10,
-    "TBOX Laksa Set 叻沙套餐": 16.90,
-    "TBOX Traditional Kaya Toast Set 傳統咖椰吐司套裝": 8.50,
-    "TBOX Traditional Butter Toast Set 傳統奶油吐司套裝": 8.20,
-    "TBOX Ham and Cheese Sandwiches 火腿和起司三文治": 10.40,
-    "Nasi Lemak Curry": 13,
-    "TBOX Peanut Thick Toast Set 花生厚吐司套裝": 8.70,
-    "TBOX Butter Suger Thick Toast 奶油糖厚吐司": 8.70,
     "TuTu Kueh (5pcs)Coconut 嘟嘟糕(5个)椰子": 6.30,
     "TuTu Kueh (5pcs)Peanut 嘟嘟糕(5个)花生": 6.30,
     "TuTu Kueh (5pcs)Plain 嘟嘟糕(5个)原味": 6.30
 };
 
-// 过滤：只显示嘟嘟糕
+// ====================== 过滤：只显示Tu======================
 function isNormalFoodOrder(items) {
     if (!items || !Array.isArray(items)) return false;
-    const tuTuKeywords = ["TuTu Kueh"];
+    const tuTuKeywords = ["Tu"];
     return items.some(item => {
         const itemName = typeof item === "object" ? (item.name || "") : item;
         return tuTuKeywords.some(keyword => itemName.includes(keyword));
@@ -171,32 +162,21 @@ function exportExcel() {
             let itemsStr = "";
             o.items.forEach(it => {
                 const name = it.name || it;
-                let price = 0;
-                if (it.price) price = it.price;
-                else {
-                    for (let key in priceList) {
-                        if (name.includes(key.replace(/^\d+\)\s*/, ''))) {
-                            price = priceList[key];
-                            break;
-                        }
-                    }
-                }
+                let price = it.price || 0;
+                if (!price) for (let k in priceList) { if (name.includes(k)) { price = priceList[k]; break; } }
                 itemsStr += `${name} ($${price.toFixed(2)}) | `;
             });
-            itemsStr = itemsStr.slice(0, -3);
-            csv += `"${o.orderNo}","${o.tableNo || '-'}","${o.total || 0}","${o.time}","${itemsStr}"\n`;
+            csv += `"${o.orderNo}","${o.tableNo||'-'}","${o.total||0}","${o.time}","${itemsStr.slice(0,-3)}"\n`;
         }
 
-        const blob = new Blob([csv], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
-        a.href = url;
-        a.download = "TuTuKueh_History.csv";
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = "TBOX_History.csv";
         a.click();
     });
 }
 
-// 加载订单（已修复总额计算）
+// 加载订单
 function loadOrders(){
     let path = viewMode === "history" ? "historyOrders" : viewMode === "cancelled" ? "cancelledOrders" : "orders";
     db.ref(path).on("value", snap=>{
@@ -223,35 +203,21 @@ function loadOrders(){
 
             if(viewMode==="current" && !lastOrderIds.includes(id)) hasNewOrder=true;
 
-            // ====================== 修复金额计算 ======================
             let total = 0;
             let html = "";
             o.items.forEach(item=>{
-                let itemName = item.name || item;
-                let p = 0;
-
-                // 优先使用订单自带价格
-                if (item.price) p = parseFloat(item.price);
-                // 匹配价格表
-                else {
-                    for (let key in priceList) {
-                        if (itemName.includes(key)) {
-                            p = priceList[key];
-                            break;
-                        }
-                    }
-                }
-
+                let name = item.name || item;
+                let p = item.price || 0;
+                if (!p) for (let k in priceList) { if (name.includes(k)) { p = priceList[k]; break; } }
                 total += p;
-                html += `${itemName} - $${p.toFixed(2)}<br>`;
+                html += `${name} - $${p.toFixed(2)}<br>`;
             });
 
             grandTotal += total;
-            // ==========================================================
 
             list.innerHTML += `
             <div class="order-box">
-                <div class="order-table">Order #${o.orderNo} | Table ${o.tableNo||'?'}</div>
+                <div class="order-table">Order #${o.orderNo} | Table 2255</div>
                 <div>${html}</div>
                 <div class="total">Total: $${total.toFixed(2)}</div>
                 <div>${o.time}</div>
