@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ttoast BoxX</title>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+<style>
+/* ... (保持你原始的 CSS 样式不变) ... */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
+    url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') 
+    center center / cover no-repeat fixed;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+header { background: linear-gradient(90deg, #d81f26, #ff4b4b); padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 10; }
+h1 { text-align: center; font-size: 28px; letter-spacing: 1.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.board { display: grid; grid-template-columns: 1fr; height: calc(100vh - 72px); padding: 12px; gap: 12px; }
+.column { padding: 16px; border-radius: 16px; overflow-y: auto; display: none; box-shadow: 0 8px 25px rgba(0,0,0,0.4); backdrop-filter: blur(6px); }
+.column h2 { text-align: center; margin-bottom: 20px; font-size: 24px; }
+.new { background: linear-gradient(160deg, rgba(58,0,0,0.85), rgba(90,0,0,0.85)); display: none; }
+.preparing { background: linear-gradient(160deg, rgba(61,37,0,0.85), rgba(92,58,0,0.85)); display: none; }
+.ready { background: linear-gradient(160deg, rgba(0,58,0,0.85), rgba(0,90,0,0.85)); display: block !important; }
+.order { background: rgba(20, 20, 20, 0.85); margin-bottom: 14px; padding: 18px; border-radius: 12px; border-left: 5px solid #d81f26; }
+.order h3 { font-size: 20px; color: #ffcc00; }
+button { width: 100%; margin-top: 10px; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.btn-prep { background: linear-gradient(90deg, #ff9500, #ffb74d); color: #222; }
+.btn-ready { background: linear-gradient(90deg, #00c853, #4caf50); color: #fff; }
+.btn-done { background: linear-gradient(90deg, #d50000, #ff5252); color: #fff; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Ttoast BoxX</h1>
+</header>
+
+<div class="board">
+  <div class="column new">
+    <h2>🆕 NEW ORDERS</h2>
+    <div id="newOrders"></div>
+  </div>
+  <div class="column preparing">
+    <h2>👨‍🍳 PREPARING</h2>
+    <div id="preparingOrders"></div>
+  </div>
+  <div class="column ready">
+    <h2>✅ READY FOR PICKUP</h2>
+    <div id="readyOrders"></div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function renderOrders(data) {
+  const newDiv = document.getElementById('newOrders');
+  const prepDiv = document.getElementById('preparingOrders');
+  const readyDiv = document.getElementById('readyOrders');
+
+  newDiv.innerHTML = '';
+  prepDiv.innerHTML = '';
+  readyDiv.innerHTML = '';
+
+  for (let id in data) {
+    const order = data[id];
+    const status = order.status || 'New';
+
+    // 1. 过滤只含有 "TBOX" 的菜品
+    if (!order.items) continue;
+    const TBOXItems = order.items.filter(item => item.toUpperCase().includes('TBOX'));
+    
+    // 如果没有 TBOX 菜品则跳过
+    if (TBOXItems.length === 0) continue; 
+
+    const div = document.createElement('div');
+    div.className = 'order';
+
+    // 2. 将菜品转换为独立并排的 HTML 列表
+    const itemsHTML = TBOXItems.map(item => `
+      <div style="background: rgba(255,255,255,0.1); padding: 8px; margin: 5px 0; border-radius: 4px; border-left: 3px solid #ffcc00;">
+        ${item}
+      </div>
+    `).join('');
+
+    div.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #555; margin-bottom: 10px; padding-bottom: 5px;">
+        <h3 style="margin:0;">#${order.orderNo || 'N/A'}</h3>
+        <span style="background: #d81f26; padding: 2px 8px; border-radius: 4px; font-size: 14px;">Table ${order.table}</span>
+      </div>
+      
+      <div class="item-list">
+        ${itemsHTML} <!-- 这里每个菜品都是独立的块 -->
+      </div>
+      
+      <p style="font-size: 12px; color: #888; margin-top: 10px;">${order.time}</p>
+      
+      ${status === 'New' ? `<button class="btn-prep" onclick="setPreparing('${id}')">Start Preparing</button>` : ''}
+      ${status === 'Preparing' ? `<button class="btn-ready" onclick="setReady('${id}')">Mark as Ready</button>` : ''}
+      ${status === 'Ready' ? `<button class="btn-done" onclick="completeOrder('${id}')">Complete Order</button>` : ''}
+    `;
+
+    if (status === 'New') newDiv.appendChild(div);
+    else if (status === 'Preparing') prepDiv.appendChild(div);
+    else readyDiv.appendChild(div);
+  }
+}
+
+function loadOrders() {
+  // 这里保持原路径 orders，如果数据库换了 TBOX 节点请记得修改此处
+  db.ref('orders').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    renderOrders(data);
+  });
+}
+
+function setPreparing(id) {
+  db.ref('orders/' + id).update({ status: 'Preparing' });
+}
+
+function setReady(id) {
+  db.ref('orders/' + id).update({ status: 'Ready' });
+}
+
+function completeOrder(id) {
+  db.ref('orders/' + id).remove();
+}
+
+loadOrders();
+</script>
+
+</body>
+</html>
