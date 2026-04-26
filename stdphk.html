@@ -84,7 +84,7 @@ function renderOrders(data) {
     const order = data[id];
     const status = order.status || 'New';
 
-    // 1. 过滤只含有 "HK" 的菜品
+    // 1. HK RoastT 的菜品
     if (!order.items) continue;
     const hkItems = order.items.filter(item => item.toUpperCase().includes('HK'));
     
