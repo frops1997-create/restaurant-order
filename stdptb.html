@@ -1,48 +1,203 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ttoast BoxX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>Ttoast BoxX · 特制看板 (仅Ready+TBOX/Hot/Ice)</title>
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
 <style>
-/* ... (保持你原始的 CSS 样式不变) ... */
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.75)),
-    url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') 
-    center center / cover no-repeat fixed;
-  color: #fff;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-header { background: linear-gradient(90deg, #d81f26, #ff4b4b); padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 10; }
-h1 { text-align: center; font-size: 28px; letter-spacing: 1.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-.board { display: grid; grid-template-columns: 1fr; height: calc(100vh - 72px); padding: 12px; gap: 12px; }
-.column { padding: 16px; border-radius: 16px; overflow-y: auto; display: none; box-shadow: 0 8px 25px rgba(0,0,0,0.4); backdrop-filter: blur(6px); }
-.column h2 { text-align: center; margin-bottom: 20px; font-size: 24px; }
-.new { background: linear-gradient(160deg, rgba(58,0,0,0.85), rgba(90,0,0,0.85)); display: none; }
-.preparing { background: linear-gradient(160deg, rgba(61,37,0,0.85), rgba(92,58,0,0.85)); display: none; }
-.ready { background: linear-gradient(160deg, rgba(0,58,0,0.85), rgba(0,90,0,0.85)); display: block !important; }
-.order { background: rgba(20, 20, 20, 0.85); margin-bottom: 14px; padding: 18px; border-radius: 12px; border-left: 5px solid #d81f26; }
-.order h3 { font-size: 20px; color: #ffcc00; }
-button { width: 100%; margin-top: 10px; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.btn-prep { background: linear-gradient(90deg, #ff9500, #ffb74d); color: #222; }
-.btn-ready { background: linear-gradient(90deg, #00c853, #4caf50); color: #fff; }
-.btn-done { background: linear-gradient(90deg, #d50000, #ff5252); color: #fff; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  /* 原始风格完全保留，只增加少量微调保持整洁 */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)),
+      url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')
+      center center / cover no-repeat fixed;
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  header {
+    background: linear-gradient(90deg, #d81f26, #ff4b4b);
+    padding: 18px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 28px;
+    letter-spacing: 1.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* 看板容器：只显示一列？但原始结构是grid三列但只有ready列可见，我们保持逻辑但只展示ready列内容 */
+  .board {
+    display: grid;
+    grid-template-columns: 1fr;
+    height: calc(100vh - 72px);
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .column {
+    padding: 16px;
+    border-radius: 16px;
+    overflow-y: auto;
+    display: none;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(6px);
+  }
+
+  .column h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+
+  .new {
+    background: linear-gradient(160deg, rgba(58, 0, 0, 0.85), rgba(90, 0, 0, 0.85));
+    display: none;
+  }
+
+  .preparing {
+    background: linear-gradient(160deg, rgba(61, 37, 0, 0.85), rgba(92, 58, 0, 0.85));
+    display: none;
+  }
+
+  /* 重点: ready 列强制显示，其他列隐藏，完全符合“只有订单已经ready才显示”需求 */
+  .ready {
+    background: linear-gradient(160deg, rgba(0, 58, 0, 0.85), rgba(0, 90, 0, 0.85));
+    display: block !important;
+  }
+
+  .order {
+    background: rgba(20, 20, 20, 0.85);
+    margin-bottom: 14px;
+    padding: 18px;
+    border-radius: 12px;
+    border-left: 5px solid #d81f26;
+    transition: all 0.2s;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .order h3 {
+    font-size: 20px;
+    color: #ffcc00;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: filter 0.1s;
+  }
+
+  .btn-prep {
+    background: linear-gradient(90deg, #ff9500, #ffb74d);
+    color: #222;
+  }
+
+  .btn-ready {
+    background: linear-gradient(90deg, #00c853, #4caf50);
+    color: #fff;
+  }
+
+  .btn-done {
+    background: linear-gradient(90deg, #d50000, #ff5252);
+    color: #fff;
+  }
+
+  button:hover {
+    filter: brightness(1.03);
+    transform: scale(0.99);
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 自定义提示信息，当没有符合条件的Ready订单时 */
+  .empty-message {
+    text-align: center;
+    padding: 40px 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 28px;
+    font-size: 1.1rem;
+    color: #ffdd99;
+    font-style: italic;
+    backdrop-filter: blur(4px);
+  }
+
+  /* 分类标签徽章 (可选，美化) */
+  .menu-badge {
+    display: inline-block;
+    background: #2c2c2c;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    margin-right: 8px;
+    margin-bottom: 6px;
+    font-weight: normal;
+  }
+
+  /* 让物品列表更清晰 */
+  .item-list {
+    margin: 12px 0 8px;
+  }
+
+  .menu-item {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 8px 12px;
+    margin: 6px 0;
+    border-radius: 10px;
+    border-left: 4px solid #ffaa44;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  /* 响应式小调整 */
+  @media (max-width: 600px) {
+    .order h3 {
+      font-size: 18px;
+    }
+    .column h2 {
+      font-size: 20px;
+    }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Ttoast BoxX</h1>
+  <h1>🔥 Ttoast BoxX · 取餐专席 🔥</h1>
 </header>
 
 <div class="board">
+  <!-- NEW 列和 PREPARING 列虽然在dom中，但css隐藏，完全符合业务: 只有ready列可见 -->
   <div class="column new">
     <h2>🆕 NEW ORDERS</h2>
     <div id="newOrders"></div>
@@ -58,94 +213,206 @@ button { width: 100%; margin-top: 10px; padding: 12px; border: none; border-radi
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
-  authDomain: "restaurants-cs.firebaseapp.com",
-  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "restaurants-cs",
-  storageBucket: "restaurants-cs.firebasestorage.app",
-  messagingSenderId: "209872919844",
-  appId: "1:209872919844:web:c1730801cd51d615e867b1"
-};
+  // ------------------------------
+  // Firebase 配置 (完整保留)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+    authDomain: "restaurants-cs.firebaseapp.com",
+    databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "restaurants-cs",
+    storageBucket: "restaurants-cs.firebasestorage.app",
+    messagingSenderId: "209872919844",
+    appId: "1:209872919844:web:c1730801cd51d615e867b1"
+  };
 
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-function renderOrders(data) {
-  const newDiv = document.getElementById('newOrders');
-  const prepDiv = document.getElementById('preparingOrders');
-  const readyDiv = document.getElementById('readyOrders');
-
-  newDiv.innerHTML = '';
-  prepDiv.innerHTML = '';
-  readyDiv.innerHTML = '';
-
-  for (let id in data) {
-    const order = data[id];
-    const status = order.status || 'New';
-
-    // 1. 过滤只含有 "TBOX" 的菜品
-    if (!order.items) continue;
-    const TBOXItems = order.items.filter(item => item.toUpperCase().includes('TBOX'));
-    
-    // 如果没有 TBOX 菜品则跳过
-    if (TBOXItems.length === 0) continue; 
-
-    const div = document.createElement('div');
-    div.className = 'order';
-
-    // 2. 将菜品转换为独立并排的 HTML 列表
-    const itemsHTML = TBOXItems.map(item => `
-      <div style="background: rgba(255,255,255,0.1); padding: 8px; margin: 5px 0; border-radius: 4px; border-left: 3px solid #ffcc00;">
-        ${item}
-      </div>
-    `).join('');
-
-    div.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #555; margin-bottom: 10px; padding-bottom: 5px;">
-        <h3 style="margin:0;">#${order.orderNo || 'N/A'}</h3>
-        <span style="background: #d81f26; padding: 2px 8px; border-radius: 4px; font-size: 14px;">Table ${order.table}</span>
-      </div>
-      
-      <div class="item-list">
-        ${itemsHTML} <!-- 这里每个菜品都是独立的块 -->
-      </div>
-      
-      <p style="font-size: 12px; color: #888; margin-top: 10px;">${order.time}</p>
-      
-      ${status === 'New' ? `<button class="btn-prep" onclick="setPreparing('${id}')">Start Preparing</button>` : ''}
-      ${status === 'Preparing' ? `<button class="btn-ready" onclick="setReady('${id}')">Mark as Ready</button>` : ''}
-      ${status === 'Ready' ? `<button class="btn-done" onclick="completeOrder('${id}')">Complete Order</button>` : ''}
-    `;
-
-    if (status === 'New') newDiv.appendChild(div);
-    else if (status === 'Preparing') prepDiv.appendChild(div);
-    else readyDiv.appendChild(div);
+  /**
+   * 核心过滤规则：
+   * 1) 订单状态必须为 'Ready' (只有ready订单才显示)
+   * 2) 订单的 items 数组中至少包含一个 含有 TBOX / Hot / Ice (不区分大小写) 的菜品才显示订单卡片
+   * 3) 订单显示时，只展示符合 TBOX / Hot / Ice 的那些菜品项，其他菜品(不包含这三个字母的)不在卡片内渲染
+   * 4) 同时保持原有按钮: Complete Order (完成订单移除)
+   * 5) NEW 和 PREPARING 列完全不显示任何订单，前端css已隐藏列，但我们渲染时也不向它们添加内容，但保留空。
+   */
+  
+  // 检查某个菜品是否符合“TBOX 或 Hot 或 Ice” 关键词（只要包含任意一个即算有效）
+  function isItemValidForDisplay(itemName) {
+    if (!itemName || typeof itemName !== 'string') return false;
+    const upper = itemName.toUpperCase();
+    // 按要求: 含 TBOX / HOT / ICE 字母组合（大小写不敏感）
+    // 只要包含任意一个就返回true
+    return upper.includes('TBOX') || upper.includes('HOT') || upper.includes('ICE');
   }
-}
-
-function loadOrders() {
-  // 这里保持原路径 orders，如果数据库换了 TBOX 节点请记得修改此处
-  db.ref('orders').on('value', snapshot => {
-    const data = snapshot.val() || {};
-    renderOrders(data);
-  });
-}
-
-function setPreparing(id) {
-  db.ref('orders/' + id).update({ status: 'Preparing' });
-}
-
-function setReady(id) {
-  db.ref('orders/' + id).update({ status: 'Ready' });
-}
-
-function completeOrder(id) {
-  db.ref('orders/' + id).remove();
-}
-
-loadOrders();
+  
+  // 从一个订单中过滤出需要展示的菜品 (仅含 TBOX/HOT/ICE 的项)
+  function getValidItemsForOrder(itemsArray) {
+    if (!Array.isArray(itemsArray)) return [];
+    return itemsArray.filter(item => isItemValidForDisplay(item));
+  }
+  
+  // 判断订单整体是否应该被展示: status === 'Ready' 并且至少有一个符合条件的菜品
+  function shouldDisplayOrder(order) {
+    if (!order) return false;
+    const status = order.status || 'New';
+    if (status !== 'Ready') return false;   // 只有ready状态才显示
+    const items = order.items || [];
+    const hasValidItem = items.some(item => isItemValidForDisplay(item));
+    return hasValidItem;
+  }
+  
+  // 核心渲染: 只向 readyOrders 容器中填充订单, 不处理 new/preparing (符合只有ready才显示的原则)
+  function renderReadyOrdersOnly(data) {
+    const readyContainer = document.getElementById('readyOrders');
+    // 同时也可以清空new和preparing容器，保持干净但css不可见也不会有内容
+    const newContainer = document.getElementById('newOrders');
+    const prepContainer = document.getElementById('preparingOrders');
+    
+    if (readyContainer) readyContainer.innerHTML = '';
+    if (newContainer) newContainer.innerHTML = '';
+    if (prepContainer) prepContainer.innerHTML = '';
+    
+    if (!data) {
+      // 显示空状态消息
+      if (readyContainer) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.className = 'empty-message';
+        emptyDiv.innerText = '🍞 暂无符合条件的 Ready 订单 (需包含 TBOX / HOT / ICE 美味)';
+        readyContainer.appendChild(emptyDiv);
+      }
+      return;
+    }
+    
+    let displayedCount = 0;
+    
+    for (let id in data) {
+      const order = data[id];
+      // 只处理状态为Ready并且包含至少一个有效菜品的订单
+      if (!shouldDisplayOrder(order)) continue;
+      
+      const items = order.items || [];
+      // 获得该订单需要展示的菜品 (仅包含TBOX/HOT/ICE)
+      const validItems = getValidItemsForOrder(items);
+      if (validItems.length === 0) continue; // 双重保险，理论上shouldDisplayOrder已经过滤，但保留严谨
+      
+      displayedCount++;
+      
+      // 创建订单卡片
+      const div = document.createElement('div');
+      div.className = 'order';
+      
+      // 生成菜品html (独立并排，每个菜品都装饰)
+      const itemsHTML = validItems.map(item => {
+        // 可以加一个小标记来识别是TBOX/HOT/ICE分类 (为了视觉效果)
+        let tagEmoji = '';
+        const upperItem = item.toUpperCase();
+        if (upperItem.includes('TBOX')) tagEmoji = '📦 ';
+        else if (upperItem.includes('HOT')) tagEmoji = '🔥 ';
+        else if (upperItem.includes('ICE')) tagEmoji = '❄️ ';
+        return `
+          <div style="background: rgba(255,255,240,0.1); padding: 10px; margin: 6px 0; border-radius: 12px; border-left: 4px solid #ffaa55; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">${tagEmoji}</span>
+            <span style="flex:1;">${escapeHtml(item)}</span>
+          </div>
+        `;
+      }).join('');
+      
+      // 构建完整订单内容 (包含下单时间/桌号/订单号)
+      const orderNo = order.orderNo || ('#' + id.slice(-6));
+      const tableNo = order.table ?? '?';
+      const orderTime = order.time || '刚刚';
+      
+      div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #777; margin-bottom: 12px; padding-bottom: 8px; flex-wrap: wrap;">
+          <h3 style="margin:0;">${escapeHtml(orderNo)}</h3>
+          <span style="background: #b71c1c; padding: 4px 12px; border-radius: 30px; font-size: 14px; font-weight: bold;">桌台 ${escapeHtml(tableNo)}</span>
+        </div>
+        <div class="item-list">
+          ${itemsHTML}
+        </div>
+        <p style="font-size: 12px; color: #bbaa88; margin-top: 12px;">🕒 ${escapeHtml(orderTime)}</p>
+        <button class="btn-done" onclick="window.completeOrder('${id.replace(/'/g, "\\'")}')">✅ 完成取餐 (移除订单)</button>
+      `;
+      
+      readyContainer.appendChild(div);
+    }
+    
+    // 如果没有显示任何订单，显示友好的空状态
+    if (displayedCount === 0 && readyContainer) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty-message';
+      emptyDiv.innerHTML = '✨ 暂无 Ready 状态的 TBOX · HOT · ICE 特制订单 ✨<br>⏳ 一旦订单状态变为 Ready 且含有专属美味，就会出现在这里';
+      readyContainer.appendChild(emptyDiv);
+    }
+  }
+  
+  // 简单防XSS辅助
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
+      return c;
+    });
+  }
+  
+  // 监听 Firebase 数据变化 (orders路径下所有订单)
+  function listenOrders() {
+    db.ref('orders').on('value', (snapshot) => {
+      const allOrders = snapshot.val() || {};
+      renderReadyOrdersOnly(allOrders);
+    }, (error) => {
+      console.error("Firebase读取失败: ", error);
+      const readyContainer = document.getElementById('readyOrders');
+      if (readyContainer) {
+        readyContainer.innerHTML = '<div class="empty-message">⚠️ 无法连接数据库，请检查网络后刷新</div>';
+      }
+    });
+  }
+  
+  // 完成订单 -> 从数据库移除 (由于Complete Order直接从列表中删除，符合预期)
+  window.completeOrder = function(orderId) {
+    if (!orderId) return;
+    db.ref('orders/' + orderId).remove()
+      .then(() => {
+        // 删除成功，无需额外动作，视图自动更新
+        console.log(`订单 ${orderId} 已完成取餐并移除`);
+      })
+      .catch(err => {
+        console.error("移除失败: ", err);
+        alert("操作失败，请稍后重试");
+      });
+  };
+  
+  // 为了完整兼容原有调用，额外保留setPreparing/setReady虽然界面不再使用按钮，但以防遗留调用或者外部代码调用，保留无副作用
+  window.setPreparing = function(id) {
+    // 此功能不在UI中出现，但保留以防将来扩展，但遵循需求不需要改变其他功能，仅做空实现或更新状态但不影响显示?
+    // 但从业务上，由于我们只显示Ready，如果某些旧脚本误调用，更新一下状态也可以，但不会有界面bug，只是让数据库改变。
+    if(id) db.ref('orders/' + id).update({ status: 'Preparing' }).catch(e=>console.warn);
+  };
+  
+  window.setReady = function(id) {
+    if(id) db.ref('orders/' + id).update({ status: 'Ready' }).catch(e=>console.warn);
+  };
+  
+  // 初始化加载
+  listenOrders();
+  
+  // 可选: 给予额外控制台输出，便于调试
+  console.log("✅ Ttoast BoxX 启动 | 模式: 只显示状态=Ready且菜品包含TBOX/HOT/ICE的订单，其他栏位已隐藏。保留原有Complete按钮移除订单");
 </script>
 
+<!-- 说明: 
+     1. 本版本严格满足“接到的菜单只有含这些字母TBOX,Hot,Ice才显示” 并且 “也只有订单已经ready才显示”。
+     2. 原始三栏中，只有READY列可见，NEW和PREPARING列通过CSS隐藏，且渲染逻辑只向ready容器填充订单。
+     3. 订单卡片内展示的菜品仅包含含有 TBOX/HOT/ICE(不区分大小写) 的菜品，其他菜品不会出现在卡片中。
+     4. 完成取餐按钮会从Firebase彻底删除订单，符合原始completeOrder逻辑。
+     5. 所有其他功能不变（数据库路径、Firebase配置完全保留，订单流转按钮未额外添加，只保留移除按钮，因为ready状态下不需要制作和准备按钮）。
+     6. 增加了防XSS和空状态友好提示，提升体验。
+-->
 </body>
 </html>
