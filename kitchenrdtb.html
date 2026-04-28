@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>厨房显示系统 | 严格区分大小写 · 仅显示含"TBOX"订单</title>
+<title>厨房显示系统 | 显示含 TBOX / Hot / Ice 订单</title>
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
@@ -138,14 +138,6 @@
     border-bottom: 1px dashed rgba(255,255,255,0.2);
   }
 
-  .order-no {
-    background: #2f353b;
-    padding: 4px 12px;
-    border-radius: 30px;
-    font-size: 0.8rem;
-    font-weight: normal;
-  }
-
   .hk-match-tag {
     font-size: 0.7rem;
     background: #c49f2e;
@@ -268,7 +260,7 @@
 <div class="header-area">
   <h1>🍳 厨房显示系统</h1>
   <div style="text-align:center;">
-    <span class="filter-badge">🔍 过滤规则：<strong>严格匹配大写 "TBOX" · 独立卡片显示</strong></span>
+    <span class="filter-badge">🔍 过滤规则：<strong>显示含 "TBOX" / "Hot" / "Ice" 字母的订单</strong> (保留原始大小写)</span>
   </div>
 </div>
 
@@ -287,7 +279,7 @@
   </div>
 </div>
 <div class="footer-note">
-  ⚡ 实时同步 | 仅显示餐品名称中<strong>包含大写 "TBOX" 字符串</strong>的订单 (大小写敏感) | 同时高亮 Hot / Ice (大小写保留) | 订单独立卡片
+  ⚡ 实时同步 | 过滤餐品包含 TBOX / Hot / Ice (大小写敏感，保留原始字母形态) | 每个订单独立卡片 | 支持状态流转
 </div>
 
 <script>
@@ -306,13 +298,12 @@
   const database = firebase.database();
 
   /**
-   * 严格检查订单餐品中是否包含大写 "TBOX" (大小写敏感)
-   * 同时此系统需要支持 Hot / Ice 高亮，但过滤条件仅依据 "TBOX" 大写形式。
-   * 根据要求：订单含 TBOX / Hot / Ice 字母组合（大小写敏感）,
-   * 但过滤核心应为 "TBOX" 必须为大写 TBOX，保持与用户描述一致: "严格过滤TBOX（区分大小写）"
-   * 注意：Hot 和 Ice 仅用于高亮展示，不影响过滤逻辑。
+   * 检查订单的餐品中是否包含关键词: TBOX 或 Hot 或 Ice
+   * 大小写敏感，完全按照字符串原文匹配 (保留字母原始大小写)
+   * 例如 "TBOX" 仅匹配大写TBOX，"Hot" 匹配首字母H大写、ot小写，"Ice" 匹配首字母I大写、ce小写。
+   * 这样保证和菜单实际字母大小写一致。
    */
-  function orderContainsStrictTBOX(order) {
+  function orderContainsValidKeyword(order) {
     if (!order) return false;
     let items = order.items;
     if (!items) return false;
@@ -326,13 +317,13 @@
       itemsText = JSON.stringify(items);
     }
     
-    // 严格匹配大写 "TBOX" (区分大小写)
-    // 注意：仅当字符串中包含连续的 T,B,O,X 四个大写字母才算匹配
-    const strictTBOXRegex = /TBOX/;  // 无 i 标志 => 区分大小写
-    return strictTBOXRegex.test(itemsText);
+    // 严格匹配 "TBOX" (全大写) 或 "Hot" (H大写, ot小写) 或 "Ice" (I大写, ce小写)
+    // 完全按照常见菜单中的写法，保留字母原始大小写对比，符合 “字母大小写根据我所提供”
+    const keywordRegex = /(TBOX|Hot|Ice)/;
+    return keywordRegex.test(itemsText);
   }
 
-  // 渲染主函数：仅渲染包含严格大写 TBOX 的订单，同时保留原始字母大小写展示和高亮 Hot/Ice
+  // 渲染函数：只渲染包含 TBOX / Hot / Ice 的订单 (大小写敏感)
   function renderFilteredOrders(ordersData) {
     const newContainer = document.getElementById('newOrdersList');
     const prepContainer = document.getElementById('preparingOrdersList');
@@ -347,11 +338,11 @@
       return;
     }
 
-    // 过滤出严格包含 "TBOX" (大写) 的订单
+    // 过滤出包含关键词的订单 (TBOX, Hot, Ice 大小写敏感)
     const filteredOrders = [];
     for (const [orderId, order] of Object.entries(ordersData)) {
       if (!order) continue;
-      if (orderContainsStrictTBOX(order)) {
+      if (orderContainsValidKeyword(order)) {
         filteredOrders.push({ id: orderId, ...order });
       }
     }
@@ -383,9 +374,9 @@
     renderOrderList(prepContainer, preparingItems, 'Preparing');
     renderOrderList(readyContainer, readyItems, 'Ready');
 
-    if (newItems.length === 0) showEmptyColumnMessage(newContainer, '暂无含大写"TBOX"的新订单');
-    if (preparingItems.length === 0) showEmptyColumnMessage(prepContainer, '暂无含大写"TBOX"的制作中订单');
-    if (readyItems.length === 0) showEmptyColumnMessage(readyContainer, '暂无含大写"TBOX"的完成订单');
+    if (newItems.length === 0) showEmptyColumnMessage(newContainer, '暂无含 TBOX/Hot/Ice 的新订单');
+    if (preparingItems.length === 0) showEmptyColumnMessage(prepContainer, '暂无含 TBOX/Hot/Ice 的制作中订单');
+    if (readyItems.length === 0) showEmptyColumnMessage(readyContainer, '暂无含 TBOX/Hot/Ice 的完成订单');
   }
 
   function showEmptyColumnMessage(container, msg) {
@@ -403,33 +394,28 @@
     readyCont.innerHTML = '';
     const msgNew = document.createElement('div'); 
     msgNew.className = 'empty-msg'; 
-    msgNew.innerText = '📭 暂无包含大写"TBOX"的新订单';
+    msgNew.innerText = '📭 暂无包含 TBOX / Hot / Ice 的新订单';
     const msgPrep = document.createElement('div'); 
     msgPrep.className = 'empty-msg'; 
-    msgPrep.innerText = '🍳 暂无包含大写"TBOX"的制作中订单';
+    msgPrep.innerText = '🍳 暂无包含 TBOX / Hot / Ice 的制作中订单';
     const msgReady = document.createElement('div'); 
     msgReady.className = 'empty-msg'; 
-    msgReady.innerText = '✅ 暂无包含大写"TBOX"的完成订单';
+    msgReady.innerText = '✅ 暂无包含 TBOX / Hot / Ice 的完成订单';
     newCont.appendChild(msgNew);
     prepCont.appendChild(msgPrep);
     readyCont.appendChild(msgReady);
   }
 
   /**
-   * 高亮文本中的关键词：TBOX, Hot, Ice (大小写敏感保留原始大小写)
-   * 由于要求“菜单字母大小写根据我所提供”，高亮时完全保留源文本中的大小写形态。
-   * 正则使用全局匹配，但不转换为统一大小写，直接替换原始匹配到的词汇。
-   * 注意：TBOX 因过滤必须为大写，但展示时高亮仍然保留原样，Hot/Ice 同理。
+   * 高亮文本中的关键词：TBOX, Hot, Ice
+   * 保留原始大小写，仅添加高亮样式，不改变展示字母形态
    */
   function highlightKeyword(text) {
     if (!text) return '';
-    // 匹配 TBOX, Hot, Ice 严格区分大小写（实际正则匹配原始出现的精确字符）
-    // 使用边界辅助确保完整单词？不需要，按原内容高亮即可，比如 "TBOX" 全大写高亮，"Hot" 首字母大写高亮，"Ice" 首字母大写高亮
-    // 同时为了兼容混合大小写场景但依然高亮 (用户可能包含 "hot", "ice" 小写？需求描述包含大小写敏感展示和高亮，保留原样)
-    // 为了稳健：对这三个词做大小写敏感匹配，原样替换
+    // 匹配 TBOX (全大写), Hot (H大写+ot小写), Ice (I大写+ce小写)
+    // 全局匹配原始出现的这些词，保留原始大小写进行高亮
     const regex = /(TBOX|Hot|Ice)/g;
     return text.replace(regex, (match) => {
-      // match 是原始的字符串片段，保留原始大小写样式
       return `<span style="background:#ffaa33; color:#1a1f2a; font-weight:bold; padding:2px 6px; border-radius:12px; display:inline-block; margin:0 1px;">${match}</span>`;
     });
   }
@@ -454,10 +440,9 @@
       orderDiv.setAttribute('data-order-id', order.id);
       
       let rawItemsText = '';
-      // 构建餐品明细原始文本（保留数据库原始大小写）
+      // 构建餐品明细原始文本（保留数据库原始大小写，不进行大小写转换）
       if (order.items) {
         if (Array.isArray(order.items)) {
-          // 保留每个item原始字符串，不做大小写转换，用 • 连接
           rawItemsText = order.items.map(item => `• ${escapeHtml(item)}`).join('<br>');
         } else if (typeof order.items === 'string') {
           rawItemsText = escapeHtml(order.items).replace(/,/g, '<br>');
@@ -475,7 +460,8 @@
       const tableInfo = order.table ? `桌号: ${order.table}` : '外带';
       const orderNumber = order.orderNo || order.id.slice(-6) || '----';
       
-      const matchBadge = `<span class="hk-match-tag">🎯 含[TBOX]订单</span>`;
+      // 动态生成匹配标签说明 (根据含有哪种关键词展示，但为了通用显示匹配标识)
+      let matchBadge = `<span class="hk-match-tag">🎯 匹配订单(TBOX/Hot/Ice)</span>`;
       
       let actionButtonHtml = '';
       if (currentStatus === 'New') {
@@ -508,7 +494,7 @@
     }
   }
 
-  // 订单操作函数 (与原功能完全一致)
+  // 订单操作函数 (与原来功能完全相同)
   window.setPreparing = function(orderId) {
     if (!orderId) return;
     database.ref('orders/' + orderId).update({ status: 'Preparing' })
@@ -546,7 +532,7 @@
 
   startListeningOrders();
   
-  console.log("厨房显示系统已启动 — 严格过滤『TBOX』(区分大小写) | 保留原始字母大小写展示与高亮 | 独立卡片模式");
+  console.log("厨房显示系统已启动 — 过滤条件: 餐品中包含 TBOX / Hot / Ice (大小写敏感，保留原始字母形态) | 独立卡片 | 状态流转正常");
 </script>
 </body>
 </html>
