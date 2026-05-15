@@ -792,11 +792,5 @@ const orderUrl = `${baseUrl}?table=${t}`;
   
   console.log(`当前模式: 顾客桌号=${currentTable} | 购物车支持多选，每日23:45重置桌号=1 & 订单号归1 | 最新订单实时更新`);
 </script>
-// 防止 file:// 模式运行
-if (location.protocol === 'file:') {
-  alert(
-    '请不要直接双击 HTML 文件运行！\n\n请使用 VSCode Live Server 或本地服务器启动。'
-  );
-}
 </body>
 </html>
