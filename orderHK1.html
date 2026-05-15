@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>港式烧腊点餐 - 双语版</title>
+<title>HK Roasted Food 双语点餐系统</title>
 
-<!-- Firebase SDK -->
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
 
@@ -49,23 +49,21 @@ body{
   padding:6px 14px;
   border-radius:40px;
   font-size:13px;
-  font-weight:500;
   margin-bottom:16px;
 }
 
 h2{
-  margin:8px 0 4px;
+  margin:10px 0;
 }
 
 .table-badge{
   background:#ffedd5;
   display:inline-block;
-  padding:4px 14px;
-  border-radius:32px;
-  font-size:0.9rem;
-  font-weight:bold;
-  margin-bottom:18px;
+  padding:6px 14px;
+  border-radius:30px;
   color:#b45309;
+  font-weight:bold;
+  margin-bottom:16px;
 }
 
 .menu-items{
@@ -73,17 +71,14 @@ h2{
   border-radius:24px;
   padding:12px 16px;
   margin:16px 0;
-  max-height:380px;
-  overflow-y:auto;
 }
 
 .menu-items label{
   display:flex;
   align-items:center;
   gap:12px;
-  padding:10px 0;
+  padding:12px 0;
   border-bottom:1px solid #ffe0b5;
-  font-weight:500;
   cursor:pointer;
 }
 
@@ -100,9 +95,9 @@ input[type="checkbox"]{
 .cart-panel{
   background:#fff6e8;
   border-radius:24px;
-  padding:12px 16px;
-  margin:18px 0;
+  padding:16px;
   border:1px solid #f5d5a4;
+  margin-top:18px;
 }
 
 .cart-header{
@@ -113,30 +108,29 @@ input[type="checkbox"]{
 
 .clear-cart-btn{
   width:auto;
-  padding:6px 14px;
+  padding:6px 12px;
+  border:none;
   border-radius:30px;
   background:#ffede0;
   color:#b45309;
-  border:none;
   cursor:pointer;
   font-weight:bold;
 }
 
 .cart-table-info{
-  font-size:0.85rem;
+  margin-top:10px;
   background:#ffede0;
+  display:inline-block;
   padding:6px 12px;
   border-radius:30px;
-  display:inline-block;
-  margin-bottom:10px;
   color:#b45309;
-  font-weight:bold;
+  font-size:14px;
 }
 
 #cartList{
   list-style:none;
   padding:0;
-  margin:0;
+  margin:12px 0;
 }
 
 .cart-item{
@@ -147,41 +141,30 @@ input[type="checkbox"]{
   border-bottom:1px solid #f7e2c0;
 }
 
-.cart-item-price{
-  font-weight:bold;
-  color:#b45309;
-}
-
 .remove-item{
   background:#f1d5b5;
   border:none;
-  border-radius:30px;
+  border-radius:20px;
   padding:4px 10px;
   cursor:pointer;
-}
-
-.cart-empty-msg{
-  text-align:center;
-  color:#b97f3a;
 }
 
 .cart-total{
   text-align:right;
   font-weight:bold;
-  margin-top:12px;
+  font-size:18px;
 }
 
 button{
   width:100%;
   padding:12px;
-  margin-top:12px;
-  background:#d97706;
-  color:white;
   border:none;
   border-radius:60px;
-  font-size:1rem;
+  background:#d97706;
+  color:white;
   font-weight:bold;
   cursor:pointer;
+  margin-top:12px;
 }
 
 button:disabled{
@@ -191,28 +174,16 @@ button:disabled{
 .order-confirm{
   background:#2d6a4f;
   color:white;
-  padding:15px;
+  padding:16px;
   border-radius:24px;
-  margin-top:18px;
+  margin-top:16px;
   text-align:center;
-  position:relative;
-}
-
-.close-confirm{
-  position:absolute;
-  top:8px;
-  right:12px;
-  background:none;
-  border:none;
-  color:white;
-  font-size:20px;
-  width:auto;
 }
 
 .history-panel{
   background:#fef3e2;
   border-radius:24px;
-  padding:12px 16px;
+  padding:16px;
   margin-top:18px;
 }
 
@@ -234,32 +205,28 @@ button:disabled{
   border-radius:30px;
 }
 
-#kitchenSection,
-#qrSection{
-  margin-top:20px;
-  background:rgba(0,0,0,0.7);
-  padding:20px;
-  border-radius:24px;
-  color:white;
-  width:90%;
-  max-width:550px;
+.cart-empty-msg{
+  text-align:center;
+  color:#999;
+  padding:12px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="menu-box" id="mainApp">
+<div class="menu-box">
 
-<a href="https://frops1997-create.github.io/restaurant-order/Main.html" class="back-home">
+<a href="https://frops1997-create.github.io/restaurant-order/Main.html"
+class="back-home">
 ← 返回主页
 </a>
 
-<!-- 🌐 双语按钮 -->
 <div style="text-align:right;">
-  <button id="langToggleBtn" style="width:auto;background:#374151;">
-    🌐 English
-  </button>
+<button id="langToggleBtn"
+style="width:auto;background:#374151;">
+🌐 English
+</button>
 </div>
 
 <h2 id="mainTitle">🍖 HK Roasted Food</h2>
@@ -340,13 +307,15 @@ data-price="6.50">
 <div class="cart-header">
 <h3 id="cartTitle">🛒 购物车</h3>
 
-<button class="clear-cart-btn" id="clearCartBtn">
+<button class="clear-cart-btn"
+id="clearCartBtn">
 清空购物车
 </button>
 </div>
 
-<div id="cartTableInfo" class="cart-table-info">
-🪑 桌号: --
+<div id="cartTableInfo"
+class="cart-table-info">
+🪑 当前桌号: --
 </div>
 
 <ul id="cartList">
@@ -356,36 +325,34 @@ data-price="6.50">
 </ul>
 
 <div class="cart-total">
-💰 总计:
+💰 Total:
 <span id="cartTotalPrice">$0.00</span>
 </div>
 
 </div>
 
-<button id="submitBtn">
+<button id="submitBtn" disabled>
 请选择菜品
 </button>
 
-<div class="order-confirm" id="orderConfirm" style="display:none;">
-
-<button class="close-confirm" id="closeConfirmBtn">
-✖
-</button>
+<div class="order-confirm"
+id="orderConfirm"
+style="display:none;">
 
 <h3>✅ 订单已送达厨房！</h3>
 
 <p>
-📋 订单号:
+📋 Order #
 <strong id="showOrderNo"></strong>
 </p>
 
 <p>
-🪑 桌号:
+🪑 Table:
 <span id="showTable"></span>
 </p>
 
 <p>
-💰 总金额:
+💰 Total:
 $<span id="showTotal"></span>
 </p>
 
@@ -393,7 +360,7 @@ $<span id="showTotal"></span>
 
 <div class="history-panel">
 
-<div class="history-header">
+<div style="font-weight:bold;margin-bottom:12px;">
 📜 最新订单记录
 </div>
 
@@ -403,20 +370,6 @@ $<span id="showTotal"></span>
 
 </div>
 
-</div>
-
-<!-- 厨房 -->
-<div id="kitchenSection" style="display:none;">
-<h2>👨‍🍳 厨房订单看板</h2>
-<div id="orders"></div>
-</div>
-
-<!-- QR -->
-<div id="qrSection" style="display:none;">
-<h2>📱 QR Code</h2>
-<input type="number" id="tableInput" placeholder="输入桌号">
-<button onclick="generateQR()">生成 QR</button>
-<div id="qrcode"></div>
 </div>
 
 <script>
@@ -438,293 +391,378 @@ const db = firebase.database();
 
 const urlParams = new URLSearchParams(location.search);
 
-const isKitchen = urlParams.get('kitchen');
-const isAdmin = urlParams.get('admin');
-
 const tableFromUrl = urlParams.get('table');
 
 let currentTable = Number(tableFromUrl) || 2255;
 
-const tableNoSpan = document.getElementById('tableNo');
-const cartTableInfoSpan = document.getElementById('cartTableInfo');
-const cartListEl = document.getElementById('cartList');
-const cartTotalSpan = document.getElementById('cartTotalPrice');
-const submitBtn = document.getElementById('submitBtn');
-const clearCartBtn = document.getElementById('clearCartBtn');
+document.getElementById('tableNo').innerText =
+currentTable;
 
-const orderConfirmDiv = document.getElementById('orderConfirm');
+document.getElementById('cartTableInfo').innerHTML =
+`🪑 当前桌号: ${currentTable}`;
 
 const checkboxes =
-document.querySelectorAll('.menu-items input[type="checkbox"]');
+document.querySelectorAll('input[type="checkbox"]');
+
+const cartListEl =
+document.getElementById('cartList');
+
+const cartTotalSpan =
+document.getElementById('cartTotalPrice');
+
+const submitBtn =
+document.getElementById('submitBtn');
+
+const clearCartBtn =
+document.getElementById('clearCartBtn');
 
 let cartItems = [];
 
-function updateTableDisplay(){
-  tableNoSpan.textContent = currentTable;
-  cartTableInfoSpan.innerHTML = `🪑 当前桌号: ${currentTable}`;
+// 语言
+let currentLang='cn';
+
+const langData={
+
+cn:{
+menu:"🔥 烧腊精选 (可多选)",
+cart:"🛒 购物车",
+clear:"清空购物车",
+submit:"✅ 确认下单",
+choose:"请选择菜品",
+empty:"🍽️ 购物车空，请勾选上方美食"
+},
+
+en:{
+menu:"🔥 Signature Roasted Menu",
+cart:"🛒 Shopping Cart",
+clear:"Clear Cart",
+submit:"✅ Place Order",
+choose:"Please Select Food",
+empty:"🍽️ Cart Empty"
 }
 
-updateTableDisplay();
+};
 
 function renderCart(){
 
-  if(cartItems.length===0){
+if(cartItems.length===0){
 
-    cartListEl.innerHTML =
-    `<li class="cart-empty-msg">
-      ${langData[currentLang].empty}
-    </li>`;
+cartListEl.innerHTML=
+`<li class="cart-empty-msg">
+${langData[currentLang].empty}
+</li>`;
 
-    cartTotalSpan.innerText='$0.00';
-    return;
-  }
+cartTotalSpan.innerText='$0.00';
 
-  let html='';
-  let total=0;
+submitBtn.disabled=true;
 
-  cartItems.forEach((item,idx)=>{
+submitBtn.innerText=
+langData[currentLang].choose;
 
-    total += item.price;
-
-    html += `
-    <li class="cart-item">
-
-      <div>${item.name}</div>
-
-      <div class="cart-item-price">
-        $${item.price.toFixed(2)}
-      </div>
-
-      <button class="remove-item"
-      data-index="${idx}">
-      X
-      </button>
-
-    </li>`;
-  });
-
-  cartListEl.innerHTML = html;
-
-  cartTotalSpan.innerText =
-  `$${total.toFixed(2)}`;
-
-  document.querySelectorAll('.remove-item')
-  .forEach(btn=>{
-
-    btn.onclick=()=>{
-
-      const idx =
-      parseInt(btn.dataset.index);
-
-      cartItems.splice(idx,1);
-
-      checkboxes[idx].checked=false;
-
-      renderCart();
-
-      updateSubmitButtonState();
-    };
-  });
+return;
 }
 
-function updateSubmitButtonState(){
+let html='';
+let total=0;
 
-  if(cartItems.length===0){
+cartItems.forEach((item,index)=>{
 
-    submitBtn.disabled=true;
+total += item.price;
 
-    submitBtn.innerText =
-    langData[currentLang].choose;
+html += `
+<li class="cart-item">
 
-  }else{
+<div>${item.name}</div>
 
-    submitBtn.disabled=false;
+<div>
+<span style="font-weight:bold;color:#b45309;">
+$${item.price.toFixed(2)}
+</span>
 
-    submitBtn.innerText =
-    langData[currentLang].submit;
-  }
+<button class="remove-item"
+onclick="removeItem(${index})">
+X
+</button>
+
+</div>
+
+</li>
+`;
+});
+
+cartListEl.innerHTML = html;
+
+cartTotalSpan.innerText =
+`$${total.toFixed(2)}`;
+
+submitBtn.disabled=false;
+
+submitBtn.innerText=
+langData[currentLang].submit;
+}
+
+function removeItem(index){
+
+const removed = cartItems[index];
+
+checkboxes.forEach(cb=>{
+
+const name =
+cb.getAttribute('data-name');
+
+if(name===removed.name){
+cb.checked=false;
+}
+});
+
+cartItems.splice(index,1);
+
+renderCart();
 }
 
 checkboxes.forEach(cb=>{
 
-  cb.addEventListener('change',()=>{
+cb.addEventListener('change',()=>{
 
-    cartItems=[];
+cartItems=[];
 
-    checkboxes.forEach(c=>{
+checkboxes.forEach(c=>{
 
-      if(c.checked){
+if(c.checked){
 
-        cartItems.push({
-          name:c.getAttribute('data-name'),
-          price:parseFloat(c.dataset.price)
-        });
-      }
-    });
+cartItems.push({
 
-    renderCart();
+name:c.getAttribute('data-name'),
 
-    updateSubmitButtonState();
-  });
+price:parseFloat(
+c.getAttribute('data-price')
+)
+
+});
+}
+});
+
+renderCart();
+});
 });
 
 clearCartBtn.onclick=()=>{
 
-  checkboxes.forEach(c=>c.checked=false);
+checkboxes.forEach(c=>c.checked=false);
 
-  cartItems=[];
+cartItems=[];
 
-  renderCart();
-
-  updateSubmitButtonState();
+renderCart();
 };
 
 async function submitOrder(){
 
-  if(cartItems.length===0)return;
+if(cartItems.length===0)return;
 
-  let total=0;
+let total=0;
 
-  let items=[];
+let items=[];
 
-  cartItems.forEach(i=>{
+cartItems.forEach(i=>{
 
-    total += i.price;
+total += i.price;
 
-    items.push(i.name);
-  });
+items.push(i.name);
 
-  const totalFixed=total.toFixed(2);
+});
 
-  const snap =
-  await db.ref('orderCounter').once('value');
+const totalFixed=total.toFixed(2);
 
-  let orderNo=snap.val() || 1;
+const snap =
+await db.ref('orderCounter').once('value');
 
-  await db.ref('orderCounter')
-  .set(orderNo+1);
+let orderNo=snap.val() || 1;
 
-  const newOrder = {
+await db.ref('orderCounter')
+.set(orderNo+1);
 
-    orderNo:orderNo,
+const newOrder={
 
-    table:currentTable,
+orderNo:orderNo,
 
-    items:items,
+table:currentTable,
 
-    total:totalFixed,
+items:items,
 
-    time:new Date().toLocaleString()
-  };
+total:totalFixed,
 
-  await db.ref('orders').push(newOrder);
+time:new Date().toLocaleString(),
 
-  document.getElementById('showOrderNo')
-  .innerText = orderNo;
+timestamp:Date.now()
+};
 
-  document.getElementById('showTable')
-  .innerText = currentTable;
+await db.ref('orders').push(newOrder);
 
-  document.getElementById('showTotal')
-  .innerText = totalFixed;
+document.getElementById('showOrderNo')
+.innerText=orderNo;
 
-  orderConfirmDiv.style.display='block';
+document.getElementById('showTable')
+.innerText=currentTable;
 
-  clearCartBtn.click();
+document.getElementById('showTotal')
+.innerText=totalFixed;
 
-  setTimeout(()=>{
-    orderConfirmDiv.style.display='none';
-  },4000);
+document.getElementById('orderConfirm')
+.style.display='block';
+
+setTimeout(()=>{
+
+document.getElementById('orderConfirm')
+.style.display='none';
+
+},4000);
+
+clearCartBtn.click();
 }
 
 submitBtn.onclick=submitOrder;
 
-// 双语
-let currentLang='cn';
+// 最新订单实时监听
+function setupLatestOrderListener(){
 
-const langData = {
+const latestOrderContainer =
+document.getElementById(
+'latestOrderContainer'
+);
 
-  cn:{
-    menu:"🔥 烧腊精选 (可多选)",
-    cart:"🛒 购物车",
-    clear:"清空购物车",
-    submit:"✅ 确认下单",
-    choose:"请选择菜品",
-    empty:"🍽️ 购物车空，请勾选上方美食"
-  },
+db.ref('orders')
+.orderByChild('table')
+.equalTo(Number(currentTable))
+.on('value',(snapshot)=>{
 
-  en:{
-    menu:"🔥 Signature Roasted Menu",
-    cart:"🛒 Shopping Cart",
-    clear:"Clear Cart",
-    submit:"✅ Place Order",
-    choose:"Please Select Food",
-    empty:"🍽️ Cart Empty"
-  }
-};
+const data = snapshot.val();
 
-const langBtn =
-document.getElementById('langToggleBtn');
+if(!data){
 
-langBtn.onclick=()=>{
+latestOrderContainer.innerHTML=`
+<div style="text-align:center;padding:12px;">
+📭 暂无订单
+</div>
+`;
 
-  currentLang =
-  currentLang==='cn' ? 'en' : 'cn';
+return;
+}
 
-  updateLanguage();
+let ordersArray=[];
+
+for(let key in data){
+
+ordersArray.push({
+id:key,
+...data[key]
+});
+}
+
+ordersArray.sort((a,b)=>{
+
+return (b.timestamp||0) -
+(a.timestamp||0);
+
+});
+
+const latest=ordersArray[0];
+
+latestOrderContainer.innerHTML=`
+
+<div class="latest-order-card">
+
+<div class="latest-order-header">
+
+<span>
+🧾 Order #${latest.orderNo}
+</span>
+
+<span class="badge-total">
+$${latest.total}
+</span>
+
+</div>
+
+<div style="margin-top:10px;">
+🍽️ ${latest.items.join('、')}
+</div>
+
+<div style="
+margin-top:8px;
+font-size:12px;
+color:#999;
+text-align:right;
+">
+⏱️ ${latest.time}
+</div>
+
+</div>
+`;
+});
+}
+
+// 双语切换
+document.getElementById('langToggleBtn')
+.onclick=()=>{
+
+currentLang =
+currentLang==='cn'
+? 'en'
+: 'cn';
+
+updateLanguage();
 };
 
 function updateLanguage(){
 
-  document.getElementById('menuTitle')
-  .innerText =
-  langData[currentLang].menu;
+document.getElementById('menuTitle')
+.innerText=
+langData[currentLang].menu;
 
-  document.getElementById('cartTitle')
-  .innerText =
-  langData[currentLang].cart;
+document.getElementById('cartTitle')
+.innerText=
+langData[currentLang].cart;
 
-  clearCartBtn.innerText =
-  langData[currentLang].clear;
+clearCartBtn.innerText=
+langData[currentLang].clear;
 
-  langBtn.innerText =
-  currentLang==='cn'
-  ? '🌐 English'
-  : '🌐 中文';
+document.getElementById('langToggleBtn')
+.innerText=
+currentLang==='cn'
+? '🌐 English'
+: '🌐 中文';
 
-  document.querySelectorAll('.menu-label')
-  .forEach(label=>{
+document.querySelectorAll('.menu-label')
+.forEach(label=>{
 
-    const text =
-    currentLang==='cn'
-    ? label.dataset.cn
-    : label.dataset.en;
+const text=
+currentLang==='cn'
+? label.dataset.cn
+: label.dataset.en;
 
-    label.querySelector('span')
-    .innerText = text;
+label.querySelector('span')
+.innerText=text;
 
-    const checkbox =
-    label.querySelector('input');
+const checkbox=
+label.querySelector('input');
 
-    checkbox.setAttribute(
-      'data-name',
+checkbox.setAttribute(
+'data-name',
 
-      currentLang==='cn'
-      ? checkbox.dataset.nameCn
-      : checkbox.dataset.nameEn
-    );
-  });
+currentLang==='cn'
+? checkbox.dataset.nameCn
+: checkbox.dataset.nameEn
+);
+});
 
-  renderCart();
-
-  updateSubmitButtonState();
+renderCart();
 }
 
 updateLanguage();
 
 renderCart();
 
-updateSubmitButtonState();
+setupLatestOrderListener();
 
 </script>
 
