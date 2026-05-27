@@ -188,15 +188,22 @@ db.ref('orderCounter').once('value').then(snap => {
 
 function updateTotal() {
   let total = 0;
-  document.querySelectorAll('input:checked').forEach(i => total += parseFloat(i.dataset.price));
-  document.getElementById('total').innerText = `Total: $${total.toFixed(2)}`;
+
+  document.querySelectorAll('input[type="checkbox"]:checked').forEach(i => {
+    total += parseFloat(i.dataset.price || 0);
+  });
+
+  document.getElementById('total').innerText =
+    `Total: $${total.toFixed(2)}`;
 }
 
 function submitOrder() {
   const btn = document.getElementById('submitBtn');
   if (btn.disabled) return;
 
-  const items = Array.from(document.querySelectorAll('input:checked'));
+  const items = Array.from(
+  document.querySelectorAll('input[type="checkbox"]:checked')
+);
   if (items.length === 0) {
     alert('Please select food!');
     return;
