@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>铜锅记 · 火锅外卖</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- 引入 Excel 导出库 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --cream:#FBF3E7;
+    --cream-2:#F3E6D2;
+    --broth:#B7371F;
+    --broth-dark:#8E2A17;
+    --copper:#C4894A;
+    --copper-light:#E3B876;
+    --ink:#2B2118;
+    --ink-soft:#6B5D4F;
+    --line:#E9DCC7;
+    --veg:#4C7A52;
+    --card:#FFFDF9;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Noto Sans SC', sans-serif;
+    padding-bottom:96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{ font-family:'Noto Serif SC', serif; }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    background:var(--cream);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{ width:34px; height:34px; }
+  .brand-name{ font-size:19px; font-weight:700; letter-spacing:.5px; }
+  .brand-name span{ color:var(--broth); }
+  .top-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--card); border:1px solid var(--line);
+    cursor:pointer; position:relative;
+    font-size:14px; font-weight:700; color:var(--ink);
+    transition:0.2s;
+  }
+  .icon-btn:hover{ background:var(--cream-2); }
+  .icon-btn.small{ width:34px; height:34px; font-size:12px; }
+  .icon-btn.danger{ background:#F2E0E0; color:#9A4A4A; border-color:#E8C8C8; }
+  .icon-btn.danger:hover{ background:#E8C8C8; }
+
+  /* ---------- 登录/注册弹窗 ---------- */
+  .auth-form{ width:100%; max-width:380px; margin:0 auto; }
+  .auth-tabs{ display:flex; gap:10px; margin-bottom:20px; }
+  .auth-tab{ flex:1; padding:10px; border-radius:12px; border:1px solid var(--line); background:var(--card); cursor:pointer; text-align:center; font-weight:600; font-size:14px; transition:0.2s; }
+  .auth-tab.active{ background:var(--broth); color:#fff; border-color:var(--broth); }
+  .auth-input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-size:14px; margin-bottom:12px; font-family:inherit; }
+  .auth-input:focus{ outline:2px solid var(--copper); outline-offset:1px; }
+  .auth-note{ font-size:12px; color:var(--ink-soft); margin-bottom:16px; text-align:center; }
+  .user-info{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--broth); background:var(--card); padding:6px 10px; border-radius:999px; border:1px solid var(--line); }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    padding:26px 20px 22px;
+    background:
+      radial-gradient(120% 140% at 50% -10%, #D9552F 0%, var(--broth) 46%, var(--broth-dark) 100%);
+    color:#FBF3E7;
+    overflow:hidden;
+    border-radius:0 0 28px 28px;
+  }
+  .hero-top{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .hero-eyebrow{
+    font-size:12px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--copper-light); font-weight:600;
+  }
+  .hero-title{ font-size:30px; font-weight:900; margin-top:6px; }
+  .hero-meta{
+    display:flex; gap:14px; margin-top:12px; font-size:13px; color:#F1D9C2;
+    flex-wrap:wrap;
+  }
+  .hero-meta b{ color:#fff; }
+  .pot-wrap{ width:78px; height:78px; flex-shrink:0; }
+
+  .steam{
+    position:absolute; bottom:-10px; opacity:.55;
+    filter:blur(1px);
+    animation:rise 4.5s ease-in infinite;
+  }
+  @keyframes rise{
+    0%{ transform:translateY(0) scaleX(1); opacity:0; }
+    15%{ opacity:.5; }
+    100%{ transform:translateY(-70px) scaleX(1.4); opacity:0; }
+  }
+  @media (prefers-reduced-motion: reduce){ .steam{ animation:none; opacity:0; } }
+
+  /* ---------- stats bar ---------- */
+  .stats-bar{
+    display:flex; gap:12px; padding:10px 20px; background:var(--cream-2);
+    border-bottom:1px solid var(--line); flex-wrap:wrap; font-size:13px; font-weight:600;
+  }
+  .stats-bar span{ background:var(--card); padding:4px 12px; border-radius:999px; border:1px solid var(--line); }
+  .stats-bar .num{ color:var(--broth); margin-left:4px; }
+
+  /* ---------- Category tabs ---------- */
+  .tabs{
+    position:sticky; top:65px; z-index:35;
+    background:var(--cream);
+    display:flex; gap:8px; padding:14px 20px 10px;
+    overflow-x:auto; border-bottom:1px solid var(--line);
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex-shrink:0; padding:9px 16px; border-radius:999px;
+    font-size:13.5px; font-weight:600; color:var(--ink-soft);
+    background:var(--card); border:1px solid var(--line);
+    cursor:pointer; white-space:nowrap; transition:.2s;
+  }
+  .tab.active{
+    background:var(--broth); color:#fff; border-color:var(--broth);
+  }
+
+  /* ---------- Menu ---------- */
+  .menu-section{ padding:22px 20px 6px; }
+  .section-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:14px; }
+  .section-head h2{ font-size:20px; font-weight:700; }
+  .section-head .count{ font-size:12.5px; color:var(--ink-soft); }
+  .rule{
+    height:1px; flex:1;
+    background:repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 11px);
+  }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:14px; }
+  .dish{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:16px; display:flex; flex-direction:column; gap:10px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .dish:hover{ transform:translateY(-2px); box-shadow:0 8px 20px rgba(43,33,24,.08); }
+  .dish-top{ display:flex; align-items:center; gap:10px; }
+  .bowl{ width:30px; height:30px; flex-shrink:0; }
+  .dish-name{ font-size:15px; font-weight:600; line-height:1.3; }
+  .dish-tag{ font-size:11px; color:var(--veg); font-weight:600; }
+  .dish-bottom{ display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
+  .price{ font-size:16.5px; font-weight:700; color:var(--broth); }
+  .price::before{ content:"$"; font-size:12px; font-weight:600; margin-right:1px; }
+
+  .stepper{ display:flex; align-items:center; gap:10px; }
+  .stepper button{
+    width:28px; height:28px; border-radius:50%; border:none; cursor:pointer;
+    background:var(--broth); color:#fff; font-size:16px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; line-height:0;
+  }
+  .stepper button.minus{ background:var(--cream-2); color:var(--broth); }
+  .stepper .qty{ min-width:16px; text-align:center; font-weight:700; font-size:14px; }
+  .add-btn{
+    border:none; background:var(--broth); color:#fff; font-weight:700; font-size:13px;
+    padding:7px 16px; border-radius:999px; cursor:pointer;
+  }
+  .add-btn:active{ transform:scale(.96); }
+
+  /* ---------- Cart bar ---------- */
+  .cart-bar{
+    position:fixed; left:16px; right:16px; bottom:16px; z-index:50;
+    background:var(--ink); color:#fff; border-radius:18px;
+    padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 12px 30px rgba(43,33,24,.35);
+    transform:translateY(140px); opacity:0; transition:.28s ease;
+  }
+  .cart-bar.show{ transform:translateY(0); opacity:1; }
+  .cart-bar-left{ display:flex; align-items:center; gap:12px; }
+  .cart-badge{
+    width:34px; height:34px; border-radius:50%; background:var(--copper);
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px;
+  }
+  .cart-total{ font-weight:700; font-size:15px; }
+  .cart-sub{ font-size:11.5px; color:#D8CBBA; }
+  .checkout-btn{
+    background:var(--copper); color:var(--ink); border:none; font-weight:700;
+    padding:10px 18px; border-radius:12px; cursor:pointer; font-size:13.5px;
+  }
+
+  /* ---------- Overlay / Modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(43,33,24,.45); z-index:60;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    background:var(--cream); width:100%; max-width:480px; border-radius:22px 22px 0 0;
+    max-height:88vh; overflow-y:auto; padding:20px 20px 26px;
+    transform:translateY(30px); transition:transform .28s ease;
+  }
+  .overlay.show .sheet{ transform:translateY(0); }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .sheet-head h3{ font-size:18px; }
+  .close-x{
+    width:30px; height:30px; border-radius:50%; border:none; background:var(--cream-2);
+    cursor:pointer; font-size:16px; color:var(--ink-soft);
+  }
+
+  .cart-line{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 0; border-bottom:1px solid var(--line); gap:10px;
+  }
+  .cart-line-name{ font-size:14px; font-weight:600; }
+  .cart-line-price{ font-size:12.5px; color:var(--ink-soft); }
+  .empty-cart{ text-align:center; padding:30px 10px; color:var(--ink-soft); font-size:13.5px; }
+
+  .summary-row{ display:flex; justify-content:space-between; font-size:13.5px; margin-top:8px; color:var(--ink-soft); }
+  .summary-row.total{ font-size:16px; font-weight:700; color:var(--ink); margin-top:12px; }
+
+  .field-label{ font-size:12.5px; font-weight:600; color:var(--ink-soft); margin:16px 0 6px; }
+  .field-input{
+    width:100%; padding:11px 14px; border-radius:12px; border:1px solid var(--line);
+    background:var(--card); font-size:14px; font-family:inherit; color:var(--ink);
+  }
+  .field-input:focus{ outline:2px solid var(--copper); outline-offset:1px; }
+
+  .primary-btn{
+    width:100%; margin-top:20px; background:var(--broth); color:#fff; border:none;
+    padding:14px; border-radius:14px; font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .primary-btn:disabled{ background:var(--line); color:var(--ink-soft); cursor:not-allowed; }
+
+  .success{ text-align:center; padding:20px 10px 6px; }
+  .success .pot-wrap{ width:64px; height:64px; margin:0 auto 14px; }
+  .success h3{ font-size:19px; margin-bottom:6px; }
+  .success p{ font-size:13.5px; color:var(--ink-soft); }
+
+  /* ---------- 历史订单样式 ---------- */
+  .order-history-item{
+    border-bottom:1px solid var(--line);
+    padding:10px 0;
+    font-size:13px;
+  }
+  .order-history-item:last-child{ border-bottom:none; }
+  .order-history-item .order-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+  }
+  .order-history-item .order-id{
+    font-weight:700;
+    color:var(--broth);
+  }
+  .order-history-item .order-status{
+    font-size:12px;
+    padding:2px 10px;
+    border-radius:999px;
+    font-weight:600;
+  }
+  .order-history-item .order-status.delivered{
+    background:#E4EFE3;
+    color:var(--veg);
+  }
+  .order-history-item .order-status.rejected{
+    background:#F2E0E0;
+    color:#9A4A4A;
+  }
+  .order-history-item .order-status.pending{
+    background:#FCE7E1;
+    color:var(--broth);
+  }
+  .order-history-item .order-status.preparing{
+    background:#FBEFD9;
+    color:#B7871F;
+  }
+  .order-history-item .order-status.ready{
+    background:#E4EAF2;
+    color:#4A5F8A;
+  }
+  .order-history-item .order-items{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    margin:4px 0;
+  }
+  .order-history-item .order-meta{
+    font-size:11px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:4px;
+  }
+  .delete-order-btn{
+    background:#9A4A4A;
+    color:#fff;
+    border:none;
+    padding:4px 14px;
+    border-radius:999px;
+    font-size:11px;
+    cursor:pointer;
+    transition:0.2s;
+  }
+  .delete-order-btn:hover{
+    background:#7A3A3A;
+  }
+
+  @media (max-width:420px){
+    .hero-title{ font-size:26px; }
+    .grid{ grid-template-columns:1fr 1fr; }
+  }
+  /* fullscreen */
+  .fullscreen .topbar{ position:static; }
+  .fullscreen .tabs{ position:static; }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<div class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 40 40"><use href="#pot-icon"/></svg>
+    <div class="brand-name">铜锅<span>记</span></div>
+  </div>
+  <div class="top-actions">
+    <div id="riderUserInfo" class="user-info" style="display:none;">🚴 骑手：<span id="riderName"></span></div>
+    <button class="icon-btn small" id="fullscreenBtn" title="全屏">⛶</button>
+    <button class="icon-btn small" id="historyBtn" title="已完成订单">📋</button>
+    <button class="icon-btn small" id="todayStatsBtn" title="今日销售">📊</button>
+    <button class="icon-btn small" id="exportExcelBtn" title="导出销售Excel" style="display:none;">📥</button>
+    <button class="icon-btn small danger" id="resetTodayBtn" title="重置今日已完成订单" style="display:none;">🔄</button>
+    <button class="icon-btn small" id="riderLoginBtn" title="骑手入口">🚴</button>
+    <div class="icon-btn" id="cartIconBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2B2118" stroke-width="2"><path d="M3 3h2l2.4 12.4a2 2 0 0 0 2 1.6h7.2a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<div class="hero">
+  <div class="steam" style="left:30%; animation-delay:0s;">
+    <svg width="26" height="60" viewBox="0 0 26 60"><path d="M13 60 C 4 46, 22 40, 13 26 C 4 12, 22 6, 13 0" stroke="#F1D9C2" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+  </div>
+  <div class="steam" style="left:55%; animation-delay:1.6s;">
+    <svg width="22" height="54" viewBox="0 0 26 60"><path d="M13 60 C 4 46, 22 40, 13 26 C 4 12, 22 6, 13 0" stroke="#F1D9C2" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+  </div>
+  <div class="steam" style="left:74%; animation-delay:3s;">
+    <svg width="20" height="48" viewBox="0 0 26 60"><path d="M13 60 C 4 46, 22 40, 13 26 C 4 12, 22 6, 13 0" stroke="#F1D9C2" stroke-width="3" fill="none" stroke-linecap="round"/></svg>
+  </div>
+
+  <div class="hero-top">
+    <div>
+      <div class="hero-eyebrow">铜锅现涮 · 一人一锅</div>
+      <h1 class="hero-title">铜锅记火锅外卖</h1>
+      <div class="hero-meta">
+        <span>★ <b>4.8</b> (2,309)</span>
+        <span>🚴 <b>28</b> 分钟送达</span>
+        <span>距您 <b>1.2</b> km</span>
+      </div>
+    </div>
+    <svg class="pot-wrap" viewBox="0 0 80 80"><use href="#pot-icon-big"/></svg>
+  </div>
+</div>
+
+<!-- stats bar -->
+<div class="stats-bar" id="statsBar">
+  <span>📦 今日订单 <span class="num" id="todayCount">0</span></span>
+  <span>💰 今日销售额 <span class="num" id="todaySales">$0.0</span></span>
+</div>
+
+<!-- Hidden SVG symbols -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="pot-icon" viewBox="0 0 40 40">
+    <circle cx="20" cy="22" r="14" fill="#B7371F"/>
+    <rect x="4" y="19" width="6" height="4" rx="2" fill="#C4894A"/>
+    <rect x="30" y="19" width="6" height="4" rx="2" fill="#C4894A"/>
+    <ellipse cx="20" cy="14" rx="14" ry="4" fill="#C4894A"/>
+  </symbol>
+  <symbol id="pot-icon-big" viewBox="0 0 80 80">
+    <ellipse cx="40" cy="44" rx="30" ry="24" fill="#E3B876"/>
+    <ellipse cx="40" cy="40" rx="27" ry="21" fill="#8E2A17"/>
+    <ellipse cx="40" cy="30" rx="27" ry="8" fill="#C4894A"/>
+    <rect x="4" y="36" width="12" height="7" rx="3.5" fill="#E3B876"/>
+    <rect x="64" y="36" width="12" height="7" rx="3.5" fill="#E3B876"/>
+  </symbol>
+  <symbol id="bowl-red" viewBox="0 0 30 30">
+    <path d="M4 14h22a11 11 0 0 1-22 0Z" fill="#B7371F"/>
+    <rect x="12" y="4" width="6" height="8" rx="2" fill="#C4894A"/>
+  </symbol>
+  <symbol id="bowl-green" viewBox="0 0 30 30">
+    <path d="M4 14h22a11 11 0 0 1-22 0Z" fill="#4C7A52"/>
+    <rect x="12" y="4" width="6" height="8" rx="2" fill="#8FA88C"/>
+  </symbol>
+  <symbol id="bowl-copper" viewBox="0 0 30 30">
+    <path d="M4 14h22a11 11 0 0 1-22 0Z" fill="#C4894A"/>
+    <rect x="12" y="4" width="6" height="8" rx="2" fill="#B7371F"/>
+  </symbol>
+</svg>
+
+<!-- ============ CATEGORY TABS ============ -->
+<div class="tabs" id="tabs"></div>
+
+<!-- ============ MENU ============ -->
+<div id="menuRoot"></div>
+
+<!-- ============ CART BAR ============ -->
+<div class="cart-bar" id="cartBar">
+  <div class="cart-bar-left">
+    <div class="cart-badge" id="cartCount">0</div>
+    <div>
+      <div class="cart-total" id="cartTotal">$0.0</div>
+      <div class="cart-sub">配送费另计</div>
+    </div>
+  </div>
+  <button class="checkout-btn" id="openCartBtn">去结算</button>
+</div>
+
+<!-- ============ OVERLAY ============ -->
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const ordersRef = db.ref('orders');
+const ridersRef = db.ref('riders');
+const RESTAURANT_ID = "tongguoji";
+const RESTAURANT_NAME = "铜锅记";
+const RESTAURANT_ADDRESS = "新加坡实龙岗路 88 号";
+
+// ============ 全局变量 ============
+const DATA = {
+  categories: [
+    {
+      id: "signature",
+      name: "招牌铜锅",
+      items: [
+        { id:1, name:"麻酱鸡肉", price:8.9, icon:"bowl-red" },
+        { id:2, name:"水果酸汤鱼片", price:8.9, icon:"bowl-red" },
+        { id:3, name:"甘榜鸡丝", price:8.9, icon:"bowl-red" },
+        { id:4, name:"香港甜汁", price:8.9, icon:"bowl-red" },
+        { id:5, name:"番茄肥牛", price:9.9, icon:"bowl-red" },
+        { id:6, name:"生豉牛肉", price:9.9, icon:"bowl-red" },
+        { id:7, name:"招牌肉糜", price:6.9, icon:"bowl-red" },
+        { id:8, name:"海鲜姜汁", price:7.9, icon:"bowl-red" },
+      ]
+    },
+    {
+      id: "base",
+      name: "锅底任选",
+      items: [
+        { id:9, name:"番茄锅底", price:5.9, icon:"bowl-copper" },
+        { id:10, name:"麻辣牛油锅底", price:6.9, icon:"bowl-copper" },
+        { id:11, name:"菌菇清汤锅底", price:6.9, icon:"bowl-copper" },
+        { id:12, name:"酸菜白肉锅底", price:5.9, icon:"bowl-copper" },
+      ]
+    },
+    {
+      id: "veg",
+      name: "涮菜拼盘",
+      items: [
+        { id:13, name:"娃娃菜拼盘", price:3.9, tag:"素", icon:"bowl-green" },
+        { id:14, name:"金针菇拼盘", price:3.9, tag:"素", icon:"bowl-green" },
+        { id:15, name:"手打虾滑", price:7.9, icon:"bowl-green" },
+        { id:16, name:"宽粉拼盘", price:2.9, tag:"素", icon:"bowl-green" },
+      ]
+    },
+    {
+      id: "drinks",
+      name: "饮品糖水",
+      items: [
+        { id:17, name:"酸梅汤", price:2.9, icon:"bowl-copper" },
+        { id:18, name:"杨枝甘露", price:4.9, icon:"bowl-copper" },
+        { id:19, name:"冰镇酸奶", price:3.5, icon:"bowl-copper" },
+      ]
+    }
+  ]
+};
+
+const cart = {};
+let allOrders = {};
+let currentRider = JSON.parse(localStorage.getItem('currentRider') || 'null');
+let authMode = 'login'; // login / register
+
+// ============ 工具函数 ============
+function fmt(n){ return n.toFixed(1); }
+function allItems(){ return DATA.categories.flatMap(c => c.items); }
+
+// ============ 骑手认证功能 ============
+function updateRiderUI(){
+  const loginBtn = document.getElementById('riderLoginBtn');
+  const userInfo = document.getElementById('riderUserInfo');
+  const riderName = document.getElementById('riderName');
+  const exportBtn = document.getElementById('exportExcelBtn');
+  const resetBtn = document.getElementById('resetTodayBtn');
+
+  if(currentRider){
+    loginBtn.title = '退出登录';
+    riderName.textContent = currentRider.name;
+    userInfo.style.display = 'flex';
+    exportBtn.style.display = 'block';
+    resetBtn.style.display = 'block';
+  }else{
+    loginBtn.title = '骑手入口';
+    userInfo.style.display = 'none';
+    exportBtn.style.display = 'none';
+    resetBtn.style.display = 'none';
+  }
+}
+
+function showRiderAuth(){
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="sheet-head">
+      <h3 class="display">🚴 骑手入口</h3>
+      <button class="close-x" id="closeSheet">✕</button>
+    </div>
+    <div class="auth-form">
+      <div class="auth-tabs">
+        <div class="auth-tab ${authMode==='login'?'active':''}" data-mode="login">登录</div>
+        <div class="auth-tab ${authMode==='register'?'active':''}" data-mode="register">注册</div>
+      </div>
+      <input type="text" class="auth-input" id="riderNameInput" placeholder="骑手姓名（必填）" />
+      <input type="tel" class="auth-input" id="riderPhoneInput" placeholder="联系电话（必填）" maxlength="15" />
+      <input type="text" class="auth-input" id="riderAddrInput" placeholder="常驻配送地址（必填）" />
+      <p class="auth-note">注册信息将永久保存，登录后可使用导出、重置功能</p>
+      <button class="primary-btn" id="authSubmitBtn">${authMode==='login'?'立即登录':'完成注册'}</button>
+    </div>
+  `;
+
+  // 切换登录/注册
+  document.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      authMode = tab.dataset.mode;
+      showRiderAuth();
+    });
+  });
+
+  // 提交认证
+  document.getElementById('authSubmitBtn').addEventListener('click', handleRiderAuth);
+  document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+  openOverlay();
+}
+
+async function handleRiderAuth(){
+  const name = document.getElementById('riderNameInput').value.trim();
+  const phone = document.getElementById('riderPhoneInput').value.trim();
+  const address = document.getElementById('riderAddrInput').value.trim();
+  const btn = document.getElementById('authSubmitBtn');
+
+  // 强制校验所有字段
+  if(!name || !phone || !address){
+    btn.textContent = '姓名、电话、地址均为必填项';
+    btn.style.background = '#C4894A';
+    setTimeout(() => showRiderAuth(), 1500);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '处理中...';
+
+  try{
+    if(authMode === 'register'){
+      // 注册：保存到数据库
+      const riderId = 'rider_' + phone.replace(/\D/g,'');
+      await ridersRef.child(riderId).set({
+        name, phone, address,
+        registerTime: firebase.database.ServerValue.TIMESTAMP
+      });
+      currentRider = { id: riderId, name, phone, address };
+    }else{
+      // 登录：验证信息
+      const riderId = 'rider_' + phone.replace(/\D/g,'');
+      const snap = await ridersRef.child(riderId).once('value');
+      if(!snap.exists()) throw new Error('该骑手信息不存在，请先注册');
+      const data = snap.val();
+      if(data.name !== name) throw new Error('姓名与预留信息不匹配');
+      currentRider = { id: riderId, name: data.name, phone: data.phone, address: data.address };
+    }
+
+    // 保存到本地存储
+    localStorage.setItem('currentRider', JSON.stringify(currentRider));
+    updateRiderUI();
+    closeOverlay();
+    alert(authMode==='login'?'登录成功！':'注册成功并已自动登录！');
+  }catch(err){
+    alert(err.message || '操作失败，请重试');
+    btn.disabled = false;
+    btn.textContent = authMode==='login'?'立即登录':'完成注册';
+  }
+}
+
+// 骑手退出登录
+document.getElementById('riderLoginBtn').addEventListener('click', () => {
+  if(currentRider){
+    if(confirm('确定要退出骑手登录吗？')){
+      currentRider = null;
+      localStorage.removeItem('currentRider');
+      updateRiderUI();
+    }
+  }else{
+    showRiderAuth();
+  }
+});
+
+// ============ 销售统计与导出功能 ============
+// 统计今日数据
+function updateStats(){
+  const now = new Date();
+  let count = 0, sales = 0;
+  Object.values(allOrders).forEach(o => {
+    if(!o.createdAt) return;
+    const d = new Date(o.createdAt);
+    if(d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate()){
+      if(o.status === 'delivered' || o.status === 'done') {
+        count++;
+        sales += (o.total || 0);
+      }
+    }
+  });
+  document.getElementById('todayCount').textContent = count;
+  document.getElementById('todaySales').textContent = '$' + sales.toFixed(1);
+}
+
+// 导出 Excel
+document.getElementById('exportExcelBtn').addEventListener('click', () => {
+  if(!currentRider) return alert('请先登录骑手账号');
+
+  const exportData = [];
+  const now = new Date();
+  Object.entries(allOrders).forEach(([id, o]) => {
+    if(!o.createdAt) return;
+    const d = new Date(o.createdAt);
+    const items = (o.items||[]).map(i => `${i.name}×${i.qty}`).join('、');
+    exportData.push({
+      '订单号': id.slice(-8).toUpperCase(),
+      '下单时间': d.toLocaleString(),
+      '客户姓名': o.customerName || '-',
+      '联系电话': o.customerPhone || '-',
+      '配送地址': o.customerAddress || '-',
+      '商品明细': items,
+      '菜品小计($)': (o.subtotal||0).toFixed(1),
+      '配送费($)': (o.deliveryFee||0).toFixed(1),
+      '订单总额($)': (o.total||0).toFixed(1),
+      '订单状态': o.status === 'delivered' ? '已送达' : o.status === 'done' ? '已完成' : o.status === 'pending' ? '待处理' : o.status
+    });
+  });
+
+  if(exportData.length === 0) return alert('暂无订单数据可导出');
+
+  // 生成 Excel
+  const ws = XLSX.utils.json_to_sheet(exportData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '订单明细');
+  XLSX.writeFile(wb, `铜锅记销售报表_${now.toLocaleDateString().replace(/\//g,'-')}.xlsx`);
+});
+
+// 重置今日已完成订单统计
+document.getElementById('resetTodayBtn').addEventListener('click', async () => {
+  if(!currentRider) return alert('请先登录骑手账号');
+  if(!confirm('⚠️ 仅重置今日统计显示，不会删除历史订单数据，确认继续？')) return;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1).getTime();
+
+  try{
+    // 标记今日已完成订单为已归档（仅影响统计，不删除）
+    const updates = {};
+    Object.entries(allOrders).forEach(([id, o]) => {
+      if(o.createdAt >= todayStart && o.createdAt < todayEnd && (o.status === 'delivered' || o.status === 'done')){
+        updates[`${id}/archived`] = true;
+      }
+    });
+    if(Object.keys(updates).length === 0) return alert('今日暂无已完成订单');
+    await ordersRef.update(updates);
+    alert('✅ 今日统计已重置完成');
+  }catch(err){
+    alert('重置失败：' + err.message);
+  }
+});
+
+// 监听订单变化
+ordersRef.on('value', snap => {
+  allOrders = snap.val() || {};
+  updateStats();
+});
+
+// ============ 原有页面渲染功能 ============
+function renderTabs(){
+  const tabsEl = document.getElementById('tabs');
+  tabsEl.innerHTML = DATA.categories.map((c, i) =>
+    `<div class="tab ${i===0?'active':''}" data-target="cat-${c.id}">${c.name}</div>`
+  ).join('');
+  tabsEl.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabsEl.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.target).scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  });
+}
+
+function dishCard(item){
+  const qty = cart[item.id] || 0;
+  return `
+    <div class="dish" data-id="${item.id}">
+      <div class="dish-top">
+        <svg class="bowl" viewBox="0 0 30 30"><use href="#${item.icon}"/></svg>
+        <div>
+          <div class="dish-name">${item.name}</div>
+          ${item.tag ? `<div class="dish-tag">${item.tag}</div>` : ''}
+        </div>
+      </div>
+      <div class="dish-bottom">
+        <div class="price">${fmt(item.price)}</div>
+        <div class="stepper-slot">
+          ${qty === 0
+            ? `<button class="add-btn" data-action="add" data-id="${item.id}">加入</button>`
+            : `<div class="stepper">
+                 <button class="minus" data-action="minus" data-id="${item.id}">−</button>
+                 <div class="qty">${qty}</div>
+                 <button data-action="plus" data-id="${item.id}">+</button>
+               </div>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMenu(){
+  const root = document.getElementById('menuRoot');
+  root.innerHTML = DATA.categories.map(cat => `
+    <div class="menu-section" id="cat-${cat.id}">
+      <div class="section-head">
+        <h2>${cat.name}</h2>
+        <div class="rule"></div>
+        <div class="count">${cat.items.length} 道</div>
+      </div>
+      <div class="grid">
+        ${cat.items.map(dishCard).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  root.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      if(action === 'add' || action === 'plus'){
+        cart[id] = (cart[id] || 0) + 1;
+      } else if(action === 'minus'){
+        cart[id] = Math.max(0, (cart[id] || 0) - 1);
+      }
+      renderMenu();
+      updateCartBar();
+      if(document.getElementById('overlay').classList.contains('show')){
+        renderCartSheet();
+      }
+    });
+  });
+}
+
+function cartCountTotal(){
+  let count = 0, total = 0;
+  const items = allItems();
+  for(const id in cart){
+    const qty = cart[id];
+    if(qty > 0){
+      const item = items.find(i => i.id == id);
+      count += qty;
+      total += qty * item.price;
+    }
+  }
+  return { count, total };
+}
+
+function updateCartBar(){
+  const { count, total } = cartCountTotal();
+  const bar = document.getElementById('cartBar');
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartTotal').textContent = '$' + fmt(total);
+  bar.classList.toggle('show', count > 0);
+}
+
+function renderCartSheet(){
+  const items = allItems();
+  const lines = Object.keys(cart).filter(id => cart[id] > 0).map(id => {
+    const item = items.find(i => i.id == id);
+    const qty = cart[id];
+    return `
+      <div class="cart-line">
+        <div>
+          <div class="cart-line-name">${item.name} × ${qty}</div>
+          <div class="cart-line-price">$${fmt(item.price)} / 份</div>
+        </div>
+        <div class="stepper">
+          <button class="minus" data-action="minus" data-id="${item.id}">−</button>
+          <div class="qty">${qty}</div>
+          <button data-action="plus" data-id="${item.id}">+</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const { total } = cartCountTotal();
+  const delivery = total > 0 ? 2.9 : 0;
+  const grand = total + delivery;
+
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="sheet-head">
+      <h3 class="display">我的订单</h3>
+      <button class="close-x" id="closeSheet">✕</button>
+    </div>
+    ${lines || `<div class="empty-cart">购物车还是空的，去挑几道菜吧 🍲</div>`}
+    ${total > 0 ? `
+      <div class="summary-row"><span>菜品小计</span><span>$${fmt(total)}</span></div>
+      <div class="summary-row"><span>配送费</span><span>$${fmt(delivery)}</span></div>
+      <div class="summary-row total"><span>合计</span><span>$${fmt(grand)}</span></div>
+
+      <div class="field-label">配送地址</div>
+      <input class="field-input" id="addrInput" placeholder="请输入收货地址" />
+
+      <div class="field-label">联系电话</div>
+      <input class="field-input" id="phoneInput" placeholder="请输入手机号" />
+
+      <button class="primary-btn" id="placeOrderBtn">提交订单 · $${fmt(grand)}</button>
+    ` : ''}
+  `;
+
+  sheet.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      if(action === 'plus') cart[id] = (cart[id] || 0) + 1;
+      if(action === 'minus') cart[id] = Math.max(0, (cart[id] || 0) - 1);
+      renderMenu();
+      updateCartBar();
+      renderCartSheet();
+    });
+  });
+
+  document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+
+  const orderBtn = document.getElementById('placeOrderBtn');
+  if(orderBtn){
+    orderBtn.addEventListener('click', () => {
+      const addr = document.getElementById('addrInput').value.trim();
+      const phone = document.getElementById('phoneInput').value.trim();
+      if(!addr || !phone){
+        orderBtn.textContent = '请填写地址和电话';
+        orderBtn.style.background = '#C4894A';
+        setTimeout(() => { renderCartSheet(); }, 1400);
+        return;
+      }
+
+      orderBtn.disabled = true;
+      orderBtn.textContent = '正在提交订单…';
+
+      const items = allItems()
+        .filter(i => cart[i.id] > 0)
+        .map(i => ({ name: i.name, qty: cart[i.id], price: i.price }));
+      const { total: subtotal } = cartCountTotal();
+      const deliveryFee = 2.9;
+
+      const newOrderRef = ordersRef.push();
+      newOrderRef.set({
+        restaurantId: RESTAURANT_ID,
+        restaurantName: RESTAURANT_NAME,
+        restaurantAddress: RESTAURANT_ADDRESS,
+        customerAddress: addr,
+        customerPhone: phone,
+        items,
+        subtotal,
+        deliveryFee,
+        total: subtotal + deliveryFee,
+        status: 'pending',
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP,
+      }).then(()
+      .then(() => {
+        showSuccess(newOrderRef.key);
+        for(const id in cart) cart[id] = 0;
+        updateCartBar();
+        renderMenu();
+      }).catch(err => {
+        orderBtn.disabled = false;
+        orderBtn.textContent = '提交失败，点击重试';
+        console.error('下单失败:', err);
+      });
+    });
+  }
+}
+
+function showSuccess(orderId){
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="success">
+      <svg class="pot-wrap" viewBox="0 0 80 80"><use href="#pot-icon-big"/></svg>
+      <h3 class="display">下单成功，商家已收到订单 🍲</h3>
+      <p>订单号 #${(orderId||'').slice(-5).toUpperCase()} · 商家确认后将安排骑手配送</p>
+      <button class="primary-btn" id="doneBtn">好的</button>
+    </div>
+  `;
+  document.getElementById('doneBtn').addEventListener('click', closeOverlay);
+}
+
+function openOverlay(){
+  document.getElementById('overlay').classList.add('show');
+  renderCartSheet();
+}
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+document.getElementById('openCartBtn').addEventListener('click', openOverlay);
+document.getElementById('cartIconBtn').addEventListener('click', openOverlay);
+document.getElementById('overlay').addEventListener('click', (e) => {
+  if(e.target.id === 'overlay') closeOverlay();
+});
+
+// ============================================
+// 全屏功能
+// ============================================
+document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+  } else {
+    document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+  }
+});
+document.addEventListener('fullscreenchange', () => {
+  document.body.classList.toggle('fullscreen', !!document.fullscreenElement);
+});
+document.addEventListener('webkitfullscreenchange', () => {
+  document.body.classList.toggle('fullscreen', !!document.webkitFullscreenElement);
+});
+
+// ============================================
+// 历史订单功能
+// ============================================
+function showHistoryOrders(){
+  const completedOrders = Object.entries(allOrders)
+    .filter(([id, o]) => o.status === 'delivered' || o.status === 'done')
+    .sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+
+  if(completedOrders.length === 0){
+    const sheet = document.getElementById('sheet');
+    sheet.innerHTML = `
+      <div class="sheet-head">
+        <h3 class="display">📋 已完成订单</h3>
+        <button class="close-x" id="closeSheet">✕</button>
+      </div>
+      <div style="padding:40px 20px; text-align:center; color:var(--ink-soft);">
+        <div style="font-size:40px; margin-bottom:12px;">📭</div>
+        <p>暂无已完成订单</p>
+      </div>
+    `;
+    document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+    openOverlay();
+    return;
+  }
+
+  const statusMap = {
+    delivered:'✅ 已送达',
+    done:'✅ 已完成',
+    rejected:'❌ 已拒绝'
+  };
+
+  let html = completedOrders.map(([id, o]) => {
+    const status = statusMap[o.status] || o.status;
+    const itemsStr = (o.items||[]).map(i => `${i.name}×${i.qty}`).join('、');
+    const time = o.createdAt ? new Date(o.createdAt).toLocaleString() : '未知时间';
+    
+    return `
+      <div class="order-history-item" data-order-id="${id}">
+        <div class="order-header">
+          <span class="order-id">#${id.slice(-6).toUpperCase()}</span>
+          <span class="order-status delivered">${status}</span>
+        </div>
+        <div class="order-items">${itemsStr || '（无菜品）'}</div>
+        <div class="order-meta">
+          <span>🕐 ${time}</span>
+          <span style="font-weight:700; color:var(--broth);">$${(o.total||0).toFixed(1)}</span>
+        </div>
+        <div class="order-meta" style="margin-top:6px;">
+          <span style="font-size:11px; color:var(--ink-soft);">📞 ${o.customerPhone || '—'}</span>
+          <button class="delete-order-btn" data-id="${id}">🗑 删除</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="sheet-head">
+      <h3 class="display">📋 已完成订单 (${completedOrders.length})</h3>
+      <button class="close-x" id="closeSheet">✕</button>
+    </div>
+    <div style="max-height:65vh; overflow-y:auto; padding-right:4px;">
+      ${html}
+    </div>
+    <div style="margin-top:12px; text-align:center; font-size:12px; color:var(--ink-soft);">
+      💡 点击「删除」可永久移除该订单
+    </div>
+  `;
+
+  document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+
+  sheet.querySelectorAll('.delete-order-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const orderId = btn.dataset.id;
+      if(confirm(`确定要永久删除订单 #${orderId.slice(-6).toUpperCase()} 吗？\n此操作不可恢复！`)) {
+        ordersRef.child(orderId).remove()
+          .then(() => {
+            showHistoryOrders();
+          })
+          .catch(err => {
+            alert('删除失败，请重试');
+            console.error('删除失败:', err);
+          });
+      }
+    });
+  });
+
+  openOverlay();
+}
+
+document.getElementById('historyBtn').addEventListener('click', showHistoryOrders);
+
+// ============================================
+// 今日销售统计弹窗
+// ============================================
+document.getElementById('todayStatsBtn').addEventListener('click', () => {
+  const now = new Date();
+  let list = [], count = 0, sales = 0;
+  
+  Object.entries(allOrders).forEach(([id, o]) => {
+    if(!o.createdAt) return;
+    const d = new Date(o.createdAt);
+    if(d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate()){
+      if(o.status === 'delivered' || o.status === 'done') {
+        count++;
+        sales += (o.total || 0);
+        list.push({ id, ...o });
+      }
+    }
+  });
+  
+  list.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+
+  const listHtml = list.map(o => `
+    <div style="border-bottom:1px solid var(--line); padding:8px 0; font-size:13px;">
+      <div style="display:flex; justify-content:space-between;">
+        <strong style="color:var(--broth);">#${o.id.slice(-6).toUpperCase()}</strong>
+        <span style="font-weight:700;">$${(o.total||0).toFixed(1)}</span>
+      </div>
+      <div style="color:var(--ink-soft); font-size:12px;">
+        ${(o.items||[]).map(i => `${i.name}×${i.qty}`).join('、')}
+      </div>
+      <div style="color:var(--ink-soft); font-size:11px; margin-top:2px;">
+        ${new Date(o.createdAt).toLocaleTimeString()}
+      </div>
+    </div>
+  `).join('');
+
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="sheet-head">
+      <h3 class="display">📊 今日销售</h3>
+      <button class="close-x" id="closeSheet">✕</button>
+    </div>
+    <div style="background:var(--card); padding:14px; border-radius:12px; margin-bottom:12px; border:1px solid var(--line);">
+      <div style="display:flex; justify-content:space-between; font-weight:600; font-size:14px; padding:4px 0;">
+        <span>📦 已完成订单</span>
+        <span style="color:var(--broth);">${count}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:700; font-size:16px; padding:4px 0; border-top:1px solid var(--line); margin-top:4px; padding-top:8px;">
+        <span>💰 总销售额</span>
+        <span style="color:var(--broth);">$${sales.toFixed(1)}</span>
+      </div>
+    </div>
+    <div style="max-height:50vh; overflow-y:auto; padding-right:4px;">
+      ${listHtml || '<div style="padding:20px; text-align:center; color:var(--ink-soft);">今日暂无已完成订单</div>'}
+    </div>
+  `;
+  document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+  openOverlay();
+});
+
+// ============================================
+// 页面初始化
+// ============================================
+renderTabs();
+renderMenu();
+updateCartBar();
+updateRiderUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>铜锅记 · 骑手端</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF3E7; --cream-2:#F3E6D2; --broth:#B7371F; --broth-dark:#8E2A17;
+    --copper:#C4894A; --copper-light:#E3B876; --ink:#2B2118; --ink-soft:#6B5D4F;
+    --line:#E9DCC7; --veg:#4C7A52; --card:#FFFDF9; --blue:#4A5F8A;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ background:var(--cream); color:var(--ink); font-family:'Noto Sans SC',sans-serif; padding-bottom:30px; }
+  h1,h2,.display{ font-family:'Noto Serif SC', serif; }
+
+  .topbar{
+    position:sticky; top:0; z-index:40; background:var(--ink); color:#fff;
+    padding:14px 18px; display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 4px 14px rgba(43,33,24,.15);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .brand-name{ font-weight:800; font-size:17px; }
+  .brand-sub{ font-size:11px; color:#D8CBBA; }
+  .top-actions{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .top-actions button{
+    background:rgba(255,255,255,.12); border:none; color:#fff; padding:6px 12px;
+    border-radius:999px; font-weight:600; font-size:12px; cursor:pointer;
+    display:flex; align-items:center; gap:4px; transition:.2s;
+  }
+  .top-actions button:hover{ background:rgba(255,255,255,.2); }
+  .top-actions button:active{ transform:scale(.96); }
+
+  .online-toggle{
+    display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.12);
+    padding:6px 12px; border-radius:999px; cursor:pointer; font-size:12.5px; font-weight:600;
+  }
+  .dot{ width:9px; height:9px; border-radius:50%; background:#8A8A8A; }
+  .dot.on{ background:#5FCB6E; box-shadow:0 0 6px #5FCB6E; }
+
+  .earnings-strip{
+    display:flex; gap:10px; padding:14px 18px; background:var(--cream-2);
+    flex-wrap:wrap;
+  }
+  .earn-card{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center; min-width:80px; }
+  .earn-num{ font-size:18px; font-weight:800; color:var(--broth); }
+  .earn-label{ font-size:11px; color:var(--ink-soft); margin-top:2px; }
+
+  .conn-banner{
+    text-align:center; font-size:12px; padding:6px; background:var(--cream-2); color:var(--ink-soft);
+    display:none;
+  }
+  .conn-banner.show{ display:block; }
+
+  .tabs{
+    display:flex; gap:8px; padding:14px 18px 8px; overflow-x:auto; scrollbar-width:none;
+    background:var(--cream); position:sticky; top:60px; z-index:35; border-bottom:1px solid var(--line);
+  }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex-shrink:0; padding:9px 15px; border-radius:999px; font-size:13.5px; font-weight:700;
+    background:var(--card); border:1px solid var(--line); color:var(--ink-soft); cursor:pointer;
+    display:flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .tab.active{ background:var(--broth); color:#fff; border-color:var(--broth); }
+  .badge{
+    background:var(--broth); color:#fff; font-size:11px; font-weight:800; border-radius:999px;
+    padding:1px 7px; min-width:16px; text-align:center;
+  }
+  .tab.active .badge{ background:#fff; color:var(--broth); }
+
+  .list{ padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+  .empty{ text-align:center; padding:50px 20px; color:var(--ink-soft); font-size:14px; }
+  .empty .em{ font-size:34px; display:block; margin-bottom:10px; }
+
+  .order-card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
+    animation:pop .25s ease;
+  }
+  @keyframes pop{ from{ opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .order-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:4px; }
+  .order-id{ font-size:13px; font-weight:700; color:var(--ink-soft); }
+  .order-time{ font-size:11.5px; color:var(--ink-soft); }
+  .status-pill{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; }
+  .status-pending{ background:#FCE7E1; color:var(--broth); }
+  .status-ready{ background:#E4EFE3; color:var(--veg); }
+  .status-assigned{ background:#E4EAF2; color:var(--blue); }
+  .status-picked_up{ background:#FBEFD9; color:#9A6A1F; }
+  .status-delivered{ background:#EAEAEA; color:#7A7A7A; }
+  .fee-pill{ font-size:11px; font-weight:800; padding:4px 10px; border-radius:999px; background:#FBEFD9; color:#9A6A1F; }
+
+  .route{ margin:10px 0; font-size:13px; }
+  .route-row{ display:flex; gap:8px; align-items:flex-start; padding:5px 0; }
+  .route-dot{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .route-dot.pickup{ background:var(--copper); }
+  .route-dot.dropoff{ background:var(--broth); }
+  .route-label{ font-size:11px; color:var(--ink-soft); }
+  .route-text{ font-weight:600; }
+
+  .divider{ height:1px; background:var(--line); margin:10px 0; }
+  .total-row{ display:flex; justify-content:space-between; font-size:13px; color:var(--ink-soft); }
+
+  .btn-row{ display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+  .btn{ flex:1; border:none; padding:11px; border-radius:12px; font-weight:700; font-size:13.5px; cursor:pointer; min-width:70px; }
+  .btn-primary{ background:var(--broth); color:#fff; }
+  .btn-ghost{ background:var(--cream-2); color:var(--ink-soft); }
+  .btn-blue{ background:var(--blue); color:#fff; }
+  .btn-veg{ background:var(--veg); color:#fff; }
+  .btn-danger{ background:#9A4A4A; color:#fff; }
+  .btn:active{ transform:scale(.97); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  /* 注册/登录弹窗 - 强制填写 */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(43,33,24,.6); z-index:90;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-card{ background:var(--cream); border-radius:24px; padding:28px 24px; max-width:380px; width:100%; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.3); }
+  .modal-card h2{ font-size:21px; margin-bottom:4px; }
+  .modal-card p{ font-size:13px; color:var(--ink-soft); margin-bottom:16px; }
+  .modal-card input{
+    width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+    background:var(--card); font-size:14px; margin-bottom:10px; font-family:inherit;
+  }
+  .modal-card button{
+    width:100%; background:var(--broth); color:#fff; border:none; padding:13px;
+    border-radius:12px; font-weight:700; font-size:14.5px; cursor:pointer; margin-top:4px;
+  }
+  .modal-card .error{ color:#B7371F; font-size:12px; margin-top:2px; display:block; }
+
+  /* 历史 & 统计 sheet */
+  .overlay{
+    position:fixed; inset:0; background:rgba(43,33,24,.45); z-index:60;
+    display:flex; align-items:flex-end; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .sheet{
+    background:var(--cream); width:100%; max-width:480px; border-radius:22px 22px 0 0;
+    max-height:88vh; overflow-y:auto; padding:20px 20px 26px;
+    transform:translateY(30px); transition:transform .28s ease;
+  }
+  .overlay.show .sheet{ transform:translateY(0); }
+  .sheet-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .close-x{
+    width:30px; height:30px; border-radius:50%; border:none; background:var(--cream-2);
+    cursor:pointer; font-size:16px; color:var(--ink-soft);
+  }
+  .history-item{
+    border-bottom:1px solid var(--line);
+    padding:10px 0;
+    font-size:13px;
+  }
+  .history-item:last-child{ border-bottom:none; }
+  .history-item .h-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+    flex-wrap:wrap;
+    gap:4px;
+  }
+  .history-item .h-id{
+    font-weight:700;
+    color:var(--broth);
+  }
+  .history-item .h-status{
+    font-size:12px;
+    padding:2px 10px;
+    border-radius:999px;
+    font-weight:600;
+    background:#E4EFE3;
+    color:var(--veg);
+  }
+  .history-item .h-items{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    margin:4px 0;
+  }
+  .history-item .h-meta{
+    font-size:11px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:4px;
+    flex-wrap:wrap;
+    gap:4px;
+  }
+  .delete-btn{
+    background:#9A4A4A;
+    color:#fff;
+    border:none;
+    padding:4px 14px;
+    border-radius:999px;
+    font-size:11px;
+    cursor:pointer;
+    transition:0.2s;
+  }
+  .delete-btn:hover{ background:#7A3A3A; }
+  .fullscreen .topbar{ position:static; }
+  .fullscreen .tabs{ position:static; }
+  .btn-sm{ font-size:12px; padding:4px 12px; border-radius:999px; border:none; background:var(--cream-2); color:var(--ink-soft); cursor:pointer; }
+  .btn-sm:hover{ background:var(--line); }
+</style>
+</head>
+<body>
+
+<!-- 强制注册弹窗（姓名/地址/电话） -->
+<div class="modal-overlay" id="nameModal">
+  <div class="modal-card">
+    <h2 class="display">📝 骑手注册</h2>
+    <p>请完善信息以开始接单</p>
+    <input id="regName" placeholder="姓名 *" />
+    <input id="regAddress" placeholder="地址（如：朝阳区望京SOHO）*" />
+    <input id="regPhone" placeholder="手机号 *" type="tel" />
+    <div class="error" id="regError"></div>
+    <button id="nameSubmit">注册 / 登录</button>
+  </div>
+</div>
+
+<div class="topbar">
+  <div>
+    <div class="brand-name">铜锅记 · 骑手端</div>
+    <div class="brand-sub" id="riderSub">未登录</div>
+  </div>
+  <div class="top-actions">
+    <button id="fullscreenBtn">⛶ 全屏</button>
+    <button id="historyBtn">📋 历史</button>
+    <button id="todayStatsBtn">📊 今日</button>
+    <button id="exportExcelBtn" style="background:#2B6B3A;">📥 Excel</button>
+    <button id="resetTodayBtn" style="background:#9A4A4A;">↻ 重置今日</button>
+    <div class="online-toggle" id="onlineToggle">
+      <div class="dot" id="onlineDot"></div>
+      <span id="onlineLabel">离线</span>
+    </div>
+  </div>
+</div>
+
+<div class="earnings-strip">
+  <div class="earn-card">
+    <div class="earn-num" id="earnToday">$0.0</div>
+    <div class="earn-label">今日收入</div>
+  </div>
+  <div class="earn-card">
+    <div class="earn-num" id="deliveredToday">0</div>
+    <div class="earn-label">今日单量</div>
+  </div>
+</div>
+
+<div class="conn-banner" id="connBanner">与服务器连接中断，正在重新连接…</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="list" id="list"></div>
+
+<!-- overlay 用于历史/统计 -->
+<div class="overlay" id="overlay">
+  <div class="sheet" id="sheet">
+    <div class="sheet-head">
+      <h3 class="display" id="sheetTitle">📋 记录</h3>
+      <button class="close-x" id="closeSheet">✕</button>
+    </div>
+    <div id="sheetBody"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDrrk3exoaA4PjYVlNnlIr1-qZcHYfXZtk",
+  authDomain: "restaurants-cs.firebaseapp.com",
+  databaseURL: "https://restaurants-cs-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "restaurants-cs",
+  storageBucket: "restaurants-cs.firebasestorage.app",
+  messagingSenderId: "209872919844",
+  appId: "1:209872919844:web:c1730801cd51d615e867b1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const ordersRef = db.ref('orders');
+
+let riderId = localStorage.getItem('riderId');
+let riderName = localStorage.getItem('riderName');
+let riderAddress = localStorage.getItem('riderAddress');
+let riderPhone = localStorage.getItem('riderPhone');
+
+if(!riderId){
+  riderId = 'rider_' + Math.random().toString(36).slice(2, 10);
+  localStorage.setItem('riderId', riderId);
+}
+
+let orders = {};
+let activeTab = 'available';
+let knownAvailableIds = new Set();
+let audioCtx = null;
+let isOnline = localStorage.getItem('riderOnline') !== 'false';
+
+// 强制注册检查
+function checkRiderRegistration(){
+  const name = localStorage.getItem('riderName');
+  const addr = localStorage.getItem('riderAddress');
+  const phone = localStorage.getItem('riderPhone');
+  if(name && addr && phone){
+    document.getElementById('nameModal').style.display = 'none';
+    document.getElementById('riderSub').textContent = `🛵 ${name} · ${phone}`;
+    return true;
+  } else {
+    document.getElementById('nameModal').style.display = 'flex';
+    return false;
+  }
+}
+
+document.getElementById('nameSubmit').addEventListener('click', () => {
+  const name = document.getElementById('regName').value.trim();
+  const addr = document.getElementById('regAddress').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const errorEl = document.getElementById('regError');
+  errorEl.textContent = '';
+  if(!name || !addr || !phone){
+    errorEl.textContent = '请完整填写姓名、地址、电话';
+    return;
+  }
+  if(!/^[\d\-+ ]{7,15}$/.test(phone)){
+    errorEl.textContent = '请输入有效的手机号';
+    return;
+  }
+  localStorage.setItem('riderName', name);
+  localStorage.setItem('riderAddress', addr);
+  localStorage.setItem('riderPhone', phone);
+  riderName = name; riderAddress = addr; riderPhone = phone;
+  document.getElementById('riderSub').textContent = `🛵 ${name} · ${phone}`;
+  document.getElementById('nameModal').style.display = 'none';
+  renderList();
+  updateEarnings();
+});
+
+// 点击弹窗外关闭（但为强制注册，不建议关闭，保留）
+document.getElementById('nameModal').addEventListener('click', function(e){
+  if(e.target === this) {
+    // 强制注册不可关闭
+  }
+});
+
+function beep(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.value = 660;
+    g.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, audioCtx.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + 0.5);
+  }catch(e){}
+}
+
+function timeAgo(ts){
+  if(!ts) return '刚刚';
+  const diff = Math.floor((Date.now() - ts) / 1000);
+  if(diff < 60) return '刚刚';
+  if(diff < 3600) return Math.floor(diff/60) + ' 分钟前';
+  if(diff < 86400) return Math.floor(diff/3600) + ' 小时前';
+  return new Date(ts).toLocaleString();
+}
+
+function mapsLink(addr){
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr || '');
+}
+
+const TABS = [
+  { id:'available', label:'可接订单', match:o => o.status === 'ready' && !o.riderId },
+  { id:'active', label:'进行中', match:o => o.riderId === riderId && ['assigned','picked_up'].includes(o.status) },
+  { id:'done', label:'已完成', match:o => o.riderId === riderId && o.status === 'delivered' },
+];
+
+function getStatusLabel(status){
+  const map = { 'pending':'待商家接单','ready':'待骑手取餐','assigned':'已接单','picked_up':'已取餐','delivered':'已送达' };
+  return map[status] || status;
+}
+function getStatusClass(status){
+  const map = { 'pending':'status-pending','ready':'status-ready','assigned':'status-assigned','picked_up':'status-picked_up','delivered':'status-delivered' };
+  return map[status] || '';
+}
+
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = TABS.map(t => {
+    const count = Object.values(orders).filter(t.match).length;
+    return `<div class="tab ${activeTab===t.id?'active':''}" data-id="${t.id}">${t.label} ${count>0 ? `<span class="badge">${count}</span>` : ''}</div>`;
+  }).join('');
+  el.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => { activeTab = tab.dataset.id; renderTabs(); renderList(); });
+  });
+}
+
+function orderCard(id, o){
+  let actions = '';
+  if(activeTab === 'available' && o.status === 'ready' && !o.riderId){
+    actions = `<div class="btn-row"><button class="btn btn-primary" data-action="claim" data-id="${id}">🛵 接单配送</button></div>`;
+  } else if(o.status === 'assigned' && o.riderId === riderId){
+    actions = `<div class="btn-row"><button class="btn btn-ghost" data-action="nav-pickup" data-id="${id}">📍 导航取餐</button><button class="btn btn-blue" data-action="pickup" data-id="${id}">✅ 确认取餐</button></div>`;
+  } else if(o.status === 'picked_up' && o.riderId === riderId){
+    actions = `<div class="btn-row"><button class="btn btn-ghost" data-action="nav-dropoff" data-id="${id}">📍 导航送餐</button><button class="btn btn-veg" data-action="deliver" data-id="${id}">✅ 确认送达</button></div>`;
+  } else if(o.status === 'delivered'){
+    actions = `<div style="text-align:center; color:var(--veg); font-weight:600; font-size:13px; margin-top:8px;">✅ 已送达</div>`;
+  }
+  return `
+    <div class="order-card">
+      <div class="order-head">
+        <div><div class="order-id">订单 #${id.slice(-5).toUpperCase()}</div><div class="order-time">${timeAgo(o.createdAt)}</div></div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;"><div class="status-pill ${getStatusClass(o.status)}">${getStatusLabel(o.status)}</div><div class="fee-pill">配送费 $${(o.deliveryFee||0).toFixed(1)}</div></div>
+      </div>
+      <div style="font-size:12px; color:var(--ink-soft); margin-bottom:6px;">${(o.items||[]).map(i => `${i.name}×${i.qty}`).join('、')}</div>
+      <div class="route">
+        <div class="route-row"><div class="route-dot pickup"></div><div><div class="route-label">取餐 · ${o.restaurantName||'商家'}</div><div class="route-text">${o.restaurantAddress||'—'}</div></div></div>
+        <div class="route-row"><div class="route-dot dropoff"></div><div><div class="route-label">送达</div><div class="route-text">${o.customerAddress||'—'}</div></div></div>
+      </div>
+      <div class="divider"></div>
+      <div class="total-row"><span>订单金额</span><span>$${(o.total||0).toFixed(1)}</span></div>
+      ${actions}
+    </div>
+  `;
+}
+
+function renderList(){
+  const el = document.getElementById('list');
+  if(!checkRiderRegistration()) {
+    el.innerHTML = `<div class="empty"><span class="em">📝</span>请先完成注册</div>`;
+    return;
+  }
+  const tabDef = TABS.find(t => t.id === activeTab);
+  const filtered = Object.entries(orders).filter(([id,o]) => tabDef.match(o)).sort((a,b) => (b[1].createdAt||0) - (a[1].createdAt||0));
+  if(!isOnline && activeTab === 'available'){
+    el.innerHTML = `<div class="empty"><span class="em">😴</span>您已下线，上线后可查看可接订单</div>`;
+    return;
+  }
+  if(filtered.length === 0){
+    let msg = '暂无相关订单';
+    if(activeTab === 'available') msg = '暂无待配送订单 🛵';
+    else if(activeTab === 'active') msg = '暂无进行中的配送 🚴';
+    else if(activeTab === 'done') msg = '暂无已完成配送 ✅';
+    el.innerHTML = `<div class="empty"><span class="em">📭</span>${msg}</div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(([id,o]) => orderCard(id,o)).join('');
+  el.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const action = btn.dataset.action;
+      const order = orders[id];
+      if(action === 'claim'){
+        ordersRef.child(id).transaction(current => {
+          if(current && current.status === 'ready' && !current.riderId){
+            current.status = 'assigned'; current.riderId = riderId; current.riderName = riderName;
+            current.assignedAt = firebase.database.ServerValue.TIMESTAMP; current.updatedAt = firebase.database.ServerValue.TIMESTAMP;
+            return current;
+          }
+          return;
+        }, (err, committed) => {
+          if(committed){ activeTab = 'active'; renderTabs(); renderList(); } else { alert('该订单已被其他骑手接走 🛵'); }
+        });
+      } else if(action === 'pickup'){
+        ordersRef.child(id).update({ status:'picked_up', pickedUpAt: firebase.database.ServerValue.TIMESTAMP, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+      } else if(action === 'deliver'){
+        ordersRef.child(id).update({ status:'delivered', deliveredAt: firebase.database.ServerValue.TIMESTAMP, updatedAt: firebase.database.ServerValue.TIMESTAMP });
+      } else if(action === 'nav-pickup'){ window.open(mapsLink(order.restaurantAddress), '_blank'); }
+      else if(action === 'nav-dropoff'){ window.open(mapsLink(order.customerAddress), '_blank'); }
+    });
+  });
+}
+
+function updateEarnings(){
+  if(!checkRiderRegistration()) return;
+  const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+  let earned = 0, count = 0;
+  Object.values(orders).forEach(o => {
+    if(o.riderId === riderId && o.status === 'delivered' && o.deliveredAt && o.deliveredAt >= startOfDay.getTime()){
+      earned += (o.deliveryFee || 0); count += 1;
+    }
+  });
+  document.getElementById('earnToday').textContent = '$' + earned.toFixed(1);
+  document.getElementById('deliveredToday').textContent = count;
+}
+
+ordersRef.on('value', snap => {
+  const val = snap.val() || {};
+  orders = val;
+  const currentAvailable = new Set();
+  Object.entries(val).forEach(([id,o]) => { if(!o.riderId && o.status === 'ready') currentAvailable.add(id); });
+  let hasNew = false;
+  currentAvailable.forEach(id => { if(!knownAvailableIds.has(id)) hasNew = true; });
+  if(hasNew && isOnline){ beep(); document.title = '🔔 新订单可接 · 骑手端'; setTimeout(() => { document.title = '铜锅记 · 骑手端'; }, 4000); }
+  knownAvailableIds = currentAvailable;
+  renderTabs(); renderList(); updateEarnings();
+});
+db.ref('.info/connected').on('value', snap => {
+  document.getElementById('connBanner').classList.toggle('show', snap.val() === false);
+});
+
+// online toggle
+function refreshOnlineUI(){
+  document.getElementById('onlineDot').classList.toggle('on', isOnline);
+  document.getElementById('onlineLabel').textContent = isOnline ? '在线接单' : '离线';
+}
+document.getElementById('onlineToggle').addEventListener('click', () => {
+  isOnline = !isOnline; localStorage.setItem('riderOnline', isOnline); refreshOnlineUI(); renderList();
+});
+refreshOnlineUI();
+
+// 全屏
+document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  if (!document.fullscreenElement) { document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.(); }
+  else { document.exitFullscreen?.() || document.webkitExitFullscreen?.(); }
+});
+document.addEventListener('fullscreenchange', () => { document.body.classList.toggle('fullscreen', !!document.fullscreenElement); });
+document.addEventListener('webkitfullscreenchange', () => { document.body.classList.toggle('fullscreen', !!document.webkitFullscreenElement); });
+
+// ========== 历史 & 删除 ==========
+function showHistoryOrders(){
+  if(!checkRiderRegistration()) return;
+  const historyOrders = Object.entries(orders).filter(([id,o]) => o.riderId === riderId && o.status === 'delivered').sort((a,b) => (b[1].deliveredAt||0) - (a[1].deliveredAt||0));
+  const overlay = document.getElementById('overlay');
+  const sheet = document.getElementById('sheet');
+  document.getElementById('sheetTitle').textContent = '📋 历史记录 ('+historyOrders.length+')';
+  let html = '';
+  if(historyOrders.length === 0){
+    html = `<div style="padding:40px 20px; text-align:center; color:var(--ink-soft);"><div style="font-size:40px;">📭</div><p>暂无已完成订单</p></div>`;
+  } else {
+    historyOrders.forEach(([id, o]) => {
+      const itemsStr = (o.items||[]).map(i => `${i.name}×${i.qty}`).join('、');
+      const time = o.deliveredAt ? new Date(o.deliveredAt).toLocaleString() : '未知时间';
+      html += `
+        <div class="history-item">
+          <div class="h-header"><span class="h-id">#${id.slice(-6).toUpperCase()}</span><span class="h-status">✅ 已送达</span></div>
+          <div class="h-items">${itemsStr || '（无菜品）'}</div>
+          <div class="h-meta"><span>🕐 ${time}</span><span style="font-weight:700;color:var(--broth);">$${(o.total||0).toFixed(1)}</span></div>
+          <div class="h-meta"><span style="font-size:11px;color:var(--ink-soft);">配送费 $${(o.deliveryFee||0).toFixed(1)}</span><button class="delete-btn" data-id="${id}">🗑 删除</button></div>
+        </div>
+      `;
+    });
+  }
+  document.getElementById('sheetBody').innerHTML = html;
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const orderId = btn.dataset.id;
+      if(confirm(`确定要永久删除订单 #${orderId.slice(-6).toUpperCase()} 吗？`)) {
+        ordersRef.child(orderId).remove().then(() => showHistoryOrders());
+      }
+    });
+  });
+  overlay.classList.add('show');
+  document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+}
+
+// ========== 今日统计 ==========
+function showTodayStats(){
+  if(!checkRiderRegistration()) return;
+  const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+  let list = [], count = 0, earned = 0;
+  Object.entries(orders).forEach(([id, o]) => {
+    if(o.riderId === riderId && o.status === 'delivered' && o.deliveredAt && o.deliveredAt >= startOfDay.getTime()){
+      count++; earned += (o.deliveryFee || 0); list.push({ id, ...o });
+    }
+  });
+  list.sort((a,b) => (b.deliveredAt||0) - (a.deliveredAt||0));
+  const overlay = document.getElementById('overlay');
+  const sheet = document.getElementById('sheet');
+  document.getElementById('sheetTitle').textContent = '📊 今日配送';
+  let listHtml = list.map(o => `
+    <div style="border-bottom:1px solid var(--line); padding:8px 0; font-size:13px;">
+      <div style="display:flex; justify-content:space-between;"><strong style="color:var(--broth);">#${o.id.slice(-6).toUpperCase()}</strong><span style="font-weight:700;">$${(o.total||0).toFixed(1)}</span></div>
+      <div style="color:var(--ink-soft); font-size:12px;">${(o.items||[]).map(i => `${i.name}×${i.qty}`).join('、')}</div>
+      <div style="color:var(--ink-soft); font-size:11px;">${o.deliveredAt ? new Date(o.deliveredAt).toLocaleTimeString() : ''}</div>
+    </div>
+  `).join('');
+  document.getElementById('sheetBody').innerHTML = `
+    <div style="background:var(--card); padding:14px; border-radius:12px; margin-bottom:12px; border:1px solid var(--line);">
+      <div style="display:flex; justify-content:space-between; font-weight:600; font-size:14px; padding:4px 0;"><span>📦 完成单量</span><span style="color:var(--broth);">${count}</span></div>
+      <div style="display:flex; justify-content:space-between; font-weight:700; font-size:16px; padding:4px 0; border-top:1px solid var(--line); margin-top:4px; padding-top:8px;"><span>💰 配送收入</span><span style="color:var(--broth);">$${earned.toFixed(1)}</span></div>
+    </div>
+    <div style="max-height:50vh; overflow-y:auto; padding-right:4px;">${listHtml || '<div style="padding:20px; text-align:center; color:var(--ink-soft);">今日暂无已完成配送</div>'}</div>
+  `;
+  overlay.classList.add('show');
+  document.getElementById('closeSheet').addEventListener('click', closeOverlay);
+}
+
+// ========== 导出 Excel（今日已完成订单） ==========
+function exportExcel(){
+  if(!checkRiderRegistration()) return;
+  const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+  const rows = [];
+  Object.entries(orders).forEach(([id, o]) => {
+    if(o.riderId === riderId && o.status === 'delivered' && o.deliveredAt && o.deliveredAt >= startOfDay.getTime()){
+      rows.push({
+        '订单号': id.slice(-6).toUpperCase(),
+        '顾客': o.customerName || '',
+        '电话': o.customerPhone || '',
+        '地址': o.customerAddress || '',
+        '菜品': (o.items||[]).map(i => `${i.name}×${i.qty}`).join('; '),
+        '总金额': o.total || 0,
+        '配送费': o.deliveryFee || 0,
+        '送达时间': o.deliveredAt ? new Date(o.deliveredAt).toLocaleString() : ''
+      });
+    }
+  });
+  if(rows.length === 0){ alert('今日暂无已完成订单可导出'); return; }
+  const headers = Object.keys(rows[0]);
+  let csv = headers.join(',') + '\n';
+  rows.forEach(r => {
+    csv += headers.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(',') + '\n';
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `配送统计_${new Date().toLocaleDateString()}.csv`;
+  link.click();
+}
+
+// ========== 重置今日订单（将今日已完成订单删除） ==========
+function resetTodayOrders(){
+  if(!checkRiderRegistration()) return;
+  if(!confirm('⚠️ 确定要重置今天所有已完成订单吗？\n此操作将永久删除今日的配送记录！')) return;
+  const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+  let count = 0;
+  const updates = {};
+  Object.entries(orders).forEach(([id, o]) => {
+    if(o.riderId === riderId && o.status === 'delivered' && o.deliveredAt && o.deliveredAt >= startOfDay.getTime()){
+      updates[id] = null;
+      count++;
+    }
+  });
+  if(count === 0){ alert('今日暂无已完成订单可重置'); return; }
+  if(confirm(`找到 ${count} 条今日订单，确认全部删除？`)){
+    ordersRef.update(updates).then(() => {
+      alert(`已重置 ${count} 条今日订单`);
+      updateEarnings();
+      renderList();
+    });
+  }
+}
+
+document.getElementById('historyBtn').addEventListener('click', showHistoryOrders);
+document.getElementById('todayStatsBtn').addEventListener('click', showTodayStats);
+document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
+document.getElementById('resetTodayBtn').addEventListener('click', resetTodayOrders);
+
+function closeOverlay(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// 初始化
+checkRiderRegistration();
+</script>
+</body>
+</html>
