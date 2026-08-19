@@ -98,7 +98,7 @@
     padding: 16px 12px;
     display: flex;
     flex-direction: column;
-    gap: 20px;  /* 增加订单之间的间距 */
+    gap: 20px;
   }
 
   .order {
@@ -109,11 +109,9 @@
     box-shadow: 0 6px 12px rgba(0,0,0,0.4);
     border-left: 6px solid;
     backdrop-filter: blur(2px);
-    /* 添加订单之间的分隔效果 */
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
 
-  /* 每个订单之间的视觉分隔线（除了最后一个） */
   .order:not(:last-child) {
     margin-bottom: 0;
   }
@@ -122,7 +120,6 @@
   .preparing .order { border-left-color: #f5bd42; }
   .ready .order { border-left-color: #5bd88b; }
 
-  /* 悬停效果，让每个订单更明显 */
   .order:hover {
     transform: translateX(4px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.5);
@@ -265,7 +262,6 @@
     margin: 5px 0;
   }
 
-  /* 订单序号醒目显示 */
   .order-number {
     font-size: 1.1rem;
     font-weight: bold;
@@ -281,7 +277,7 @@
 <div class="header-area">
   <h1>🍳 厨房显示系统</h1>
   <div style="text-align:center;">
-    <span class="filter-badge">🔍 过滤规则：<strong>只显示含 "Hong Kong RoastTT" 字母的餐品订单</strong></span>
+    <span class="filter-badge">🔍 过滤规则：<strong>只显示含 "HK" 字母的餐品订单</strong></span>
   </div>
 </div>
 
@@ -300,8 +296,7 @@
   </div>
 </div>
 <div class="footer-note">
-  ⚡ 实时同步 | 仅显示餐品名称中包含 "
-" 的订单 (不区分大小写) | 每个订单独立显示
+  ⚡ 实时同步 | 仅显示餐品名称中包含 "HK" 的订单 (不区分大小写) | 点击“完成出餐”将直接移除订单
 </div>
 
 <script>
@@ -335,7 +330,7 @@
       itemsText = JSON.stringify(items);
     }
     
-    // 匹配 TBOX 或 HOT 或 COLD
+    // 匹配 HK (不区分大小写)
     const keywordRegex = /HK/i;
     return keywordRegex.test(itemsText);
   }
@@ -391,9 +386,9 @@
     renderOrderList(prepContainer, preparingItems, 'Preparing');
     renderOrderList(readyContainer, readyItems, 'Ready');
 
-    if (newItems.length === 0) showEmptyColumnMessage(newContainer, '暂无含"Hong Kong RoastTT"的新订单');
-    if (preparingItems.length === 0) showEmptyColumnMessage(prepContainer, '暂无含"Hong Kong RoastTT"的制作中订单');
-    if (readyItems.length === 0) showEmptyColumnMessage(readyContainer, '暂无含"Hong Kong RoastTT"的完成订单');
+    if (newItems.length === 0) showEmptyColumnMessage(newContainer, '暂无含"HK"的新订单');
+    if (preparingItems.length === 0) showEmptyColumnMessage(prepContainer, '暂无含"HK"的制作中订单');
+    if (readyItems.length === 0) showEmptyColumnMessage(readyContainer, '暂无含"HK"的完成订单');
   }
 
   function showEmptyColumnMessage(container, msg) {
@@ -411,13 +406,13 @@
     readyCont.innerHTML = '';
     const msgNew = document.createElement('div'); 
     msgNew.className = 'empty-msg'; 
-    msgNew.innerText = '📭 暂无包含"Hong Kong RoastTT"的新订单';
+    msgNew.innerText = '📭 暂无包含"HK"的新订单';
     const msgPrep = document.createElement('div'); 
     msgPrep.className = 'empty-msg'; 
-    msgPrep.innerText = '🍳 暂无包含"Hong Kong RoastTT"的制作中订单';
+    msgPrep.innerText = '🍳 暂无包含"HK"的制作中订单';
     const msgReady = document.createElement('div'); 
     msgReady.className = 'empty-msg'; 
-    msgReady.innerText = '✅ 暂无包含"Hong Kong RoastTT"的完成订单';
+    msgReady.innerText = '✅ 暂无包含"HK"的完成订单';
     newCont.appendChild(msgNew);
     prepCont.appendChild(msgPrep);
     readyCont.appendChild(msgReady);
@@ -434,19 +429,19 @@
       
       let itemsHtml = '';
 
-if (order.items) {
-  if (Array.isArray(order.items)) {
-    itemsHtml = order.items.map(item => `• ${escapeHtml(item)}`).join('<br>');
-  } else if (typeof order.items === 'string') {
-    itemsHtml = escapeHtml(order.items).replace(/,/g, '<br>');
-  } else {
-    itemsHtml = escapeHtml(JSON.stringify(order.items));
-  }
-} else {
-  itemsHtml = '无餐品明细';
-}
+      if (order.items) {
+        if (Array.isArray(order.items)) {
+          itemsHtml = order.items.map(item => `• ${escapeHtml(item)}`).join('<br>');
+        } else if (typeof order.items === 'string') {
+          itemsHtml = escapeHtml(order.items).replace(/,/g, '<br>');
+        } else {
+          itemsHtml = escapeHtml(JSON.stringify(order.items));
+        }
+      } else {
+        itemsHtml = '无餐品明细';
+      }
 
-const highlightedItems = highlightKeyword(itemsHtml);    
+      const highlightedItems = highlightKeyword(itemsHtml);    
       
       const timeStr = order.time || '';
       const tableInfo = order.table ? `桌号: ${order.table}` : '外带';
@@ -486,13 +481,14 @@ const highlightedItems = highlightKeyword(itemsHtml);
   }
   
   // 高亮文本中的关键词
- function highlightKeyword(text) {
-  if (!text) return '';
-  const regex = /(HK)/gi;
-  return text.replace(regex, match => 
-    `<span style="background:#ffaa33; color:#1a1f2a; font-weight:bold; padding:2px 6px; border-radius:12px;">${match}</span>`
-  );
-}
+  function highlightKeyword(text) {
+    if (!text) return '';
+    const regex = /(HK)/gi;
+    return text.replace(regex, match => 
+      `<span style="background:#ffaa33; color:#1a1f2a; font-weight:bold; padding:2px 6px; border-radius:12px;">${match}</span>`
+    );
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/[&<>]/g, function(m) {
@@ -516,12 +512,11 @@ const highlightedItems = highlightKeyword(itemsHtml);
       .catch(err => console.error("更新状态失败:", err));
   };
 
+  // 【已修复】移除 confirm 弹窗，点击后直接删除订单，提升厨房触屏操作效率
   window.completeOrder = function(orderId) {
     if (!orderId) return;
-    if (confirm('确认此订单已完成并移出列表？')) {
-      database.ref('orders/' + orderId).remove()
-        .catch(err => console.error("移除订单失败:", err));
-    }
+    database.ref('orders/' + orderId).remove()
+      .catch(err => console.error("移除订单失败:", err));
   };
 
   // 实时监听 Firebase
@@ -541,7 +536,7 @@ const highlightedItems = highlightKeyword(itemsHtml);
 
   startListeningOrders();
   
-  console.log("厨房显示系统已启动 — 每个订单独立卡片显示");
+  console.log("厨房显示系统已启动 — 每个订单独立卡片显示，已完成订单一键删除");
 </script>
 
 </body>
