@@ -300,8 +300,6 @@
   /**
    * 检查订单的餐品中是否包含关键词: TBOX 或 Hot 或 Ice
    * 大小写敏感，完全按照字符串原文匹配 (保留字母原始大小写)
-   * 例如 "TBOX" 仅匹配大写TBOX，"Hot" 匹配首字母H大写、ot小写，"Ice" 匹配首字母I大写、ce小写。
-   * 这样保证和菜单实际字母大小写一致。
    */
   function orderContainsValidKeyword(order) {
     if (!order) return false;
@@ -318,7 +316,6 @@
     }
     
     // 严格匹配 "TBOX" (全大写) 或 "Hot" (H大写, ot小写) 或 "Ice" (I大写, ce小写)
-    // 完全按照常见菜单中的写法，保留字母原始大小写对比，符合 “字母大小写根据我所提供”
     const keywordRegex = /(TBOX|Hot|Ice)/;
     return keywordRegex.test(itemsText);
   }
@@ -338,7 +335,7 @@
       return;
     }
 
-    // 过滤出包含关键词的订单 (TBOX, Hot, Ice 大小写敏感)
+    // 过滤出包含关键词的订单
     const filteredOrders = [];
     for (const [orderId, order] of Object.entries(ordersData)) {
       if (!order) continue;
@@ -412,8 +409,6 @@
    */
   function highlightKeyword(text) {
     if (!text) return '';
-    // 匹配 TBOX (全大写), Hot (H大写+ot小写), Ice (I大写+ce小写)
-    // 全局匹配原始出现的这些词，保留原始大小写进行高亮
     const regex = /(TBOX|Hot|Ice)/g;
     return text.replace(regex, (match) => {
       return `<span style="background:#ffaa33; color:#1a1f2a; font-weight:bold; padding:2px 6px; border-radius:12px; display:inline-block; margin:0 1px;">${match}</span>`;
@@ -430,7 +425,7 @@
     });
   }
 
-  // 渲染订单卡片 - 每个订单独立显示，保留原始文本大小写，高亮关键词完全依据原始大小写
+  // 渲染订单卡片
   function renderOrderList(container, ordersArray, currentStatus) {
     if (!ordersArray.length) return;
     
@@ -440,7 +435,6 @@
       orderDiv.setAttribute('data-order-id', order.id);
       
       let rawItemsText = '';
-      // 构建餐品明细原始文本（保留数据库原始大小写，不进行大小写转换）
       if (order.items) {
         if (Array.isArray(order.items)) {
           rawItemsText = order.items.map(item => `• ${escapeHtml(item)}`).join('<br>');
@@ -453,14 +447,12 @@
         rawItemsText = '无餐品明细';
       }
       
-      // 高亮关键词 (TBOX, Hot, Ice) 保留原始大小写
       const highlightedItems = highlightKeyword(rawItemsText);
       
       const timeStr = order.time || '';
       const tableInfo = order.table ? `桌号: ${order.table}` : '外带';
       const orderNumber = order.orderNo || order.id.slice(-6) || '----';
       
-      // 动态生成匹配标签说明 (根据含有哪种关键词展示，但为了通用显示匹配标识)
       let matchBadge = `<span class="hk-match-tag">🎯 匹配订单(TBOX/Hot/Ice)</span>`;
       
       let actionButtonHtml = '';
@@ -469,6 +461,7 @@
       } else if (currentStatus === 'Preparing') {
         actionButtonHtml = `<button class="btn-ready" onclick="window.setReady('${order.id}')">✅ 烹饪完成</button>`;
       } else if (currentStatus === 'Ready') {
+        // 【已修改】此处移除了 confirm 弹窗，点击直接执行删除
         actionButtonHtml = `<button class="btn-done" onclick="window.completeOrder('${order.id}')">🗑️ 完成出餐</button>`;
       }
       
@@ -494,7 +487,7 @@
     }
   }
 
-  // 订单操作函数 (与原来功能完全相同)
+  // 订单操作函数
   window.setPreparing = function(orderId) {
     if (!orderId) return;
     database.ref('orders/' + orderId).update({ status: 'Preparing' })
@@ -507,15 +500,14 @@
       .catch(err => console.error("更新状态失败:", err));
   };
 
+  // 【已修改】移除了 confirm 弹窗，点击后直接删除订单
   window.completeOrder = function(orderId) {
     if (!orderId) return;
-    if (confirm('确认此订单已完成并移出列表？')) {
-      database.ref('orders/' + orderId).remove()
-        .catch(err => console.error("移除订单失败:", err));
-    }
+    database.ref('orders/' + orderId).remove()
+      .catch(err => console.error("移除订单失败:", err));
   };
 
-  // 实时监听 Firebase，每次变更时重新渲染严格过滤后的订单
+  // 实时监听 Firebase
   function startListeningOrders() {
     const ordersRef = database.ref('orders');
     ordersRef.on('value', (snapshot) => {
